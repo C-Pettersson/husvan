@@ -118,6 +118,8 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 - Datum i ISO 8601. Belopp i kronor (`Decimal`, suffix `Sek`). Enheter anges explicit (`m2`, `kWh`, `W/m2K`).
 - Datatyper för attribut: `text`, `number` (med enhet), `year`, `date`, `choice` (lista), referens till `actor`, `document` eller `component`.
 - Nycklar som prognosen läser och som därför måste heta lika i alla typer: `installation_year`, `condition` (1–5, 5 är nytt), `area` (m2), `length` (m), `quantity` (antal). På huset: `construction_year`, `living_area`, `heating_kwh_per_year`, `electricity_kwh_per_year`, `operating_cost_sek_per_year`.
+- Köpdata är observationer på huset, med källa som alla andra värden: `asking_price_sek` (utgångspris), `highest_bid_sek` och `highest_bid_date`, `final_price_sek` (slutpris), `sale_status` (`upcoming`, `bidding`, `closed`), `assessed_value_sek` (taxeringsvärde) och `assessment_year`. `sale_status` gäller försäljningen och är skilt från husets `status`.
+- **Pris** i prognos och jämförelse är `final_price_sek` om det finns, annars `highest_bid_sek`, annars `asking_price_sek`. Svaret säger alltid vilket av dem som användes.
 - Enumvärden är `UPPER_CASE` i databasen och får en översättningsnyckel per värde i webben (`house.status.purchased`).
 
 ### Språk
@@ -157,15 +159,27 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 
 Biblioteket börjar med de delar som dominerar kostnaden för ett småhus. Varje typ får en `LifespanProfile` med källa innan den används.
 
-Klimatskal: `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`. Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`.
+Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`. Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`.
 
 Fönster registreras styck för styck när underlaget tillåter det, annars som en komponent `window` med `quantity`.
+
+### Grunden
+
+`foundation` är en komponent med ett attribut `foundation_type` (`slab_on_ground` platta på mark, `crawl_space` krypgrund, `basement` källare, `plinth` plintgrund, `stone_foundation` torpargrund) och ett attribut för varianten som hör till typen:
+
+| `foundation_type` | Attribut | Värden |
+| --- | --- | --- |
+| `slab_on_ground` | `slab_insulation` | `below` (under plattan), `above` (ovanpå plattan) |
+| `crawl_space` | `crawl_space_ventilation` | `outdoor_air` (uteluftsventilerad), `dehumidified` (avfuktad) |
+| `basement` | `basement_wall_insulation` | `exterior` (utvändig), `interior` (invändig) |
+
+Grunden byts inte, så den har ingen `LifespanProfile` och ger inga byten i prognosen. Det som slits är dränering, fuktskydd och avfuktare, som är egna komponenter. **Riskkonstruktion** (platta med isolering ovanpå, uteluftsventilerad krypgrund, källare med invändig isolering) räknas fram vid läsning ur typ och variant och lagras inte.
 
 ## MCP-verktyg i version 1
 
 | Verktyg | Vad det gör | Läser/skriver |
 | --- | --- | --- |
-| `list_houses` | Alla hus med status och nyckeltal | Läser |
+| `list_houses` | Alla hus med status, försäljningsstatus, pris, underhållsjusterat pris och nyckeltal | Läser |
 | `get_house` | Allt om ett hus: komponentträd, aktuella värden med källa och alternativ, dokument, åtgärder, öppna utkast. Valfritt per datum | Läser |
 | `type_library` | Kända komponenttyper och deras attribut, så att Claude vet vad den ska leta efter | Läser |
 | `create_house` | Nytt kandidathus. Kärnan sparas direkt, övriga uppgifter returneras som utkast | Skriver |
@@ -175,7 +189,7 @@ Fönster registreras styck för styck när underlaget tillåter det, annars som 
 | `add_work_item` | Åtgärd från besiktningen eller eget val | Skriver utkast |
 | `set_assumption` | Horisont, startår, ränta, energipriser, drifttrend | Skriver |
 | `forecast` | Kostnad per år och post för ett hus | Läser |
-| `compare` | Flera hus sida vid sida, med de största skillnaderna först | Läser |
+| `compare` | Flera hus sida vid sida: pris, underhållsskuld och underhållsjusterat pris, prisskillnaden förklarad per komponent, därefter de största skillnaderna | Läser |
 
 Verktygens beskrivningar och svar till Claude är på engelska. Claude svarar ändå användaren på svenska.
 
@@ -191,7 +205,7 @@ Per hus och år över vald horisont, i startårets kronor:
 4. **Regionalt.** Snöröjning och takskottning efter snözon. Saknas energidata: grov skattning av uppvärmning med Fgeo.
 5. **Kapitalkostnad (valfri).** Ränta på lånet med användarens ränta.
 
-Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg–hög) som blir bredare ju fler värden som saknas eller är osäkra. Jämförelsen visar först de poster som skiljer mest. Prognoser sparas så att man ser hur bedömningen av ett hus ändras.
+Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg–hög) som blir bredare ju fler värden som saknas eller är osäkra. Jämförelsen börjar med underhållsjusterat pris (se nedan) och visar sedan de poster som skiljer mest. Prognoser sparas så att man ser hur bedömningen av ett hus ändras.
 
 ### Regler för beräkningen
 
@@ -201,6 +215,17 @@ Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg�
 - **Passerad livslängd** ger inte ett byte i det förflutna. Bytesår före startåret läggs på startåret och flaggas.
 - **Spann.** Låg använder `lifespanMaxYears` och `costLowSek`, hög använder `lifespanMinYears` och `costHighSek`. Varje post bär en lista över indata som saknas eller har `confidence` under 0,7.
 - **Standardantaganden** när användaren inte satt egna: horisont 15 år, startår innevarande år, ingen kapitalkostnad, ingen drifttrend.
+
+### Underhållsskuld och underhållsjusterat pris
+
+Prognosen säger vad som händer inom horisonten. För att jämföra köp behövs också ett mått som inte beror på horisonten, så att ett tak som ska bytas år 16 ändå räknas.
+
+- **Underhållsskuld** `U = Σ cᵢ · min(1, aᵢ / Lᵢ) + Σ wⱼ`. `cᵢ` är komponentens bytekostnad i startårets kronor, `aᵢ` dess ålder och `Lᵢ` livslängden enligt reglerna ovan, alltså justerad efter skick. `wⱼ` är kostnaden för varje öppen åtgärd från besiktning och prospekt. En åtgärd som gäller byte av en komponent ersätter komponentens term, så att inget räknas två gånger.
+- **Underhållsjusterat pris** = pris + `U`. Det är huvudtalet i jämförelsen.
+- **Spann** som för prognosen: låg med `lifespanMaxYears` och `costLowSek`, hög med `lifespanMinYears` och `costHighSek`. Gissade installationsår och mängder breddar spannet på samma sätt.
+- **K/T-tal** = pris / `assessed_value_sek`. Taxeringsvärdet ska motsvara 75 % av marknadsvärdet året före taxeringsåret, så talet visas med `assessment_year`.
+- **Förklaring av prisskillnad.** Mellan två hus delas skillnaden i underhållsskuld upp per komponenttyp, största först. Skillnader under 20 000 kr slås ihop till "Övrigt". Prisskillnaden plus delarna ger skillnaden i underhållsjusterat pris.
+- Grunden ger ingen term i `U`. En riskkonstruktion flaggas i jämförelsen men räknas inte om till kronor.
 
 ## Byggordning
 
