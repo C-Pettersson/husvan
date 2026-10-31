@@ -1,0 +1,25 @@
+# Hemligheter och lokal konfiguration
+.env
+.env.*
+!.env.example
+
+# Beroenden och byggfiler
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+
+# Uppladdade dokument och lokala databasfiler
+uploads/
+*.dump
+
+# Editor och OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code, lokala inställningar
+.claude/settings.local.json
