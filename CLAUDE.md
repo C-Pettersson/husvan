@@ -33,10 +33,22 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | MCP | Officiella TypeScript-SDK:t v2 (`@modelcontextprotocol/server`), Streamable HTTP, route `src/app/api/mcp/route.ts`. Verktygen ligger i `src/server/mcp/`. |
 | Autentisering | **Better Auth** med pluginen `mcp` (OAuth 2.1-auktoriseringsserver i samma app), `cimd` och `jwt`. Ersätter NextAuth, som inte kan agera auktoriseringsserver. Inloggning med e-post och lösenord, registrering avstängd, en användare seedas. |
 | Test | Vitest. |
-| Drift | Docker Compose med app, Postgres och Caddy på användarens VPS. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. |
-| Framför VPS:en | Cloudflare på gratisplanen som DNS-proxy. En WAF-regel släpper bara in Anthropics IP-intervall `160.79.104.0/21` till MCP-routen, token- och JWKS-endpoints och `/.well-known/*`. Cloudflare Access (gratis upp till 50 användare, bara ägarens e-post tillåten) framför alla andra sökvägar, alltså webbsidorna och OAuth-inloggningen. Bots stoppas vid kanten och når aldrig servern. Caddy kör med Cloudflares origin-certifikat i stället för Let's Encrypt, och ursprungsservern tar bara emot trafik från Cloudflares IP-intervall. Exakta sökvägar för reglerna fastställs i milstolpe 0 när Better Auths routes är kända. |
+| Drift | k3s på användarens VPS, styrt från `C:\projects\infra-gitops` med Argo CD, Kustomize, KSOPS och Kargo. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. Se "Leverans och drift". |
+| Lokal körning | `docker compose up -d postgres` och `yarn dev`, som i brfjamforelse. Compose innehåller Postgres och en valfri app-image för att testa containern; det är inte produktionsmiljön. |
 
 Skillnader mot brfjamforelse: ingen organisationsmodell, inga kvoter, ingen egen AI-anropning, ingen publik yta. Det som inte behövs byggs inte.
+
+### Leverans och drift
+
+Manifesten följer standarden i infra-gitops (`apps/<app>/base` och `apps/<app>/envs/production`, upptäckta av ApplicationSet:et i `appsets/production.yaml`). Förebilden är `apps/brfjamforelse-se`.
+
+- **Image.** GitHub Actions bygger och pushar `ghcr.io/c-pettersson/husvan` när en semver-tagg pushas, samma workflow som brfjamforelse. Dockerfile enligt brfjamforelse: Node 22 Alpine, flerstegsbygge, `prisma generate` vid bygget, `yarn start` på port 3000.
+- **Manifest.** `apps/husvan-se/base` med Deployment (en replika, `envFrom` från Secret `husvan`, `imagePullSecrets: regcred`) och Service på 3000. `apps/husvan-se/envs/production` med Traefik-Ingress för `husvan.se`, `secrets.sops.yaml`, `registry-creds.sops.yaml` och `cloudflare-origin-certificate.sops.yaml`, alla krypterade med SOPS och age enligt `.sops.yaml`. Namnrymden blir `husvan-se-production`.
+- **Release.** `kargo/pipelines/husvan-se` med Project, ProjectConfig (`autoPromotionEnabled: false`), Warehouse mot GHCR med semver-filter och en manuell `production`-stage som använder `kargo/base` PromotionTask. Promotion pinnar image-digest i `envs/production/kustomization.yaml`, committar till `main` och låter Argo CD synka. Lägg till appen i `scripts/lib/workloads.mjs` och kör `npm run validate` och `npm test` i infra-gitops.
+- **Databas.** Den delade Bitnami-Postgres i namnrymden `default` (`postgres-postgresql.default.svc.cluster.local:5432`), med en egen databas `husvan` och en egen roll. Migrationer körs med `yarn prisma migrate deploy` mot databasen via port-forward, som i brfjamforelse. Ingen migration körs automatiskt vid podstart.
+- **Dokumentfiler.** En PVC monterad på `UPLOADS_DIR`, eftersom appen har en replika. S3-kompatibel lagring (R2) är alternativet om PVC:n blir opraktisk, med samma inställningar som brfjamforelse.
+- **Framför klustret.** Cloudflare som DNS-proxy med origin-certifikat i Ingress-TLS:en; Traefik litar redan på Cloudflares IP-intervall för vidarebefordrade headers. En WAF-regel släpper bara in Anthropics IP-intervall `160.79.104.0/21` till MCP-routen, token- och JWKS-endpoints och `/.well-known/*`. Cloudflare Access (bara ägarens e-post) framför alla andra sökvägar, alltså webbsidorna och OAuth-inloggningen. Exakta sökvägar fastställs i milstolpe 0 när Better Auths routes är kända. En Tailscale-Ingress som i brfjamforelse är valfri för privat åtkomst förbi Cloudflare.
+- **Regel.** Inga direkta ändringar i klustret. Allt går via manifest i infra-gitops, commit, push och reconciliation i Argo CD. Samma regel som i det repots `AGENTS.md`.
 
 ### Autentisering: vad Claude kräver
 
@@ -195,13 +207,13 @@ Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg�
 Varje milstolpe ska gå att visa i Claude eller i webbläsaren innan nästa påbörjas.
 
 0. **Verifiera kopplingen.** Next.js-app med Better Auth (`mcp`, `cimd`, `jwt`), en seedad användare och en MCP-route med ett verktyg, körd över HTTPS. Läggs till som egen koppling i claude.ai med "Use Claude's published identity". Avgör protokollversion och om `legacy: "reject"` går att använda.
-1. **Grund.** Prisma-schema och första migration, Compose (app, Postgres, Caddy), Vitest.
+1. **Grund.** Prisma-schema och första migration, Compose med Postgres för lokal körning, Dockerfile och bygg-workflow, Vitest.
 2. **Data.** Kommuner (Luleå 2580, Boden 2582), typbibliotek, livslängdsprofiler med källor, BKI-serie. Det mest arbetskrävande steget, och det ligger inte i kod.
 3. **Läsverktyg** mot seedad data: `list_houses`, `get_house`, `type_library`.
 4. **Skrivverktyg** med utkast och godkännande.
 5. **Prognos och jämförelse.**
 6. **Webbsida**, först visning, sedan rättning och filuppladdning.
-7. **Drift på VPS** bakom Cloudflare: origin-certifikat i Caddy, brandvägg som bara släpper in Cloudflare, WAF-regeln för Anthropics IP-intervall och Access framför webben. Verifiera att Claude fortfarande kan ansluta och logga in när reglerna är på.
+7. **Drift i k3s.** Manifest och Kargo-pipeline i infra-gitops, databas och roll på den delade Postgres, första migration via port-forward, första manuella promotion. Därefter WAF-regeln för Anthropics IP-intervall och Access framför webben. Verifiera att Claude fortfarande kan ansluta och logga in när reglerna är på.
 
 ## Utanför version 1
 
