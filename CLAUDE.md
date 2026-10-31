@@ -33,7 +33,8 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | MCP | Officiella TypeScript-SDK:t v2 (`@modelcontextprotocol/server`), Streamable HTTP, route `src/app/api/mcp/route.ts`. Verktygen ligger i `src/server/mcp/`. |
 | Autentisering | **Better Auth** med pluginen `mcp` (OAuth 2.1-auktoriseringsserver i samma app), `cimd` och `jwt`. Ersätter NextAuth, som inte kan agera auktoriseringsserver. Inloggning med e-post och lösenord, registrering avstängd, en användare seedas. |
 | Test | Vitest. |
-| Drift | Docker Compose med app, Postgres och Caddy (automatisk TLS) på användarens VPS. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. |
+| Drift | Docker Compose med app, Postgres och Caddy på användarens VPS. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. |
+| Framför VPS:en | Cloudflare på gratisplanen som DNS-proxy. En WAF-regel släpper bara in Anthropics IP-intervall `160.79.104.0/21` till MCP-routen, token- och JWKS-endpoints och `/.well-known/*`. Cloudflare Access (gratis upp till 50 användare, bara ägarens e-post tillåten) framför alla andra sökvägar, alltså webbsidorna och OAuth-inloggningen. Bots stoppas vid kanten och når aldrig servern. Caddy kör med Cloudflares origin-certifikat i stället för Let's Encrypt, och ursprungsservern tar bara emot trafik från Cloudflares IP-intervall. Exakta sökvägar för reglerna fastställs i milstolpe 0 när Better Auths routes är kända. |
 
 Skillnader mot brfjamforelse: ingen organisationsmodell, inga kvoter, ingen egen AI-anropning, ingen publik yta. Det som inte behövs byggs inte.
 
@@ -200,7 +201,7 @@ Varje milstolpe ska gå att visa i Claude eller i webbläsaren innan nästa påb
 4. **Skrivverktyg** med utkast och godkännande.
 5. **Prognos och jämförelse.**
 6. **Webbsida**, först visning, sedan rättning och filuppladdning.
-7. **Drift på VPS.**
+7. **Drift på VPS** bakom Cloudflare: origin-certifikat i Caddy, brandvägg som bara släpper in Cloudflare, WAF-regeln för Anthropics IP-intervall och Access framför webben. Verifiera att Claude fortfarande kan ansluta och logga in när reglerna är på.
 
 ## Utanför version 1
 
