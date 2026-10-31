@@ -1,0 +1,389 @@
+// Husvan data model (Prisma 6, Postgres 16).
+//
+// Read CLAUDE.md, section "Datamodell", before changing this file. The short
+// version:
+//   * Fixed core, dynamic facts. House and Component carry only what every
+//     query needs. Everything Claude reads out of a document is an
+//     Observation: key, value, who said it, which document, how sure.
+//   * Append only. An Observation is never updated. A better value is a new
+//     row; a wrong one gets retractedAt. A replaced component is a new
+//     Component whose replacesId points at the old one.
+//   * Drafts are real rows. Everything written through MCP belongs to a
+//     Changeset. Rows in a DRAFT changeset exist in the tables but are
+//     invisible to reads until the user approves. Approval flips one status.
+//   * The authentication tables (user, session, account, verification, jwks,
+//     oauth*) are owned by Better Auth and generated with
+//     `npx @better-auth/cli generate`. Only User is declared here so that
+//     House can reference it.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Authentication (Better Auth) ----------------------------------------------
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  houses House[]
+}
+
+// Reference data per municipality ---------------------------------------------
+
+model Municipality {
+  code               String   @id // SCB municipality code, four digits
+  name               String
+  groundSnowLoadKnM2 Decimal? @db.Decimal(4, 2) // snow zone value, Boverket
+  fgeo               Decimal? @db.Decimal(3, 2) // geographic adjustment factor, BBR
+  dvutC              Decimal? @db.Decimal(4, 1) // design winter outdoor temperature
+  cloudburstMapUrl   String?
+  updatedAt          DateTime @updatedAt
+
+  houses        House[]
+  tariffChanges MunicipalTariffChange[]
+}
+
+// Year-on-year change per municipality and cost category, from the Nils
+// Holgersson report. Used only when the user turns on operating cost trends.
+model MunicipalTariffChange {
+  municipalityCode String
+  year             Int
+  category         TariffCategory
+  changeFraction   Decimal        @db.Decimal(6, 4) // 0.079 = +7.9 %
+  sourceUrl        String?
+
+  municipality Municipality @relation(fields: [municipalityCode], references: [code])
+
+  @@id([municipalityCode, year, category])
+}
+
+enum TariffCategory {
+  WATER_SEWAGE
+  WASTE
+  ELECTRICITY
+  DISTRICT_HEATING
+}
+
+// National price index series, used to bring library prices from their price
+// year to the forecast start year. series: 'bki_small_houses' (SCB
+// construction cost index for group-built small houses, monthly).
+model PriceIndex {
+  series    String
+  period    DateTime @db.Date // first day of the month
+  value     Decimal  @db.Decimal(12, 4)
+  sourceUrl String?
+
+  @@id([series, period])
+}
+
+// Type library ----------------------------------------------------------------
+
+model ComponentType {
+  type                 String   @id // snake_case key, e.g. underfloor_heating
+  label                Json // {"sv": "Golvvärme", "en": "Underfloor heating"}
+  category             String // heating, ventilation, roof, ...
+  attributeSchema      Json     @default("{}") // key -> {label, datatype, unit, options}
+  allowedSubcomponents String[] @default([])
+  // Per-type overrides for the forecast rules in CLAUDE.md, e.g.
+  // {"quantityPerLivingM2": 0.15, "conditionRule": {"5": "max", "2": "min"}}
+  forecastDefaults     Json     @default("{}")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  components       Component[]
+  lifespanProfiles LifespanProfile[]
+}
+
+// Lifespan and cost for a type, optionally narrowed to attribute values
+// (match = {"material": "clay_tile"}). The forecast picks the most specific
+// matching profile. The numbers are the curated result; sources keeps the
+// raw values per source for traceability:
+// [{"name": "Handelsbanken", "url": ..., "lifespanYears": 40, "costSek": 1200, "note": ...}]
+model LifespanProfile {
+  id                   String   @id @default(uuid(7)) @db.Uuid
+  type                 String
+  match                Json     @default("{}")
+  lifespanMinYears     Int
+  lifespanTypicalYears Int
+  lifespanMaxYears     Int
+  costLowSek           Decimal? @db.Decimal(12, 0)
+  costHighSek          Decimal? @db.Decimal(12, 0)
+  costUnit             CostUnit
+  priceYear            Int?
+  sources              Json     @default("[]")
+
+  componentType ComponentType @relation(fields: [type], references: [type])
+
+  @@index([type])
+}
+
+// costUnit decides which observation key gives the quantity (see CLAUDE.md):
+// M2 -> area, LINEAR_M -> length, EACH -> quantity (default 1), HOUSE -> 1.
+enum CostUnit {
+  EACH
+  M2
+  LINEAR_M
+  HOUSE
+}
+
+// Changesets ------------------------------------------------------------------
+
+// Every row written through MCP or the web points at a changeset. Reads
+// include a row only when its changeset is APPROVED. Draft rows are shown
+// to the user as the proposal to approve or reject.
+model Changeset {
+  id        String          @id @default(uuid(7)) @db.Uuid
+  status    ChangesetStatus @default(DRAFT)
+  source    ValueSource
+  houseId   String?         @db.Uuid // null = not about one house (default assumptions)
+  comment   String?
+  createdAt DateTime        @default(now())
+  decidedAt DateTime?
+
+  house        House?        @relation(fields: [houseId], references: [id])
+  components   Component[]
+  observations Observation[]
+  documents    Document[]
+  workItems    WorkItem[]
+  assumptions  Assumption[]
+
+  @@index([houseId, status])
+}
+
+enum ChangesetStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+// Who asserted a value. The document it came from is documentId; the kind of
+// document (inspection, listing) is Document.type, not a source.
+enum ValueSource {
+  USER
+  CLAUDE
+  IMPORT
+}
+
+// Houses ----------------------------------------------------------------------
+
+model House {
+  id                  String      @id @default(uuid(7)) @db.Uuid
+  ownerId             String
+  address             String
+  municipalityCode    String?
+  propertyDesignation String? // fastighetsbeteckning
+  status              HouseStatus @default(INTERESTED)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  owner        User          @relation(fields: [ownerId], references: [id])
+  municipality Municipality? @relation(fields: [municipalityCode], references: [code])
+  changesets   Changeset[]
+  components   Component[]
+  observations Observation[]
+  documents    Document[]
+  workItems    WorkItem[]
+  assumptions  Assumption[]
+  forecasts    Forecast[]
+
+  @@index([ownerId])
+}
+
+enum HouseStatus {
+  INTERESTED
+  VIEWING
+  BIDDING
+  DECLINED
+  PURCHASED
+  SOLD
+}
+
+// Documents and actors --------------------------------------------------------
+
+// save_document stores text, metadata and Claude's interpretation. The
+// original file is uploaded through the web app (MCP calls carry JSON) and
+// matched to the row by sha256, which fills storagePath.
+model Document {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  houseId        String?      @db.Uuid // null until the house exists
+  type           DocumentType
+  title          String?
+  sourceUrl      String? // e.g. the listing URL
+  filename       String?
+  mime           String?
+  sha256         String?      @unique
+  storagePath    String? // null until the file is uploaded
+  fullText       String?
+  interpretation Json? // Claude's interpretation, stored unchanged
+  documentDate   DateTime?    @db.Date
+  amountSek      Decimal?     @db.Decimal(12, 2)
+  actorId        String?      @db.Uuid
+  changesetId    String       @db.Uuid
+  createdAt      DateTime     @default(now())
+
+  house        House?        @relation(fields: [houseId], references: [id])
+  actor        Actor?        @relation(fields: [actorId], references: [id])
+  changeset    Changeset     @relation(fields: [changesetId], references: [id])
+  observations Observation[]
+  workItems    WorkItem[]
+
+  @@index([houseId])
+}
+
+enum DocumentType {
+  LISTING
+  INSPECTION
+  ENERGY_CERTIFICATE
+  INVOICE
+  RECEIPT
+  MANUAL
+  WARRANTY
+  DRAWING
+  PHOTO
+  OTHER
+}
+
+model Actor {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  name      String
+  orgNumber String? // organisationsnummer
+  roles     String[] @default([]) // installer, supplier, manufacturer, broker, inspector
+  contact   Json     @default("{}")
+
+  documents Document[]
+}
+
+// Components in a tree --------------------------------------------------------
+
+model Component {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  houseId     String   @db.Uuid
+  type        String
+  parentId    String?  @db.Uuid
+  replacesId  String?  @db.Uuid // this component replaced that one
+  name        String? // e.g. 'W-3, kitchen, south'
+  changesetId String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  house         House         @relation(fields: [houseId], references: [id])
+  componentType ComponentType @relation(fields: [type], references: [type])
+  parent        Component?    @relation("ComponentTree", fields: [parentId], references: [id])
+  children      Component[]   @relation("ComponentTree")
+  replaces      Component?    @relation("ComponentReplacement", fields: [replacesId], references: [id])
+  replacedBy    Component[]   @relation("ComponentReplacement")
+  changeset     Changeset     @relation(fields: [changesetId], references: [id])
+  observations  Observation[]
+  workItems     WorkItem[]
+
+  @@index([houseId])
+  @@index([parentId])
+  @@index([replacesId])
+}
+
+// Observations: every fact about a house or component -------------------------
+
+// One row per assertion. Several rows may exist for the same key: the listing
+// says the roof is from 1995, the inspection says 2001, the user says 1998.
+// The current value is chosen on read: USER first, then highest confidence,
+// then newest. A row is never updated; retractedAt hides it.
+model Observation {
+  id          String      @id @default(uuid(7)) @db.Uuid
+  houseId     String      @db.Uuid
+  componentId String?     @db.Uuid // null = about the house itself
+  key         String // snake_case, e.g. installation_year
+  value       Json
+  unit        String?
+  source      ValueSource
+  documentId  String?     @db.Uuid
+  confidence  Decimal?    @db.Decimal(3, 2) // 0.00 to 1.00
+  quote       String? // the passage in the document that supports the value
+  retractedAt DateTime?
+  changesetId String      @db.Uuid
+  recordedAt  DateTime    @default(now())
+
+  house     House      @relation(fields: [houseId], references: [id])
+  component Component? @relation(fields: [componentId], references: [id])
+  document  Document?  @relation(fields: [documentId], references: [id])
+  changeset Changeset  @relation(fields: [changesetId], references: [id])
+
+  @@index([houseId, componentId, key])
+  @@index([changesetId])
+}
+
+// Work items: what the inspection or the user says needs doing ----------------
+
+model WorkItem {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  houseId     String         @db.Uuid
+  componentId String?        @db.Uuid
+  description String
+  yearMin     Int? // "within 1 to 3 years" becomes a range
+  yearMax     Int?
+  costLowSek  Decimal?       @db.Decimal(12, 0)
+  costHighSek Decimal?       @db.Decimal(12, 0)
+  source      ValueSource
+  documentId  String?        @db.Uuid
+  quote       String?
+  status      WorkItemStatus @default(PLANNED)
+  changesetId String         @db.Uuid
+  createdAt   DateTime       @default(now())
+
+  house     House      @relation(fields: [houseId], references: [id])
+  component Component? @relation(fields: [componentId], references: [id])
+  document  Document?  @relation(fields: [documentId], references: [id])
+  changeset Changeset  @relation(fields: [changesetId], references: [id])
+
+  @@index([houseId])
+}
+
+enum WorkItemStatus {
+  PLANNED
+  DISMISSED
+  DONE
+}
+
+// Forecast assumptions --------------------------------------------------------
+
+// Append only; the newest approved row per (houseId, key) wins. houseId null
+// is the default for all houses. Keys and their value shapes are validated in
+// code: horizon_years, start_year, interest_rate, loan_sek,
+// electricity_price_sek_kwh, district_heating_price_sek_kwh,
+// operating_cost_trend ('none' | 'municipality').
+model Assumption {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  houseId     String?  @db.Uuid
+  key         String
+  value       Json
+  changesetId String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  house     House?    @relation(fields: [houseId], references: [id])
+  changeset Changeset @relation(fields: [changesetId], references: [id])
+
+  @@index([houseId, key])
+}
+
+// Saved forecasts, to see how the assessment of a house changes ---------------
+
+model Forecast {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  houseId      String   @db.Uuid
+  calculatedAt DateTime @default(now())
+  assumptions  Json // the assumptions that were used
+  result       Json // cost per year and item, total, range, missing inputs
+
+  house House @relation(fields: [houseId], references: [id])
+
+  @@index([houseId, calculatedAt])
+}
