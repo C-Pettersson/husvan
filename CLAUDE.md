@@ -36,7 +36,7 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | Drift | k3s på användarens VPS, styrt från `C:\projects\infra-gitops` med Argo CD, Kustomize, KSOPS och Kargo. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. Se "Leverans och drift". |
 | Lokal körning | `docker compose up -d postgres` och `yarn dev`, som i brfjamforelse. Compose innehåller Postgres och en valfri app-image för att testa containern; det är inte produktionsmiljön. |
 
-Skillnader mot brfjamforelse: ingen organisationsmodell, inga kvoter, ingen egen AI-anropning, ingen publik yta. Det som inte behövs byggs inte.
+Skillnader mot brfjamforelse: ingen organisationsmodell, inga kvoter, ingen egen AI-anropning, ingen publik yta utöver startsidan. Det som inte behövs byggs inte.
 
 ### Leverans och drift
 
@@ -47,7 +47,7 @@ Manifesten följer standarden i infra-gitops (`apps/<app>/base` och `apps/<app>/
 - **Release.** `kargo/pipelines/husvan-se` med Project, ProjectConfig (`autoPromotionEnabled: false`), Warehouse mot GHCR med semver-filter och en manuell `production`-stage som använder `kargo/base` PromotionTask. Promotion pinnar image-digest i `envs/production/kustomization.yaml`, committar till `main` och låter Argo CD synka. Lägg till appen i `scripts/lib/workloads.mjs` och kör `npm run validate` och `npm test` i infra-gitops.
 - **Databas.** Den delade Bitnami-Postgres i namnrymden `default` (`postgres-postgresql.default.svc.cluster.local:5432`), med en egen databas `husvan` och en egen roll. Migrationer körs med `yarn prisma migrate deploy` mot databasen via port-forward, som i brfjamforelse. Ingen migration körs automatiskt vid podstart.
 - **Dokumentfiler.** En PVC monterad på `UPLOADS_DIR`, eftersom appen har en replika. S3-kompatibel lagring (R2) är alternativet om PVC:n blir opraktisk, med samma inställningar som brfjamforelse.
-- **Framför klustret.** Cloudflare som DNS-proxy med origin-certifikat i Ingress-TLS:en; Traefik litar redan på Cloudflares IP-intervall för vidarebefordrade headers. En WAF-regel släpper bara in Anthropics IP-intervall `160.79.104.0/21` till MCP-routen, token- och JWKS-endpoints och `/.well-known/*`. Cloudflare Access (bara ägarens e-post) framför alla andra sökvägar, alltså webbsidorna och OAuth-inloggningen. Exakta sökvägar fastställs i milstolpe 0 när Better Auths routes är kända. En Tailscale-Ingress som i brfjamforelse är valfri för privat åtkomst förbi Cloudflare.
+- **Framför klustret.** Cloudflare som DNS-proxy med origin-certifikat i Ingress-TLS:en; Traefik litar redan på Cloudflares IP-intervall för vidarebefordrade headers. En WAF-regel släpper bara in Anthropics IP-intervall `160.79.104.0/21` till MCP-routen, token- och JWKS-endpoints och `/.well-known/*`. Under utvecklingen står Cloudflare Access (bara ägarens e-post) framför alla andra sökvägar, alltså webbsidorna och OAuth-inloggningen. Access är tillfälligt: när appen är klar tas det bort, startsidan `/` blir publik och resten av webben skyddas av Better Auths inloggning. Exakta sökvägar fastställs i milstolpe 0 när Better Auths routes är kända. En Tailscale-Ingress som i brfjamforelse är valfri för privat åtkomst förbi Cloudflare.
 - **Regel.** Inga direkta ändringar i klustret. Allt går via manifest i infra-gitops, commit, push och reconciliation i Argo CD. Samma regel som i det repots `AGENTS.md`.
 
 ### Autentisering: vad Claude kräver
@@ -237,8 +237,8 @@ Varje milstolpe ska gå att visa i Claude eller i webbläsaren innan nästa påb
 3. **Läsverktyg** mot seedad data: `list_houses`, `get_house`, `type_library`.
 4. **Skrivverktyg** med utkast och godkännande.
 5. **Prognos och jämförelse.**
-6. **Webbsida**, först visning, sedan rättning och filuppladdning.
-7. **Drift i k3s.** Manifest och Kargo-pipeline i infra-gitops, databas och roll på den delade Postgres, första migration via port-forward, första manuella promotion. Därefter WAF-regeln för Anthropics IP-intervall och Access framför webben. Verifiera att Claude fortfarande kan ansluta och logga in när reglerna är på.
+6. **Webbsida**, först visning, sedan rättning och filuppladdning. Sist den publika startsidan.
+7. **Drift i k3s.** Manifest och Kargo-pipeline i infra-gitops, databas och roll på den delade Postgres, första migration via port-forward, första manuella promotion. Därefter WAF-regeln för Anthropics IP-intervall och Access framför webben. Verifiera att Claude fortfarande kan ansluta och logga in när reglerna är på. När appen är klar tas Access bort och startsidan blir publik. WAF-regeln för MCP ligger kvar.
 
 ## Utanför version 1
 
