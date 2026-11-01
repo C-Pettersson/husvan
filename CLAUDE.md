@@ -47,7 +47,7 @@ Manifesten följer standarden i infra-gitops (`apps/<app>/base` och `apps/<app>/
 - **Release.** `kargo/pipelines/husvan-se` med Project, ProjectConfig (`autoPromotionEnabled: false`), Warehouse mot GHCR med semver-filter och en manuell `production`-stage som använder `kargo/base` PromotionTask. Promotion pinnar image-digest i `envs/production/kustomization.yaml`, committar till `main` och låter Argo CD synka. Lägg till appen i `scripts/lib/workloads.mjs` och kör `npm run validate` och `npm test` i infra-gitops.
 - **Databas.** Den delade Bitnami-Postgres i namnrymden `default` (`postgres-postgresql.default.svc.cluster.local:5432`), med en egen databas `husvan` och en egen roll. Migrationer körs med `yarn prisma migrate deploy` mot databasen via port-forward, som i brfjamforelse. Ingen migration körs automatiskt vid podstart.
 - **Dokumentfiler.** En PVC monterad på `UPLOADS_DIR`, eftersom appen har en replika. S3-kompatibel lagring (R2) är alternativet om PVC:n blir opraktisk, med samma inställningar som brfjamforelse.
-- **Framför klustret.** Cloudflare som DNS-proxy med origin-certifikat i Ingress-TLS:en; Traefik litar redan på Cloudflares IP-intervall för vidarebefordrade headers. En WAF-regel släpper bara in Anthropics IP-intervall `160.79.104.0/21` till MCP-routen, token- och JWKS-endpoints och `/.well-known/*`. Under utvecklingen står Cloudflare Access (bara ägarens e-post) framför alla andra sökvägar, alltså webbsidorna och OAuth-inloggningen. Access är tillfälligt: när appen är klar tas det bort, startsidan `/` blir publik och resten av webben skyddas av Better Auths inloggning. Exakta sökvägar fastställs i milstolpe 0 när Better Auths routes är kända. En Tailscale-Ingress som i brfjamforelse är valfri för privat åtkomst förbi Cloudflare.
+- **Framför klustret.** Cloudflare som DNS-proxy med origin-certifikat i Ingress-TLS:en; Traefik litar redan på Cloudflares IP-intervall för vidarebefordrade headers. En WAF-regel släpper bara in Anthropics IP-intervall `160.79.104.0/21` till MCP-routen, token- och JWKS-endpoints och `/.well-known/*`. Under utvecklingen står Cloudflare Access (bara ägarens e-post) framför alla andra sökvägar, alltså webbsidorna och OAuth-inloggningen. Access är tillfälligt: när appen är klar tas det bort, startsidan `/` blir publik och resten av webben skyddas av Better Auths inloggning. Exakta sökvägar fastställs i milstolpe 0 när Better Auths routes är kända. Samma regler gäller `dev.husvan.se`, tunneln till den lokala appen fram till milstolpe 7. En Tailscale-Ingress som i brfjamforelse är valfri för privat åtkomst förbi Cloudflare.
 - **Regel.** Inga direkta ändringar i klustret. Allt går via manifest i infra-gitops, commit, push och reconciliation i Argo CD. Samma regel som i det repots `AGENTS.md`.
 
 ### Autentisering: vad Claude kräver
@@ -71,7 +71,7 @@ Principerna, i den ordning de styr schemat:
 
 1. **Fast kärna, dynamiska fakta.** `House` har ägare, adress, kommun, fastighetsbeteckning och status. `Component` har hus, typ, förälder, vad den ersätter och ett namn. Allt annat som Claude läser ut är en `Observation`: nyckel, värde, källa, dokument, säkerhet.
 2. **Observationer, inte giltighetstider.** Att prospektet säger 1995 och besiktningen 2001 är inte en förändring över tid utan två påståenden. Därför finns ingen `valid_from`/`valid_to` på värden. Varje observation är en rad med `recordedAt`; det aktuella värdet väljs vid läsning. När något faktiskt byts ut är det komponentens livscykel som ändras, inte värdet.
-3. **Bara tillägg.** Ingen rad uppdateras eller raderas. Ett bättre värde är en ny observation; ett felaktigt får `retractedAt`. En utbytt del är en ny `Component` med `replacesId` mot den gamla. Att en komponent är ersatt härleds, det lagras inte på den gamla raden.
+3. **Bara tillägg.** Ingen rad raderas, och inget påstående skrivs över. Ett bättre värde är en ny observation; ett felaktigt får `retractedAt`, och så gör en åtgärd som avfärdas. De enda fält som ändras på plats är `retractedAt`, ändringssetets status och husets kärnfält (adress, kommun, fastighetsbeteckning, status). En utbytt del är en ny `Component` med `replacesId` mot den gamla. Att en komponent är ersatt härleds, det lagras inte på den gamla raden.
 4. **Utkast är riktiga rader.** Allt som skrivs via MCP eller webben pekar på ett `Changeset`. Rader i ett `DRAFT`-ändringsset finns i tabellerna men filtreras bort vid läsning tills användaren godkänner. Godkännande ändrar en status; inget transformeras från JSON till rader. Samma kod renderar utkast och godkända data.
 5. **Källa är vem, inte vad.** `ValueSource` är `USER`, `CLAUDE` eller `IMPORT`. Vilken sorts dokument värdet kommer från är `Document.type`. Besiktningen är ett dokument, inte en källa.
 6. **Typbibliotek som växer.** `ComponentType.attributeSchema` säger vad Claude ska leta efter men begränsar inte vad som får sparas. Om en nyckel ligger utanför schemat räknas fram vid läsning, det lagras inte.
@@ -97,6 +97,8 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 | `MunicipalTariffChange` och `PriceIndex` som egna tabeller | `tariff_changes` som JSON på kommunen | Typade värden med unika nycklar. En nullbar kommunkolumn i ett unikt index släpper igenom dubbletter i Postgres. |
 | `yearMin`/`yearMax` på åtgärder | Ett `year` | Besiktningen säger "inom 1–3 år", aldrig ett årtal. |
 | Inga tabeller för händelser och relationer mellan komponenter | Tabellerna med i schemat men oanvända | Oanvända tabeller är otestade gissningar. De läggs till med en migration när underhållsläget byggs. |
+| `HouseStatus` som ägarens beslut, `sale_status` som observation | `VIEWING` och `BIDDING` i husets status | Försäljningens läge kommer från annonsen och mäklaren och kan vara fel eller motsägas. Husets status ändras bara av ägaren. |
+| `WorkItem.kind` och `retractedAt` | `status` (`PLANNED`, `DISMISSED`, `DONE`) som uppdateras | `kind` behövs för att en bytesåtgärd inte ska räknas två gånger i underhållsskulden. En avfärdad åtgärd återkallas som en observation. Utförda åtgärder hör till underhållsläget. |
 | `AreaStatistic` per område och nivå | Områdets värden som observationer på varje hus | Samma siffra gäller många hus och uppdateras årligen. Per hus blir den en kopia som kan bli inaktuell, och nivån (kommun eller DeSO) skulle gå förlorad. |
 | `ownerId` på `House` redan nu | Lägga till vid flera användare | Better Auth ger ändå en användartabell, och en backfill senare kostar mer än en kolumn nu. |
 | Prisma-namn (`PascalCase`-modeller, `camelCase`-fält, `UPPER_CASE`-enum) | snake_case-SQL | Samma som brfjamforelse. Attributnycklar och typnamn i datan är fortfarande snake_case. |
@@ -121,7 +123,8 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 - Nycklar som prognosen läser och som därför måste heta lika i alla typer: `installation_year`, `condition` (1–5, 5 är nytt), `area` (m2), `length` (m), `quantity` (antal). På huset: `construction_year`, `living_area`, `heating_kwh_per_year`, `electricity_kwh_per_year`, `operating_cost_sek_per_year`.
 - Köpdata är observationer på huset, med källa som alla andra värden: `asking_price_sek` (utgångspris), `highest_bid_sek` och `highest_bid_date`, `final_price_sek` (slutpris), `sale_status` (`upcoming`, `bidding`, `closed`), `assessed_value_sek` (taxeringsvärde) och `assessment_year`. `sale_status` gäller försäljningen och är skilt från husets `status`.
 - **Pris** i prognos och jämförelse är `final_price_sek` om det finns, annars `highest_bid_sek`, annars `asking_price_sek`. Svaret säger alltid vilket av dem som användes.
-- Egenskaper som är observationer på huset: `room_count` (antal rum), `floor_count` (våningar), `energy_class` (`A`–`G`), `energy_performance_kwh_per_m2` (primärenergital) och `energy_declaration_year`, `absent_features` (lista med typnamn som huset uttryckligen saknar) och `deso_code` (SCB:s demografiska statistikområde).
+- Egenskaper som är observationer på huset: `room_count` (antal rum), `floor_count` (våningar), `energy_class` (`A`–`G`), `energy_performance_kwh_per_m2` (primärenergital) och `energy_declaration_year`, `absent_features` (lista med typnamn som huset uttryckligen saknar), `deso_code` (SCB:s demografiska statistikområde) och `police_area_code` (lokalpolisområde).
+- Husets `status` är `CANDIDATE`, `DECLINED` (avstått), `PURCHASED` eller `SOLD` och är ägarens beslut. Försäljningens läge är observationen `sale_status`, eftersom den kommer från annonsen och mäklaren och kan vara fel.
 - Enumvärden är `UPPER_CASE` i databasen och får en översättningsnyckel per värde i webben (`house.status.purchased`).
 
 ### Språk
@@ -161,7 +164,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 
 Biblioteket börjar med de delar som dominerar kostnaden för ett småhus. En typ med `LifespanProfile` (med källa) ingår i prognosen och underhållsskulden. En typ utan profil ger ingen kostnad men visas, filtreras och jämförs; när den får en profil räknas den in utan att några data ändras.
 
-Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`. Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `electric_radiators` (direktverkande el), `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`. Egenskaper, utan profil i version 1: `pool`, `sauna`, `deck`, `sunroom`, `garage`.
+Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`. Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `electric_radiators` (direktverkande el), `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `electrical_panel`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`. Egenskaper, utan profil i version 1: `pool`, `sauna`, `deck`, `sunroom`, `garage`.
 
 Fönster registreras styck för styck när underlaget tillåter det, annars som en komponent `window` med `quantity`.
 
@@ -176,6 +179,25 @@ Fönster registreras styck för styck när underlaget tillåter det, annars som 
 | `basement` | `basement_wall_insulation` | `exterior` (utvändig), `interior` (invändig) |
 
 Grunden byts inte, så den har ingen `LifespanProfile` och ger inga byten i prognosen. Det som slits är dränering, fuktskydd och avfuktare, som är egna komponenter. **Riskkonstruktion** (platta med isolering ovanpå, uteluftsventilerad krypgrund, källare med invändig isolering) räknas fram vid läsning ur typ och variant och lagras inte.
+
+### Elsystem och rör
+
+Delar som ofta är renoverade i omgångar, så att huset har ett byggår men varje del sin egen historia.
+
+| Typ | Attribut |
+| --- | --- |
+| `electrical_installation` | `wiring` (`cloth_insulated` tygisolerade ledningar, `two_wire` ojordat tvåledarsystem, `grounded` jordat), `installation_year`, `condition`. Delkomponent `electrical_panel`. |
+| `electrical_panel` | `panel_type` (`fuses` proppskåp, `circuit_breakers` automatsäkringar), `rcd` (jordfelsbrytare, ja/nej), `main_fuse_a` (huvudsäkring, A), `installation_year`. |
+| `water_pipes` | `material` (`copper`, `galvanized_steel`, `pex`, `composite`), `installation_year`, `condition`. |
+| `sewer_pipes` | `material` (`cast_iron` gjutjärn, `plastic`, `concrete`, `clay` lera), `section` (`indoor`, `under_slab` under grundplattan, `ground` i mark till förbindelsepunkten), `renovation_method` (`replaced`, `relined`), `installation_year`, `condition`. En komponent per sträcka, eftersom de åldras olika. |
+
+Det som har hänt med rören och elen uttrycks med de mekanismer som redan finns, utan en händelsetabell:
+
+- **Filmat eller besiktigat.** Protokollet är ett dokument av typen `PIPE_INSPECTION` eller `ELECTRICAL_INSPECTION`. Det Claude läser ut blir observationer på komponenten, oftast `condition` och `inspected_year`, med dokumentet som källa, och åtgärder från protokollet blir `WorkItem`. Skicket flyttar bytesåret enligt skickregeln.
+- **Relinat.** En ny `sewer_pipes` med `replacesId` mot den gamla, `renovation_method: relined` och `installation_year` = året för reliningen. Ett relinat rör har en egen `LifespanProfile` med `match: {"renovation_method": "relined"}`.
+- **Bytt.** En ny komponent med `replacesId`, `renovation_method: replaced` och det nya materialet. Det gäller också en ny elcentral, som ersätter den gamla `electrical_panel` men inte ledningarna.
+
+Profilen väljs efter material och metod (`LifespanProfile.match`), eftersom gjutjärn, plast, koppar och relinade rör håller olika länge. **Äldre elsystem** (`cloth_insulated` eller `two_wire`, eller ingen jordfelsbrytare) räknas fram vid läsning och flaggas som riskkonstruktionerna, utan kronvärde utöver byteskostnaden.
 
 ### Egenskaper
 
@@ -199,7 +221,7 @@ Det man vill ha i ett hus utöver kostnaden. I version 1 har egenskaperna inget 
 
 ### Området
 
-Statistik som gäller många hus lagras per område, inte per hus. `AreaStatistic` har `areaLevel` (`MUNICIPALITY`, `DESO`, `POLICE_AREA`), `areaCode`, `key`, `year`, `value` och `source`, unikt på (nivå, kod, nyckel, år). Tabellen fylls av ett importskript som körs när ny statistik publiceras, som kommuner och byggkostnadsindex; servern hämtar inget vid körning. Huset kopplas till sitt DeSO med observationen `deso_code`, och kommunen finns redan.
+Statistik som gäller många hus lagras per område, inte per hus. `AreaStatistic` har `areaLevel` (`NATION`, `MUNICIPALITY`, `POLICE_AREA`, `DESO`), `areaCode` (`SE` för riket), `key`, `year`, `value` och `source`, unikt på (nivå, kod, nyckel, år). Tabellen fylls av ett importskript som körs när ny statistik publiceras, som kommuner och byggkostnadsindex; servern hämtar inget vid körning. Huset kopplas till sina områden med observationerna `deso_code` och `police_area_code`, och kommunen finns redan.
 
 | Fråga | Källa | Nivå |
 | --- | --- | --- |
@@ -254,7 +276,7 @@ Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg�
 
 Prognosen säger vad som händer inom horisonten. För att jämföra köp behövs också ett mått som inte beror på horisonten, så att ett tak som ska bytas år 16 ändå räknas.
 
-- **Underhållsskuld** `U = Σ cᵢ · min(1, aᵢ / Lᵢ) + Σ wⱼ`. `cᵢ` är komponentens bytekostnad i startårets kronor, `aᵢ` dess ålder och `Lᵢ` livslängden enligt reglerna ovan, alltså justerad efter skick. `wⱼ` är kostnaden för varje öppen åtgärd från besiktning och prospekt. En åtgärd som gäller byte av en komponent ersätter komponentens term, så att inget räknas två gånger.
+- **Underhållsskuld** `U = Σ cᵢ · min(1, aᵢ / Lᵢ) + Σ wⱼ`. `cᵢ` är komponentens bytekostnad i startårets kronor, `aᵢ` dess ålder och `Lᵢ` livslängden enligt reglerna ovan, alltså justerad efter skick. `wⱼ` är kostnaden för varje åtgärd från besiktning och prospekt som inte är återkallad. En åtgärd med `kind: REPLACEMENT` på en komponent ersätter komponentens term, så att inget räknas två gånger.
 - **Underhållsjusterat pris** = pris + `U`. Det är huvudtalet i jämförelsen.
 - **Spann** som för prognosen: låg med `lifespanMaxYears` och `costLowSek`, hög med `lifespanMinYears` och `costHighSek`. Gissade installationsår och mängder breddar spannet på samma sätt.
 - **K/T-tal** = pris / `assessed_value_sek`. Taxeringsvärdet ska motsvara 75 % av marknadsvärdet året före taxeringsåret, så talet visas med `assessment_year`.
@@ -265,7 +287,8 @@ Prognosen säger vad som händer inom horisonten. För att jämföra köp behöv
 
 Varje milstolpe ska gå att visa i Claude eller i webbläsaren innan nästa påbörjas.
 
-0. **Verifiera kopplingen.** Next.js-app med Better Auth (`mcp`, `cimd`, `jwt`), en seedad användare och en MCP-route med ett verktyg, körd över HTTPS. Läggs till som egen koppling i claude.ai med "Use Claude's published identity". Avgör protokollversion och om `legacy: "reject"` går att använda.
+0. **Verifiera kopplingen.** Next.js-app med Better Auth (`mcp`, `cimd`, `jwt`), en seedad användare och en MCP-route med ett verktyg, körd över HTTPS. Läggs till som egen koppling i claude.ai med "Use Claude's published identity". Avgör protokollversion och om `legacy: "reject"` går att använda, och vilka sökvägar Better Auth använder, så att WAF- och Access-reglerna kan skrivas.
+   - **HTTPS före k3s.** Anthropics servrar måste nå appen redan nu, men driften kommer i milstolpe 7. Den lokala appen exponeras därför med en Cloudflare Tunnel (`cloudflared`) på `dev.husvan.se`, med samma WAF-regel och Access som produktionen. `BETTER_AUTH_URL` och MCP-resursen pekar på dev-värden, och kopplingen i Claude heter `https://dev.husvan.se/api/mcp`. Eftersom `resource` måste vara exakt den adress som skrivs in läggs kopplingen till på nytt med `https://husvan.se/api/mcp` i milstolpe 7.
 1. **Grund.** Prisma-schema och första migration, Compose med Postgres för lokal körning, Dockerfile och bygg-workflow, Vitest.
 2. **Data.** Kommuner (Luleå 2580, Boden 2582), typbibliotek, livslängdsprofiler med källor, BKI-serie, områdesstatistik från Brå och SCB för Luleå och Boden. Det mest arbetskrävande steget, och det ligger inte i kod.
 3. **Läsverktyg** mot seedad data: `list_houses`, `get_house`, `type_library`.
