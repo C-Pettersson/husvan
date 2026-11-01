@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { AppBar, Box, Button, Toolbar } from '@mui/material'
 import { auth } from '@/lib/auth'
 import LanguageSwitch from './LanguageSwitch'
+import Logo from './Logo'
 import SignOutButton from './SignOutButton'
 
 export default async function AppHeader() {
@@ -12,12 +13,8 @@ export default async function AppHeader() {
   return (
     <AppBar position="static" color="default" elevation={0}>
       <Toolbar sx={{ gap: 2 }}>
-        <Button
-          href="/"
-          color="inherit"
-          sx={{ fontSize: '1.25rem', fontWeight: 700, textTransform: 'none' }}
-        >
-          Husvan
+        <Button href="/" color="inherit" sx={{ textTransform: 'none', ml: -1 }}>
+          <Logo />
         </Button>
         {session && (
           <Button href="/houses" color="inherit">
