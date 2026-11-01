@@ -315,6 +315,7 @@ Varje värde visas bredvid kommunens och rikets, med år och nivå. Ett kommunv�
 | --- | --- | --- |
 | `list_houses` | Alla hus med status, försäljningsstatus, pris, underhållsjusterat pris och nyckeltal. Valfritt filter på egenskaper, där okänt redovisas skilt från nej | Läser |
 | `get_house` | Allt om ett hus: komponentträd, aktuella värden med källa och alternativ, egenskaper, området, dokument, åtgärder, öppna utkast. Valfritt per datum | Läser |
+| `get_document` | Ett sparat dokument: metadata, fulltexten i sidor och Claudes tolkning, så att en ny chatt kan läsa besiktningen igen utan ny uppladdning. Servern extraherar ingen text ur originalfilen; finns bara filen ber Claude användaren bifoga den | Läser |
 | `type_library` | Kända komponenttyper och deras attribut, så att Claude vet vad den ska leta efter | Läser |
 | `create_house` | Nytt kandidathus. Kärnan sparas direkt, övriga uppgifter returneras som utkast | Skriver |
 | `save_document` | Fulltext, metadata och Claudes tolkning. Originalfilen laddas upp via webben | Skriver |
