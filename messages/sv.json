@@ -48,7 +48,124 @@
       "declined": "Avstått",
       "purchased": "Köpt",
       "sold": "Sålt"
+    },
+    "key": {
+      "asking_price_sek": "Utgångspris",
+      "highest_bid_sek": "Högsta bud",
+      "highest_bid_date": "Datum för högsta bud",
+      "final_price_sek": "Slutpris",
+      "sale_status": "Försäljning",
+      "sale_date": "Såld",
+      "ventilation_type": "Ventilation",
+      "assessed_value_sek": "Taxeringsvärde",
+      "assessed_building_value_sek": "Byggnadsvärde",
+      "assessment_year": "Taxeringsår",
+      "property_fee_sek_per_year": "Fastighetsavgift per år",
+      "house_type": "Hustyp",
+      "tenure": "Upplåtelseform",
+      "room_count": "Antal rum",
+      "bedroom_count": "Antal sovrum",
+      "floor_count": "Våningar",
+      "living_area": "Boarea",
+      "secondary_area": "Biarea",
+      "plot_area": "Tomtarea",
+      "construction_year": "Byggår",
+      "energy_class": "Energiklass",
+      "energy_performance_kwh_per_m2": "Primärenergital",
+      "energy_declaration_year": "Energideklarationens år",
+      "heating_kwh_per_year": "Uppvärmning per år",
+      "electricity_kwh_per_year": "Elförbrukning per år",
+      "operating_cost_sek_per_year": "Driftkostnad per år",
+      "heating_cost_sek_per_year": "Värmekostnad per år",
+      "household_electricity_cost_sek_per_year": "Elkostnad per år",
+      "water_sewage_cost_sek_per_year": "Vatten och avlopp per år",
+      "waste_cost_sek_per_year": "Renhållning per år",
+      "absent_features": "Saknar",
+      "deso_code": "DeSO-område",
+      "police_area_code": "Lokalpolisområde"
+    },
+    "value": {
+      "sale_status": {
+        "upcoming": "Kommande",
+        "bidding": "Budgivning",
+        "closed": "Avslutad"
+      },
+      "house_type": {
+        "detached": "Friliggande villa"
+      },
+      "tenure": {
+        "freehold": "Friköpt"
+      },
+      "ventilation_type": {
+        "natural_draft": "Självdrag"
+      }
     }
+  },
+  "houseDetail": {
+    "back": "Alla hus",
+    "propertyDesignation": "Fastighet",
+    "municipality": "{name} kommun",
+    "about": "Om huset",
+    "components": "Komponenter",
+    "workItems": "Åtgärder",
+    "documents": "Dokument",
+    "nothingApproved": "Inget är godkänt än.",
+    "noValues": "Inga uppgifter.",
+    "noDocuments": "Inga dokument.",
+    "wholeHouse": "Hela huset",
+    "noYear": "år saknas",
+    "noCost": "kostnad saknas",
+    "draft": "Utkast",
+    "confidence": "säkerhet {value} %",
+    "alternative": "Även: {value} ({source})",
+    "draftWaiting": "Ett utkast väntar på ditt godkännande: {components} komponenter, {observations} värden och {workItems} åtgärder.",
+    "showDraft": "Visa utkastet",
+    "previewing": "Du ser utkastet med {components} komponenter, {observations} värden och {workItems} åtgärder, markerade som utkast. Inget av det räknas förrän du godkänner det.",
+    "approve": "Godkänn",
+    "reject": "Avslå",
+    "hideDraft": "Dölj utkastet",
+    "rejectTitle": "Avslå utkastet?",
+    "rejectBody": "Raderna sparas men visas aldrig. Claude kan föreslå ett nytt utkast.",
+    "cancel": "Avbryt",
+    "decisionFailed": "Det gick inte att spara beslutet. Ladda om sidan och försök igen.",
+    "notFound": "Huset finns inte."
+  },
+  "source": {
+    "user": "Du",
+    "claude": "Claude",
+    "import": "Import"
+  },
+  "documentType": {
+    "listing": "Prospekt",
+    "inspection": "Besiktning",
+    "pipe_inspection": "Rörinspektion",
+    "electrical_inspection": "Elbesiktning",
+    "energy_certificate": "Energideklaration",
+    "invoice": "Faktura",
+    "receipt": "Kvitto",
+    "manual": "Manual",
+    "warranty": "Garanti",
+    "drawing": "Ritning",
+    "photo": "Foto",
+    "other": "Övrigt"
+  },
+  "workItemKind": {
+    "replacement": "Byte",
+    "repair": "Åtgärd",
+    "investigation": "Undersökning"
+  },
+  "category": {
+    "envelope": "Klimatskal",
+    "heating": "Uppvärmning",
+    "ventilation": "Ventilation",
+    "plumbing": "Vatten och avlopp",
+    "electrical": "El",
+    "interior": "Inomhus",
+    "feature": "Egenskaper"
+  },
+  "value": {
+    "yes": "Ja",
+    "no": "Nej"
   },
   "error": {
     "generic": "Något gick fel."

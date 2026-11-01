@@ -34,7 +34,7 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | Autentisering | **Better Auth** med pluginen `mcp` (OAuth 2.1-auktoriseringsserver i samma app), `cimd` och `jwt`. Ersätter NextAuth, som inte kan agera auktoriseringsserver. Inloggning med e-post och lösenord, registrering avstängd, en användare seedas. `mcp` och `cimd` är egna paket (`@better-auth/mcp`, `@better-auth/cimd`) byggda på `@better-auth/oauth-provider`; `jwt` kommer från `better-auth/plugins`. Konfigurationen ligger i `src/lib/auth.ts`. |
 | Test | Vitest. |
 | Drift | k3s på användarens VPS, styrt från `C:\projects\infra-gitops` med Argo CD, Kustomize, KSOPS och Kargo. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. Se "Leverans och drift". |
-| Lokal körning | `docker compose up -d postgres`, `yarn db:migrate`, `yarn db:seed` och `yarn dev`, som i brfjamforelse. Postgres 16 lyssnar på `localhost:5433` (5432 används av andra projekt); kopiera `.env.example` till `.env` och fyll i hemligheten och den seedade användaren. Compose får senare en valfri app-image för att testa containern; det är inte produktionsmiljön. |
+| Lokal körning | `docker compose up -d postgres`, `yarn db:migrate`, `yarn db:seed`, `yarn import:bki`, `yarn import:scb`, `yarn import:bra` och `yarn dev`, som i brfjamforelse. Postgres 16 lyssnar på `localhost:5433` (5432 används av andra projekt); kopiera `.env.example` till `.env` och fyll i hemligheten och den seedade användaren. Compose får senare en valfri app-image för att testa containern; det är inte produktionsmiljön. |
 
 Skillnader mot brfjamforelse: ingen organisationsmodell, inga kvoter, ingen egen AI-anropning, ingen publik yta utöver startsidan. Det som inte behövs byggs inte.
 
@@ -140,7 +140,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 
 - Attributnycklar och typnamn i datan är engelska, ASCII i snake_case (`installation_year`, `underfloor_heating`).
 - Datum i ISO 8601. Belopp i kronor (`Decimal`, suffix `Sek`). Enheter anges explicit (`m2`, `kWh`, `W/m2K`).
-- Datatyper för attribut: `text`, `number` (med enhet), `year`, `date`, `choice` (lista), referens till `actor`, `document` eller `component`.
+- Datatyper för attribut: `text`, `number` (med enhet och valfritt `min`/`max`), `year`, `date`, `boolean` (ja/nej, till exempel `rcd`), `choice` (lista), referens till `actor`, `document` eller `component`. Formen valideras med Zod i `src/server/library/schema.ts`.
 - Nycklar som prognosen läser och som därför måste heta lika i alla typer: `installation_year`, `condition` (1–5, 5 är nytt), `area` (m2), `length` (m), `quantity` (antal). På huset: `construction_year`, `living_area`, `heating_kwh_per_year`, `electricity_kwh_per_year`, `operating_cost_sek_per_year`.
 - Köpdata är observationer på huset, med källa som alla andra värden: `asking_price_sek` (utgångspris), `highest_bid_sek` och `highest_bid_date`, `final_price_sek` (slutpris), `sale_status` (`upcoming`, `bidding`, `closed`), `assessed_value_sek` (taxeringsvärde) och `assessment_year`. `sale_status` gäller försäljningen och är skilt från husets `status`.
 - **Pris** i prognos och jämförelse är `final_price_sek` om det finns, annars `highest_bid_sek`, annars `asking_price_sek`. Svaret säger alltid vilket av dem som användes.
@@ -185,7 +185,9 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 
 Biblioteket börjar med de delar som dominerar kostnaden för ett småhus. En typ med `LifespanProfile` (med källa) ingår i prognosen och underhållsskulden. En typ utan profil ger ingen kostnad men visas, filtreras och jämförs; när den får en profil räknas den in utan att några data ändras.
 
-Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`. Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `electric_radiators` (direktverkande el), `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `electrical_panel`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`. Egenskaper, utan profil i version 1: `pool`, `sauna`, `deck`, `sunroom`, `garage`.
+Typerna finns i `prisma/data/componentTypes.mts` och profilerna i `prisma/data/lifespanProfiles.mts`; `yarn db:seed` lägger in dem. Seeden lägger till och skriver över de nycklar den själv definierar men behåller attribut och profiler som skapats under drift. En profil identifieras av typ och `match`. Av profilerna vars `match` stämmer med komponentens attribut används den som matchar den tidigaste nyckeln i typens `forecastDefaults.profileKeyOrder`, därefter den som matchar flest nycklar; tom `match` är typens standard. Ett relinat gjutjärnsrör följer alltså relining-profilen, eftersom `sewer_pipes` har ordningen `renovation_method`, `material`, `section`. Regeln ligger i `selectProfile` (`src/server/library/profiles.ts`), och `validateLibrary` kräver en ordning för varje typ vars profiler matchar på olika nycklar.
+
+Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`, `crawl_space_dehumidifier` (avfuktare i krypgrund). Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `electric_radiators` (direktverkande el), `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `electrical_panel`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`. Egenskaper, utan profil i version 1: `pool`, `sauna`, `deck`, `sunroom`, `garage`.
 
 Fönster registreras styck för styck när underlaget tillåter det, annars som en komponent `window` med `quantity`.
 
@@ -226,10 +228,11 @@ Det man vill ha i ett hus utöver kostnaden. I version 1 har egenskaperna inget 
 
 | Egenskap | Lagras som |
 | --- | --- |
-| Pool | `pool` med `pool_type` (`in_ground`, `above_ground`) och `heated` |
+| Pool | `pool` med `pool_type` (`in_ground`, `above_ground`), `heated` och `orientation` |
 | Bastu | `sauna` med `heating` (`electric`, `wood`) |
-| Terrass, altan, inglasad altan | `deck` med `area` och `glazing` (`open`, `glazed`) |
-| Uterum | `sunroom` med `area` och `insulated` |
+| Terrass, altan, inglasad altan | `deck` med `area`, `glazing` (`open`, `glazed`) och `orientation` |
+| Uterum | `sunroom` med `area`, `insulated` och `orientation` |
+| Väderstreck | `orientation` (`north`, `north_east`, `east`, `south_east`, `south`, `south_west`, `west`, `north_west`) på `deck`, `sunroom`, `pool` och ett `window` som registreras för sig |
 | Garage, dubbelgarage | `garage` med `capacity` (bilplatser) och `attached`; `garage_door` som delkomponent |
 | Kamin | `wood_stove` |
 | Luftvärmepump, AC | `heat_pump_air_air` |
@@ -251,6 +254,18 @@ Statistik som gäller många hus lagras per område, inte per hus. `AreaStatisti
 | Vilka som bor där | SCB, befolkning efter ålder, inkomst och utbildning | DeSO |
 
 Varje värde visas bredvid kommunens och rikets, med år och nivå. Ett kommunvärde presenteras aldrig som om det gällde husets närområde. Området har inget kronvärde och markeras inte som bättre eller sämre i jämförelsen.
+
+**Import.** Andelar lagras som decimaltal (`0.168` = 16,8 %) med `unit: "share"`.
+
+| Kommando | Källa | Nycklar |
+| --- | --- | --- |
+| `yarn import:scb` | SCB:s API (PxWebApi 2.0), tabellerna TAB6574, TAB6684, TAB6685 och TAB6534, per DeSO i Luleå (48) och Boden (18), kommunen och riket, från 2024 | `population_total`, `population_share_age_0_19`, `population_share_age_65_plus`, `median_economic_standard_sek`, `share_low_economic_standard`, `share_high_economic_standard`, `share_post_secondary_education`, `share_post_secondary_3y_plus` |
+| `yarn import:bra` | Brå har inget API. Siffrorna förs in för hand i `scripts/data/bra.mts` med källa per värde när Brå publicerar | `reported_crimes_per_100k`, `reported_crimes_count` per kommun och riket; `ntu_unsafe_outdoors_evening_share`, `ntu_worry_burglary_share`, `ntu_victim_personal_crime_share`, `ntu_household_burglary_share`, `ntu_problem_gangs_share`, `ntu_problem_open_drug_dealing_share` per lokalpolisområde och riket |
+| `yarn import:bki` | SCB TAB1368, byggkostnadsindex för gruppbyggda småhus, månadsvis från 1975 | `PriceIndex` med serien `bki_small_houses`. Ett pris förs från år X till år Y med medelvärdet för Y delat med medelvärdet för X. |
+
+- **DeSO.** Koderna är DeSO 2025 utan SCB:s suffix (`2580C1140`). De har data från 2024; äldre år finns bara på DeSO 2018-koder och importeras inte. SCB har ingen median för disponibel inkomst per DeSO, så inkomst är median ekonomisk standard (hushållets disponibla inkomst justerad för hushållets storlek).
+- **Lokalpolisområde.** Brå namnger lokalpolisområden men ger dem ingen kod. Luleå och Boden delar lokalpolisområdet Luleå-Boden, som lagras som `POLICE_AREA` med koden `lulea-boden`; det är husets `police_area_code`. NTU-året är Brås eget: utsatthet avser året före undersökningen, otrygghet och problem undersökningsåret. Brås kommunskattningar med konfidensintervall importeras inte, eftersom `AreaStatistic` saknar kolumner för intervall.
+- **DeSO ur koordinater.** SCB:s WFS svarar på en punkt: `https://geodata.scb.se/geoserver/stat/wfs?service=WFS&version=2.0.0&request=GetFeature&typeNames=stat:DeSO_2025&outputFormat=application/json&propertyName=desokod&CQL_FILTER=INTERSECTS(sp_geometry,SRID=4326;POINT(<lon> <lat>))`. Koordinaterna måste komma från Claude eller användaren.
 
 ## MCP-verktyg i version 1
 
@@ -325,8 +340,13 @@ Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för f�
 ## Öppna frågor
 
 - Kostar Boverkets API för energideklarationer något? (Kräver avtal som företag.)
-- Går SMHI:s Snötyngd att hämta som data?
-- Fgeo, DVUT och snözon för Luleå och Boden med källa (BBR-tabell), samt standardvärden för energipriser.
-- Vilka pristyper i Handelsbankens, Planimas och Villaägarnas underlag går att översätta till `costUnit`?
-- Vilka av Brås och SCB:s tabeller finns för Luleå och Boden, på vilken nivå och hur ofta uppdateras de?
-- Hur får huset sin `deso_code`: uppslagen av Claude eller användaren, eller framräknad ur husets koordinater mot SCB:s DeSO-gränser?
+- Var lagras standardpriser för energi? De skiljer sig per kommun (el 1,44 kr/kWh i Luleå och 1,53 i Boden, fjärrvärme 0,78 kr/kWh i Luleå, se `prisma/data/municipalities.mts`), men `Assumption` gäller ett hus eller alla hus. Avgörs i milstolpe 5. Bodens Energi publicerar inget kWh-pris för villor, bara tariffens delar.
+- Hur får huset sina koordinater, så att `deso_code` och snölasten kan räknas fram? Boverkets klimatlast-API ger `s_k` för en punkt (Luleå centrum 2,5 kN/m², resten av kommunen 3,0).
+
+Besvarat i milstolpe 2:
+
+- **Fgeo, DVUT och snözon** finns med källa i `prisma/data/municipalities.mts`. BBR upphävdes 2026-10-01 av BFS 2026:9, som behåller Fgeo per kommun (Luleå 1,5, Boden 1,6; Boden var 1,5 i BBR 29). Snölasten kommer ur BFS 2024:6, som ersatte EKS. DVUT gäller tidskonstanten ett dygn, vilket är en bedömning för ett lätt trähus.
+- **SMHI:s Snötyngd** visar bara aktuell snölast och går inte att hämta som data. Boverkets klimatlast-API är källan i stället.
+- **Pristyper.** Handelsbanken ger en klumpsumma och en livslängd per byggnadsdel för en genomsnittsvilla, med mycket eget arbete; den går bara att använda som `HOUSE`, eller `EACH` för kök och badrum. Planima skriver enheten i åtgärdens namn ("per st", m², m) och översätts till `EACH`, `M2` och `LINEAR_M`, men hela listan kräver konto. Villaägarnas öppna sidor ger nästan bara livslängder. Kostnaderna vilar därför mest på pris- och hantverkarsidor från 2025–2026.
+- **Brå och SCB.** Se "Området".
+- **Nils Holgersson** har ingen småhusvariant; tarifförändringarna gäller ett flerbostadshus med 15 lägenheter, och el avser bara nätavgiften.

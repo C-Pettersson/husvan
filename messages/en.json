@@ -48,7 +48,124 @@
       "declined": "Declined",
       "purchased": "Purchased",
       "sold": "Sold"
+    },
+    "key": {
+      "asking_price_sek": "Asking price",
+      "highest_bid_sek": "Highest bid",
+      "highest_bid_date": "Date of highest bid",
+      "final_price_sek": "Final price",
+      "sale_status": "Sale",
+      "sale_date": "Sold",
+      "ventilation_type": "Ventilation",
+      "assessed_value_sek": "Assessed value",
+      "assessed_building_value_sek": "Assessed building value",
+      "assessment_year": "Assessment year",
+      "property_fee_sek_per_year": "Property fee per year",
+      "house_type": "House type",
+      "tenure": "Tenure",
+      "room_count": "Rooms",
+      "bedroom_count": "Bedrooms",
+      "floor_count": "Floors",
+      "living_area": "Living area",
+      "secondary_area": "Secondary area",
+      "plot_area": "Plot area",
+      "construction_year": "Year built",
+      "energy_class": "Energy class",
+      "energy_performance_kwh_per_m2": "Primary energy number",
+      "energy_declaration_year": "Energy certificate year",
+      "heating_kwh_per_year": "Heating per year",
+      "electricity_kwh_per_year": "Electricity use per year",
+      "operating_cost_sek_per_year": "Running cost per year",
+      "heating_cost_sek_per_year": "Heating cost per year",
+      "household_electricity_cost_sek_per_year": "Electricity cost per year",
+      "water_sewage_cost_sek_per_year": "Water and sewage per year",
+      "waste_cost_sek_per_year": "Waste collection per year",
+      "absent_features": "Lacks",
+      "deso_code": "DeSO area",
+      "police_area_code": "Local police area"
+    },
+    "value": {
+      "sale_status": {
+        "upcoming": "Upcoming",
+        "bidding": "Bidding",
+        "closed": "Closed"
+      },
+      "house_type": {
+        "detached": "Detached house"
+      },
+      "tenure": {
+        "freehold": "Freehold"
+      },
+      "ventilation_type": {
+        "natural_draft": "Natural draught"
+      }
     }
+  },
+  "houseDetail": {
+    "back": "All houses",
+    "propertyDesignation": "Property",
+    "municipality": "{name} municipality",
+    "about": "About the house",
+    "components": "Components",
+    "workItems": "Actions",
+    "documents": "Documents",
+    "nothingApproved": "Nothing is approved yet.",
+    "noValues": "No details.",
+    "noDocuments": "No documents.",
+    "wholeHouse": "Whole house",
+    "noYear": "no year",
+    "noCost": "no cost",
+    "draft": "Draft",
+    "confidence": "confidence {value}%",
+    "alternative": "Also: {value} ({source})",
+    "draftWaiting": "A draft is waiting for your approval: {components} components, {observations} values and {workItems} actions.",
+    "showDraft": "Show the draft",
+    "previewing": "You are looking at the draft with {components} components, {observations} values and {workItems} actions, marked as draft. None of it counts until you approve it.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "hideDraft": "Hide the draft",
+    "rejectTitle": "Reject the draft?",
+    "rejectBody": "The rows are kept but never shown. Claude can propose a new draft.",
+    "cancel": "Cancel",
+    "decisionFailed": "The decision could not be saved. Reload the page and try again.",
+    "notFound": "The house does not exist."
+  },
+  "source": {
+    "user": "You",
+    "claude": "Claude",
+    "import": "Import"
+  },
+  "documentType": {
+    "listing": "Listing",
+    "inspection": "Inspection",
+    "pipe_inspection": "Pipe inspection",
+    "electrical_inspection": "Electrical inspection",
+    "energy_certificate": "Energy certificate",
+    "invoice": "Invoice",
+    "receipt": "Receipt",
+    "manual": "Manual",
+    "warranty": "Warranty",
+    "drawing": "Drawing",
+    "photo": "Photo",
+    "other": "Other"
+  },
+  "workItemKind": {
+    "replacement": "Replacement",
+    "repair": "Repair",
+    "investigation": "Investigation"
+  },
+  "category": {
+    "envelope": "Building envelope",
+    "heating": "Heating",
+    "ventilation": "Ventilation",
+    "plumbing": "Water and sewage",
+    "electrical": "Electrical",
+    "interior": "Interior",
+    "feature": "Features"
+  },
+  "value": {
+    "yes": "Yes",
+    "no": "No"
   },
   "error": {
     "generic": "Something went wrong."
