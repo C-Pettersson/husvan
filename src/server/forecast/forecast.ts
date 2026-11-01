@@ -1,7 +1,11 @@
 // The cost forecast for one house (CLAUDE.md, "Kostnadsprognos"): cost per
 // year and item over the horizon, in start-year kronor, in three scenarios.
 // Pure: the caller loads the house, the library and the assumptions.
-import type { TariffCategory, WorkItemKind } from '@prisma/client'
+import type {
+  TariffCategory,
+  WorkItemKind,
+  WorkItemSeverity,
+} from '@prisma/client'
 import {
   SCENARIOS,
   byScenario,
@@ -16,6 +20,7 @@ export type WorkItemInput = {
   id: string
   componentId: string | null
   kind: WorkItemKind
+  severity?: WorkItemSeverity | null
   description: string
   yearMin: number | null
   yearMax: number | null
@@ -64,15 +69,70 @@ export type ForecastInput = {
   // Mean yearly change per tariff category, when the user chose a trend.
   trend: Partial<Record<TariffCategory, number>> | null
   capital: { interestRate: number; loanSek: number } | null
+  // The house has an inspection protocol, so a documented part without a
+  // serious finding has been seen working.
+  inspected?: boolean
 }
 
-// Midpoint of a work item's years, or the start year when it has none.
+// Years after the start year within which a finding without years is
+// done, by the protocol's severity: a serious one at once, a minor one
+// when convenient. Without a severity, at once.
+export const SEVERITY_WINDOW: Record<WorkItemSeverity, number> = {
+  SEVERE: 0,
+  DEFECT: 1,
+  RISK: 3,
+  MINOR: 4,
+}
+
+// A work item's years; without them, the window its severity gives from
+// the start year.
 export function workItemYears(w: WorkItemInput, startYear: number) {
   const first = w.yearMin ?? w.yearMax
   const last = w.yearMax ?? w.yearMin
-  return first === null || last === null
-    ? { first: startYear, last: startYear, given: false }
-    : { first, last, given: true }
+  if (first !== null && last !== null) return { first, last, given: true }
+  const window = w.severity ? SEVERITY_WINDOW[w.severity] : 0
+  return { first: startYear, last: startYear + window, given: false }
+}
+
+// What the inspection said about a part, for placing a replacement that is
+// past its lifespan (CLAUDE.md, "Brådska ur besiktningen"): flagged by a
+// serious finding, seen working with at most minor notes, or not judged.
+export type Seen = 'flagged' | 'ok' | 'unjudged'
+
+export function seenByInspection(
+  plan: ComponentPlan,
+  workItems: WorkItemInput[],
+  inspected: boolean
+): Seen {
+  const own = workItems.filter((w) => w.componentId === plan.componentId)
+  if (own.some((w) => w.severity === 'SEVERE')) return 'flagged'
+  if (!inspected || plan.assumed) return 'unjudged'
+  // An item without a severity is not known to be minor.
+  const concern = own.some(
+    (w) => w.kind === 'INVESTIGATION' || w.severity !== 'MINOR'
+  )
+  return concern ? 'unjudged' : 'ok'
+}
+
+// Years from the start year to the replacement of a part already past its
+// lifespan, as a share of its lifespan. A part the inspection saw working
+// has some life left; one nobody judged may need replacing now in high.
+const OVERDUE_SHARE: Record<Seen, ByScenario> = {
+  flagged: { low: 0, typical: 0, high: 0 },
+  unjudged: { low: 0.2, typical: 0.1, high: 0 },
+  ok: { low: 0.3, typical: 0.2, high: 0.1 },
+}
+
+export function overdueYear(
+  plan: ComponentPlan,
+  seen: Seen,
+  s: Scenario,
+  startYear: number
+) {
+  const share = OVERDUE_SHARE[seen][s]
+  return share
+    ? startYear + Math.max(1, Math.round(share * plan.fullLifespan[s]))
+    : startYear
 }
 
 export function workItemCost(w: WorkItemInput): ByScenario | null {
@@ -106,7 +166,9 @@ export function schedule(
   s: Scenario,
   startYear: number,
   endYear: number,
-  forced?: { year: number; cost: number | null }
+  forced?: { year: number; cost: number | null },
+  // Where a replacement already past its lifespan goes.
+  overdue = startYear
 ) {
   const replacements: Event[] = []
   const repaints: Event[] = []
@@ -121,7 +183,7 @@ export function schedule(
         : startYear + 1
       : plan.installYear[s] + plan.lifespan[s]
   if (next < startYear) {
-    next = startYear
+    next = overdue
     overdueReplacement = true
   }
   const cheaper = renewsCheaper(plan, s) ? plan.renewal : null
@@ -187,6 +249,7 @@ export function computeForecast(input: ForecastInput): Forecast {
   for (const plan of input.plans) {
     const w = forcedBy.get(plan.componentId)
     const cost = w && workItemCost(w)
+    const seen = seenByInspection(plan, input.workItems, !!input.inspected)
     const runs = byScenario((s) => {
       let forced
       if (w) {
@@ -196,7 +259,14 @@ export function computeForecast(input: ForecastInput): Forecast {
           cost: cost ? cost[s] : null,
         }
       }
-      return schedule(plan, s, startYear, endYear, forced)
+      return schedule(
+        plan,
+        s,
+        startYear,
+        endYear,
+        forced,
+        overdueYear(plan, seen, s, startYear)
+      )
     })
     const base = {
       key: plan.type,
@@ -206,7 +276,15 @@ export function computeForecast(input: ForecastInput): Forecast {
     }
     const flags = [...plan.flags]
     if (runs.typical.overdueReplacement && !w)
-      flags.push(flag('overdue_replacement'))
+      flags.push(
+        flag(
+          seen === 'flagged'
+            ? 'overdue_replacement'
+            : seen === 'ok'
+              ? 'overdue_seen_ok'
+              : 'overdue_unjudged'
+        )
+      )
     if (w)
       flags.push(flag('timed_by_work_item', { description: w.description }))
     if (!plan.cost && !cost) flags.push(flag('replacement_not_costed'))
@@ -276,7 +354,15 @@ export function computeForecast(input: ForecastInput): Forecast {
     const { first, last, given } = workItemYears(w, startYear)
     const cost = workItemCost(w)
     const flags: Flag[] = []
-    if (!given) flags.push(flag('work_item_no_year'))
+    if (!given)
+      flags.push(
+        w.severity
+          ? flag('work_item_timed_by_severity', {
+              severity: w.severity,
+              years: SEVERITY_WINDOW[w.severity] + 1,
+            })
+          : flag('work_item_no_year')
+      )
     if (first < startYear) flags.push(flag('work_item_before_start'))
     if (!cost) flags.push(flag('work_item_no_cost'))
     const span = last - first + 1

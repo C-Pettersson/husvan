@@ -52,6 +52,7 @@ export function useLabels(types: TypeLabels) {
     if (typeof p.key === 'string' && typeof p.value === 'string')
       p.value = valueText(p.key, p.value)
     if (typeof p.key === 'string') p.key = attributeLabel(p.key, type)
+    if (typeof p.severity === 'string') p.severity = t(`severity.${p.severity}`)
     if (typeof p.confidence === 'number')
       p.confidence = Math.round(p.confidence * 100)
     if (f.code === 'cheaper_renewal' && typeof p.match === 'string')

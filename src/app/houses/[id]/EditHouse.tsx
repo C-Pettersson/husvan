@@ -20,6 +20,7 @@ type WorkItem = {
   id: string
   componentId: string | null
   kind: 'REPLACEMENT' | 'REPAIR' | 'INVESTIGATION'
+  severity: Severity | null
   description: string
   yearMin: number | null
   yearMax: number | null
@@ -28,6 +29,8 @@ type WorkItem = {
 }
 
 const KINDS = ['REPAIR', 'REPLACEMENT', 'INVESTIGATION'] as const
+const SEVERITIES = ['MINOR', 'RISK', 'DEFECT', 'SEVERE'] as const
+type Severity = (typeof SEVERITIES)[number]
 
 const num = (s: string) =>
   s.trim() === '' ? undefined : Number(s.replace(',', '.').replace(/\s/g, ''))
@@ -52,6 +55,7 @@ export function WorkItemDialog({
   const utils = trpc.useUtils()
   const [form, setForm] = useState({
     kind: item?.kind ?? 'REPAIR',
+    severity: (item?.severity ?? '') as Severity | '',
     description: item?.description ?? '',
     component: item?.componentId ?? '',
     yearMin: text(item?.yearMin),
@@ -75,6 +79,7 @@ export function WorkItemDialog({
         replaces: item?.id,
         component: form.component || undefined,
         kind: form.kind,
+        severity: form.severity || undefined,
         description: form.description.trim(),
         yearMin: num(form.yearMin),
         yearMax: num(form.yearMax),
@@ -99,6 +104,19 @@ export function WorkItemDialog({
             {KINDS.map((k) => (
               <MenuItem key={k} value={k}>
                 {t(`workItemKind.${k.toLowerCase()}`)}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label={t('workItemEdit.severity')}
+            value={form.severity}
+            onChange={set('severity')}
+          >
+            <MenuItem value="">{t('workItemEdit.noSeverity')}</MenuItem>
+            {SEVERITIES.map((s) => (
+              <MenuItem key={s} value={s}>
+                {t(`severity.${s}`)}
               </MenuItem>
             ))}
           </TextField>

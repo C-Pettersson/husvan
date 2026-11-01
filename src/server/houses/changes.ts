@@ -98,6 +98,12 @@ export const workItemInput = z.object({
     .describe(
       'REPLACEMENT of the component (takes the place of its term in the maintenance debt), REPAIR, or INVESTIGATION (a recommended survey such as filming the sewer line).'
     ),
+  severity: z
+    .enum(['MINOR', 'RISK', 'DEFECT', 'SEVERE'])
+    .optional()
+    .describe(
+      'How serious the protocol judges it, in its own terms. MINOR: mindre brist, a note or general information (e.g. Anticimex’s blue mark: no further investigation needed). RISK: a risk in the risk analysis (riskanalys, risk för fel/skada). DEFECT: a defect or damage that should be fixed. SEVERE: a serious defect, acute damage or something to fix at once. A recommended further investigation (fördjupad undersökning, fortsatt teknisk utredning) is kind INVESTIGATION with the severity of what it is about. Without years the forecast times the item by severity, so set it for every finding from a protocol.'
+    ),
   description: z
     .string()
     .min(1)

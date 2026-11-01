@@ -581,11 +581,23 @@ model Observation {
 // Append only like observations: a work item that is wrong or that the user
 // dismisses gets retractedAt. Done work belongs to maintenance mode and is
 // added with its own table then.
+// The protocol's levels: MINOR mindre brist or a note, RISK a risk in the
+// risk analysis, DEFECT a defect to fix, SEVERE a serious defect or damage.
+enum WorkItemSeverity {
+  MINOR
+  RISK
+  DEFECT
+  SEVERE
+}
+
 model WorkItem {
   id          String       @id @default(uuid(7)) @db.Uuid
   houseId     String       @db.Uuid
   componentId String?      @db.Uuid
   kind        WorkItemKind
+  // How serious the inspection judged it, in the protocol's own terms;
+  // times an item without years.
+  severity    WorkItemSeverity?
   description String
   yearMin     Int? // "within 1 to 3 years" becomes a range
   yearMax     Int?

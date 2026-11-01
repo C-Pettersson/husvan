@@ -200,6 +200,7 @@ export async function insertChanges(
           : null,
       replacesId: w.replaces ?? null,
       kind: w.kind,
+      severity: w.severity ?? null,
       description: w.description,
       yearMin: w.yearMin ?? null,
       yearMax: w.yearMax ?? null,

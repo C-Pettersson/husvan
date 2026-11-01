@@ -640,6 +640,70 @@ describe('annualCost', () => {
   })
 })
 
+describe('urgency from the inspection', () => {
+  // A roof from 1960 is past every lifespan (30/40/50) in 2026.
+  const old = () =>
+    comp('roof_covering', { installation_year: 1960, area: 100 }, 'roof')
+  const years = (inspected: boolean, items: ReturnType<typeof work>[] = []) => {
+    const plans = planComponents([old()], house, library, START)
+    const f = computeForecast({
+      startYear: START,
+      horizonYears: 30,
+      plans,
+      workItems: items,
+      running: [],
+      trend: null,
+      capital: null,
+      inspected,
+    })
+    const item = f.items.find((i) => i.category === 'replacement')!
+    return {
+      typical: item.typical[0].year,
+      flag: flagText(item.flags.at(-1)!),
+    }
+  }
+
+  it('gives a part seen working by the inspection some life left', () => {
+    const r = years(true, [
+      work({ componentId: 'roof', severity: 'MINOR', costLowSek: 1000 }),
+    ])
+    // 20 % of the typical 40 years.
+    expect(r.typical).toBe(2034)
+    expect(r.flag).toContain('saw it without a serious finding')
+  })
+
+  it('spreads a part nobody judged, now only in high', () => {
+    expect(years(false).typical).toBe(2030)
+    // An item of unknown severity is not known to be minor.
+    expect(years(true, [work({ componentId: 'roof' })]).typical).toBe(2030)
+  })
+
+  it('replaces a part with a serious finding at once', () => {
+    const r = years(true, [work({ componentId: 'roof', severity: 'SEVERE' })])
+    expect(r.typical).toBe(START)
+    expect(r.flag).toContain('flagged as serious')
+  })
+
+  it('times a finding without years by its severity', () => {
+    const f = computeForecast({
+      startYear: START,
+      horizonYears: 6,
+      plans: [],
+      workItems: [
+        work({ severity: 'MINOR', costLowSek: 5000, costHighSek: 5000 }),
+        work({ severity: 'SEVERE', costLowSek: 1000, costHighSek: 1000 }),
+      ],
+      running: [],
+      trend: null,
+      capital: null,
+    })
+    expect(f.items[0].typical.map((e) => e.year)).toEqual([
+      2026, 2027, 2028, 2029, 2030,
+    ])
+    expect(f.items[1].typical).toEqual([{ year: 2026, sek: 1000 }])
+  })
+})
+
 describe('parts that depend on the rest of the house', () => {
   const lib: Library = {
     ...library,

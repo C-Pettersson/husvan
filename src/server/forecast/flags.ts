@@ -27,7 +27,11 @@ const ENGLISH = {
   last_painted_missing: () =>
     'last_painted_year missing; installation year used',
   overdue_replacement: () =>
-    'past its lifespan; replacement put in the start year',
+    'past its lifespan and flagged as serious by the inspection; replaced in the start year',
+  overdue_seen_ok: () =>
+    'past its lifespan, but the inspection saw it without a serious finding; given part of a lifespan more',
+  overdue_unjudged: () =>
+    'past its lifespan and not judged by an inspection; replaced within the coming years, in high at once',
   timed_by_work_item: (p: Params) => `timed by work item: ${p.description}`,
   replacement_not_costed: () => 'replacement not costed',
   cheaper_renewal: (p: Params) =>
@@ -35,7 +39,9 @@ const ENGLISH = {
   repaint_overdue: () => 'repaint overdue; put in the start year',
   inspection_added: (p: Params) =>
     `added by Husvan for ${p.count} part(s) without inspected_year; it decides whether and how they are renewed`,
-  work_item_no_year: () => 'no year given; put in the start year',
+  work_item_no_year: () => 'no year or severity given; put in the start year',
+  work_item_timed_by_severity: (p: Params) =>
+    `no year given; spread over ${p.years} year(s) by its severity ${p.severity}`,
   work_item_before_start: () => 'due before the start year',
   work_item_no_cost: () => 'no cost given',
   trended: (p: Params) => `trended ${p.percent} % a year`,

@@ -193,6 +193,7 @@ export async function getHouse(
       replacesId: w.replacesId,
       componentId: w.componentId,
       kind: w.kind as WorkItemKind,
+      severity: w.severity,
       description: w.description,
       yearMin: w.yearMin,
       yearMax: w.yearMax,

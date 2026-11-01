@@ -352,6 +352,20 @@ export default function HouseDetail({
                     variant="outlined"
                     label={t(`workItemKind.${w.kind.toLowerCase()}`)}
                   />
+                  {w.severity && (
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      color={
+                        w.severity === 'SEVERE'
+                          ? 'error'
+                          : w.severity === 'MINOR'
+                            ? 'default'
+                            : 'warning'
+                      }
+                      label={t(`severity.${w.severity}`)}
+                    />
+                  )}
                   <Typography variant="body2" color="text.secondary">
                     {component
                       ? componentLabel(component)
