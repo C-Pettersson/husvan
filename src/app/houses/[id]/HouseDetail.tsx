@@ -11,6 +11,8 @@ import {
   IconButton,
   Paper,
   Stack,
+  Tab,
+  Tabs,
   Typography,
 } from '@mui/material'
 import DeleteOutline from '@mui/icons-material/DeleteOutline'
@@ -36,6 +38,8 @@ import {
 } from './EditValue'
 import { CoreDialog, WorkItemDialog } from './EditHouse'
 import { AreaSection, FactsSection } from './FactsSection'
+import QuestionsSection from './QuestionsSection'
+import { HOUSE_TABS, type HouseTab } from './tabs'
 import ValueTable, { type DocumentRef } from './ValueTable'
 
 const CATEGORY_ORDER = [
@@ -66,9 +70,11 @@ type AddValue = {
 export default function HouseDetail({
   id,
   draftId,
+  tab: initialTab,
 }: {
   id: string
   draftId?: string
+  tab?: HouseTab
 }) {
   const t = useTranslations()
   const locale = useLocale()
@@ -80,6 +86,16 @@ export default function HouseDetail({
     item?: (typeof h.workItems)[number]
   } | null>(null)
   const [dismissing, setDismissing] = useState<string | null>(null)
+  // A draft's rows are shown with the rest of what is known about the house.
+  const [tab, setTab] = useState<HouseTab>(
+    initialTab ?? (draftId ? 'house' : 'cost')
+  )
+  const showTab = (next: HouseTab) => {
+    setTab(next)
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', next)
+    window.history.replaceState(null, '', url)
+  }
 
   if (house.isPending) return <CircularProgress />
   if (house.isError) {
@@ -240,220 +256,265 @@ export default function HouseDetail({
 
       <DraftBanner houseId={h.id} drafts={h.drafts} preview={h.preview} />
 
-      <Section title={t('cost.title')}>
-        <CostSection houseId={h.id} />
-      </Section>
-
-      <Section title={t('facts.title')}>
-        <FactsSection
-          houseId={h.id}
-          componentName={(cid) => {
-            const c = flat.get(cid)
-            return c && componentLabel(c)
-          }}
-        />
-      </Section>
-
-      <Section
-        title={t('houseDetail.about')}
-        action={
-          <Button
-            size="small"
-            onClick={() =>
-              setAdding({
-                title: t('edit.addTitle'),
-                keys: Object.keys(houseKeys).map((key) => ({
-                  key,
-                  label: keyLabel(key, { locale, t }),
-                  kind: houseKind(key),
-                })),
-              })
-            }
-          >
-            {t('edit.add')}
-          </Button>
-        }
+      <Box
+        sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 2,
+          bgcolor: 'background.default',
+          borderBottom: 1,
+          borderColor: 'divider',
+          mb: 3,
+        }}
       >
-        {h.values.length > 0 ? (
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <ValueTable
-              values={h.values}
-              documents={documents}
-              edit={{ houseId: h.id, kindOf: houseKind }}
-            />
-          </Paper>
-        ) : (
-          <Typography color="text.secondary">
-            {t('houseDetail.nothingApproved')}
-          </Typography>
-        )}
-      </Section>
+        <Tabs
+          value={tab}
+          onChange={(_, next: HouseTab) => showTab(next)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          aria-label={t('houseDetail.tabsLabel')}
+        >
+          {HOUSE_TABS.map((key) => (
+            <Tab key={key} value={key} label={t(`houseDetail.tab.${key}`)} />
+          ))}
+        </Tabs>
+      </Box>
 
-      {categories.length > 0 && (
-        <Section title={t('houseDetail.components')}>
-          <Stack spacing={3}>
-            {categories.map((g) => (
-              <Box key={g.category}>
-                <Typography
-                  variant="overline"
-                  color="text.secondary"
-                  component="h3"
-                >
-                  {t.has(`category.${g.category}`)
-                    ? t(`category.${g.category}`)
-                    : g.category}
-                </Typography>
-                <Stack spacing={2}>
-                  {g.components.map((c) => (
-                    <Paper key={c.id} variant="outlined" sx={{ p: 2 }}>
-                      {renderComponent(c)}
-                    </Paper>
-                  ))}
-                </Stack>
-              </Box>
-            ))}
-          </Stack>
+      {tab === 'cost' && (
+        <>
+          <Section title={t('cost.title')}>
+            <CostSection houseId={h.id} />
+          </Section>
+          <Section title={t('assumptions.title')}>
+            <AssumptionsSection houseId={h.id} />
+          </Section>
+        </>
+      )}
+
+      {tab === 'viewing' && (
+        <Section>
+          <QuestionsSection houseId={h.id} />
         </Section>
       )}
 
-      <Section
-        title={t('houseDetail.workItems')}
-        action={
-          <Button size="small" onClick={() => setWorkItem({})}>
-            {t('workItemEdit.add')}
-          </Button>
-        }
-      >
-        <Stack spacing={2}>
-          {h.workItems.map((w) => {
-            const component = w.componentId ? flat.get(w.componentId) : null
-            return (
-              <Paper
-                key={w.id}
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  ...(w.draft && {
-                    borderLeft: 3,
-                    borderLeftColor: 'warning.main',
-                  }),
-                }}
+      {tab === 'house' && (
+        <>
+          <Section title={t('facts.title')}>
+            <FactsSection
+              houseId={h.id}
+              componentName={(cid) => {
+                const c = flat.get(cid)
+                return c && componentLabel(c)
+              }}
+            />
+          </Section>
+
+          <Section
+            title={t('houseDetail.about')}
+            action={
+              <Button
+                size="small"
+                onClick={() =>
+                  setAdding({
+                    title: t('edit.addTitle'),
+                    keys: Object.keys(houseKeys).map((key) => ({
+                      key,
+                      label: keyLabel(key, { locale, t }),
+                      kind: houseKind(key),
+                    })),
+                  })
+                }
               >
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  flexWrap="wrap"
-                  useFlexGap
-                  sx={{ mb: 1 }}
-                >
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={t(`workItemKind.${w.kind.toLowerCase()}`)}
-                  />
-                  {w.severity && (
-                    <Chip
-                      size="small"
-                      variant="outlined"
-                      color={
-                        w.severity === 'SEVERE'
-                          ? 'error'
-                          : w.severity === 'MINOR'
-                            ? 'default'
-                            : 'warning'
-                      }
-                      label={t(`severity.${w.severity}`)}
-                    />
-                  )}
-                  <Typography variant="body2" color="text.secondary">
-                    {component
-                      ? componentLabel(component)
-                      : t('houseDetail.wholeHouse')}
-                  </Typography>
-                  {w.draft && (
-                    <Chip
-                      size="small"
-                      color="warning"
-                      label={t('houseDetail.draft')}
-                    />
-                  )}
-                  {!w.draft && (
-                    <Box sx={{ ml: 'auto !important', whiteSpace: 'nowrap' }}>
-                      <IconButton
-                        size="small"
-                        aria-label={t('workItemEdit.editLabel', {
-                          description: w.description,
-                        })}
-                        onClick={() => setWorkItem({ item: w })}
-                      >
-                        <EditOutlined fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        aria-label={t('workItemEdit.dismissLabel', {
-                          description: w.description,
-                        })}
-                        onClick={() => setDismissing(w.id)}
-                      >
-                        <DeleteOutline fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  )}
-                </Stack>
-                <Typography variant="body2">{w.description}</Typography>
-                {w.quote && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    component="div"
-                    sx={{ fontStyle: 'italic', mt: 0.5 }}
-                  >
-                    ”{w.quote}”
-                  </Typography>
-                )}
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  component="div"
-                >
-                  {[
-                    w.documentId && documents[w.documentId]
-                      ? t(
-                          `documentType.${documents[w.documentId].type.toLowerCase()}`
-                        )
-                      : null,
-                    w.yearMin !== null
-                      ? w.yearMax !== null && w.yearMax !== w.yearMin
-                        ? `${w.yearMin}–${w.yearMax}`
-                        : String(w.yearMin)
-                      : t('houseDetail.noYear'),
-                    w.costLowSek !== null
-                      ? w.costHighSek !== null && w.costHighSek !== w.costLowSek
-                        ? `${formatSek(w.costLowSek, locale)}–${formatSek(w.costHighSek, locale)}`
-                        : formatSek(w.costLowSek, locale)
-                      : t('houseDetail.noCost'),
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </Typography>
+                {t('edit.add')}
+              </Button>
+            }
+          >
+            {h.values.length > 0 ? (
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <ValueTable
+                  values={h.values}
+                  documents={documents}
+                  edit={{ houseId: h.id, kindOf: houseKind }}
+                />
               </Paper>
-            )
-          })}
-        </Stack>
-      </Section>
+            ) : (
+              <Typography color="text.secondary">
+                {t('houseDetail.nothingApproved')}
+              </Typography>
+            )}
+          </Section>
 
-      <Section title={t('houseDetail.documents')}>
-        <DocumentsSection houseId={h.id} documents={h.documents} />
-      </Section>
+          {categories.length > 0 && (
+            <Section title={t('houseDetail.components')}>
+              <Stack spacing={3}>
+                {categories.map((g) => (
+                  <Box key={g.category}>
+                    <Typography
+                      variant="overline"
+                      color="text.secondary"
+                      component="h3"
+                    >
+                      {t.has(`category.${g.category}`)
+                        ? t(`category.${g.category}`)
+                        : g.category}
+                    </Typography>
+                    <Stack spacing={2}>
+                      {g.components.map((c) => (
+                        <Paper key={c.id} variant="outlined" sx={{ p: 2 }}>
+                          {renderComponent(c)}
+                        </Paper>
+                      ))}
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            </Section>
+          )}
 
-      <Section title={t('area.title')}>
-        <AreaSection houseId={h.id} />
-      </Section>
+          <Section
+            title={t('houseDetail.workItems')}
+            action={
+              <Button size="small" onClick={() => setWorkItem({})}>
+                {t('workItemEdit.add')}
+              </Button>
+            }
+          >
+            <Stack spacing={2}>
+              {h.workItems.map((w) => {
+                const component = w.componentId ? flat.get(w.componentId) : null
+                return (
+                  <Paper
+                    key={w.id}
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      ...(w.draft && {
+                        borderLeft: 3,
+                        borderLeftColor: 'warning.main',
+                      }),
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      flexWrap="wrap"
+                      useFlexGap
+                      sx={{ mb: 1 }}
+                    >
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        label={t(`workItemKind.${w.kind.toLowerCase()}`)}
+                      />
+                      {w.severity && (
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          color={
+                            w.severity === 'SEVERE'
+                              ? 'error'
+                              : w.severity === 'MINOR'
+                                ? 'default'
+                                : 'warning'
+                          }
+                          label={t(`severity.${w.severity}`)}
+                        />
+                      )}
+                      <Typography variant="body2" color="text.secondary">
+                        {component
+                          ? componentLabel(component)
+                          : t('houseDetail.wholeHouse')}
+                      </Typography>
+                      {w.draft && (
+                        <Chip
+                          size="small"
+                          color="warning"
+                          label={t('houseDetail.draft')}
+                        />
+                      )}
+                      {!w.draft && (
+                        <Box
+                          sx={{ ml: 'auto !important', whiteSpace: 'nowrap' }}
+                        >
+                          <IconButton
+                            size="small"
+                            aria-label={t('workItemEdit.editLabel', {
+                              description: w.description,
+                            })}
+                            onClick={() => setWorkItem({ item: w })}
+                          >
+                            <EditOutlined fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            aria-label={t('workItemEdit.dismissLabel', {
+                              description: w.description,
+                            })}
+                            onClick={() => setDismissing(w.id)}
+                          >
+                            <DeleteOutline fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      )}
+                    </Stack>
+                    <Typography variant="body2">{w.description}</Typography>
+                    {w.quote && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        component="div"
+                        sx={{ fontStyle: 'italic', mt: 0.5 }}
+                      >
+                        ”{w.quote}”
+                      </Typography>
+                    )}
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      component="div"
+                    >
+                      {[
+                        w.documentId && documents[w.documentId]
+                          ? t(
+                              `documentType.${documents[w.documentId].type.toLowerCase()}`
+                            )
+                          : null,
+                        w.yearMin !== null
+                          ? w.yearMax !== null && w.yearMax !== w.yearMin
+                            ? `${w.yearMin}–${w.yearMax}`
+                            : String(w.yearMin)
+                          : t('houseDetail.noYear'),
+                        w.costLowSek !== null
+                          ? w.costHighSek !== null &&
+                            w.costHighSek !== w.costLowSek
+                            ? `${formatSek(w.costLowSek, locale)}–${formatSek(w.costHighSek, locale)}`
+                            : formatSek(w.costLowSek, locale)
+                          : t('houseDetail.noCost'),
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Typography>
+                  </Paper>
+                )
+              })}
+            </Stack>
+          </Section>
+        </>
+      )}
 
-      <Section title={t('assumptions.title')}>
-        <AssumptionsSection houseId={h.id} />
-      </Section>
+      {tab === 'documents' && (
+        <Section>
+          <DocumentsSection houseId={h.id} documents={h.documents} />
+        </Section>
+      )}
+
+      {tab === 'area' && (
+        <Section>
+          <AreaSection houseId={h.id} />
+        </Section>
+      )}
 
       {editCore && <CoreDialog house={h} onClose={() => setEditCore(false)} />}
       {adding && (
@@ -488,28 +549,31 @@ export default function HouseDetail({
   )
 }
 
+// Without a title when it is the only section of its tab, which names it.
 function Section({
   title,
   action,
   children,
 }: {
-  title: string
+  title?: string
   action?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
     <Box component="section" sx={{ mb: 5 }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 2 }}
-      >
-        <Typography component="h2" variant="h5">
-          {title}
-        </Typography>
-        {action}
-      </Stack>
+      {title && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mb: 2 }}
+        >
+          <Typography component="h2" variant="h5">
+            {title}
+          </Typography>
+          {action}
+        </Stack>
+      )}
       {children}
     </Box>
   )
