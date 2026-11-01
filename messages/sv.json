@@ -318,13 +318,13 @@
     "quantity_missing": "{key} saknas; ingen kostnad",
     "profile_without_cost": "Livslängdsprofilen saknar kostnad",
     "last_painted_missing": "Senast målad saknas; installationsåret används",
-    "overdue_replacement": "Livslängden har passerats; bytet läggs på startåret",
+    "overdue_replacement": "Livslängden har passerats och besiktningen anger ett allvarligt fel; byts startåret",
     "timed_by_work_item": "Tidpunkten styrs av åtgärden: {description}",
     "replacement_not_costed": "Bytet saknar kostnad",
     "cheaper_renewal": "Låg och typisk förnyar billigare ({match}); hög byter",
     "repaint_overdue": "Ommålningen har passerats; läggs på startåret",
     "inspection_added": "Lagd av Husvan för {count, plural, one {# del} other {# delar}} utan inspektionsår; inspektionen avgör om och hur de förnyas",
-    "work_item_no_year": "Inget år; läggs på startåret",
+    "work_item_no_year": "Inget år eller allvar; läggs på startåret",
     "work_item_before_start": "Skulle ha gjorts före startåret",
     "work_item_no_cost": "Ingen kostnad; räknas som noll",
     "trended": "Trendad {percent} % per år",
@@ -337,7 +337,10 @@
     "heating_from_energy_use": "Energianvändning × {price} kr/kWh",
     "heating_estimated": "Uppskattad ur primärenergital × boyta × Fgeo {fgeo} / {weight}: cirka {kwh} kWh",
     "heating_unknown": "Uppvärmningen okänd: ingen kostnad, energianvändning eller energiklass",
-    "running_costs_unknown": "Driftkostnaderna är okända"
+    "running_costs_unknown": "Driftkostnaderna är okända",
+    "overdue_seen_ok": "Livslängden har passerats, men besiktningen såg delen utan allvarlig anmärkning; den får en del av en livslängd till",
+    "overdue_unjudged": "Livslängden har passerats och ingen besiktning har bedömt delen; byts inom de närmaste åren, i hög direkt",
+    "work_item_timed_by_severity": "Inget år; utlagd på {years, plural, one {# år} other {# år}} efter allvaret ({severity})"
   },
   "risk": {
     "title": "Risker",
@@ -495,7 +498,9 @@
     "costLow": "Kostnad från (kr)",
     "costHigh": "Kostnad till (kr)",
     "save": "Spara",
-    "cancel": "Avbryt"
+    "cancel": "Avbryt",
+    "severity": "Allvar enligt besiktningen",
+    "noSeverity": "Inte angivet"
   },
   "core": {
     "edit": "Ändra huset",
@@ -550,5 +555,11 @@
     "yearsRange": "{min}–{max} år",
     "renewedAs": "Förnyas billigare i låg och typisk: {how}",
     "note": "Varje byte och ommålning delas på de år den håller, så ett badrum för 200 000 kr som håller i 25 år blir 8 000 kr om året oavsett när det betalas. Åtgärder från besiktningen ingår inte: de är eftersatt underhåll och räknas i underhållsskulden."
+  },
+  "severity": {
+    "MINOR": "Mindre brist",
+    "RISK": "Risk",
+    "DEFECT": "Brist",
+    "SEVERE": "Allvarligt fel"
   }
 }

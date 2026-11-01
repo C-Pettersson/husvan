@@ -223,6 +223,7 @@ export async function analyseHouse(
     running: running.lines,
     trend,
     capital,
+    inspected: view.documents.some((d) => d.type === 'INSPECTION'),
   })
   const debt = maintenanceDebt(plans, workItems, startYear)
   const price = pickPrice(view.values)

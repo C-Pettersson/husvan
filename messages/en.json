@@ -318,13 +318,13 @@
     "quantity_missing": "{key} missing; no cost",
     "profile_without_cost": "The lifespan profile has no cost",
     "last_painted_missing": "Last painted missing; the installation year is used",
-    "overdue_replacement": "Past its lifespan; replacement put in the start year",
+    "overdue_replacement": "Past its lifespan and flagged as serious by the inspection; replaced in the start year",
     "timed_by_work_item": "Timed by the work item: {description}",
     "replacement_not_costed": "The replacement has no cost",
     "cheaper_renewal": "Low and typical renew it more cheaply ({match}); high replaces it",
     "repaint_overdue": "Repainting overdue; put in the start year",
     "inspection_added": "Added by Husvan for {count, plural, one {# part} other {# parts}} without an inspection year; it decides whether and how they are renewed",
-    "work_item_no_year": "No year; put in the start year",
+    "work_item_no_year": "No year or severity; put in the start year",
     "work_item_before_start": "Due before the start year",
     "work_item_no_cost": "No cost; counts as zero",
     "trended": "Trended {percent} % a year",
@@ -337,7 +337,10 @@
     "heating_from_energy_use": "Energy use × {price} kr/kWh",
     "heating_estimated": "Estimated from primary energy × living area × Fgeo {fgeo} / {weight}: about {kwh} kWh",
     "heating_unknown": "Heating unknown: no cost, energy use or energy class",
-    "running_costs_unknown": "Running costs are unknown"
+    "running_costs_unknown": "Running costs are unknown",
+    "overdue_seen_ok": "Past its lifespan, but the inspection saw it without a serious finding; given part of a lifespan more",
+    "overdue_unjudged": "Past its lifespan and not judged by an inspection; replaced within the coming years, in high at once",
+    "work_item_timed_by_severity": "No year; spread over {years, plural, one {# year} other {# years}} by its severity ({severity})"
   },
   "risk": {
     "title": "Risks",
@@ -495,7 +498,9 @@
     "costLow": "Cost from (kr)",
     "costHigh": "Cost to (kr)",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "severity": "Severity in the inspection",
+    "noSeverity": "Not given"
   },
   "core": {
     "edit": "Change the house",
@@ -550,5 +555,11 @@
     "yearsRange": "{min}–{max} years",
     "renewedAs": "Renewed more cheaply in low and typical: {how}",
     "note": "Each replacement and repaint is divided by the years it lasts, so a bathroom for 200,000 kr that lasts 25 years is 8,000 kr a year whenever it is paid. Work items from the inspection are left out: they are overdue maintenance and count in the maintenance debt."
+  },
+  "severity": {
+    "MINOR": "Minor defect",
+    "RISK": "Risk",
+    "DEFECT": "Defect",
+    "SEVERE": "Serious defect"
   }
 }

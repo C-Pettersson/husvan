@@ -217,6 +217,7 @@ export function registerWriteTools(
         'Add actions that need doing, from an inspection report, a listing or the user, as a draft the user approves. ' +
         'Each may name an existing component, or a component in the draft given by draftId. ' +
         'Convert relative times to calendar years from the document’s date. Work items read alongside new components belong in propose_changes instead. ' +
+        'Give every finding from an inspection its severity in the protocol’s own terms; the forecast times an item without years by it, and a part past its lifespan that the inspection saw without a serious finding is not replaced at once. Do not invent urgency the protocol does not state. ' +
         'To price or correct a work item that already exists, such as an inspection finding without a cost, give its id as replaces instead of adding a second one; mark your own cost estimates as such in the description, since the user reads them.',
       inputSchema: z.object({
         houseId: z.uuid(),

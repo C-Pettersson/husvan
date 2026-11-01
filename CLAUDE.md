@@ -353,13 +353,28 @@ Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg�
 - **Installationsår** är observationen `installation_year` på komponenten, annars husets `construction_year`. Saknas båda markeras posten som gissad och spannet breddas till hela livslängdsintervallet.
 - **Mängd** följer profilens `costUnit`: `M2` läser `area`, `LINEAR_M` läser `length`, `EACH` läser `quantity` (standard 1), `HOUSE` är alltid 1. Saknas mängden används typens `quantityPerLivingM2` gånger `living_area` om det finns, annars markeras posten som gissad.
 - **Skick** flyttar bytesåret. Standardregel, justerbar per typ i `forecastDefaults`: skick 5 använder `lifespanMaxYears`, 4 och 3 `lifespanTypicalYears`, 2 `lifespanMinYears`, 1 byte inom två år. Utan skick används `lifespanTypicalYears`.
-- **Passerad livslängd** ger inte ett byte i det förflutna. Bytesår före startåret läggs på startåret och flaggas.
+- **Passerad livslängd** ger inte ett byte i det förflutna, och inte heller ett byte genast bara för att delen är gammal. Var bytet hamnar avgör besiktningen, se "Brådska ur besiktningen".
 - **Ommålning.** En profil med `repaintMinYears`, `repaintTypicalYears`, `repaintMaxYears`, `repaintCostLowSek` och `repaintCostHighSek` (samma `costUnit` och `priceYear` som bytet) ger en ommålning med jämna mellanrum fram till nästa byte. Intervallet räknas från `last_painted_year`, annars `installation_year`, annars husets `construction_year`. Är `paint_type` känd används typens intervall i `forecastDefaults.repaintByPaintType`, annars profilens. Ett byte nollställer intervallet, eftersom en ny del levereras målad. Ommålning som passerat läggs på startåret och flaggas, som ett byte.
 - **Delar som inte nämns.** Ett hus ska inte bli billigare för att underlaget säger mindre. Saknar huset en godkänd komponent av en typ med `assumeUndocumented` och nämner `absent_features` inte typen, räknar prognosen och underhållsskulden med en sådan del från byggåret, med mängd ur `quantityPerLivingM2`. Delen lagras inte, har id `assumed:<typ>`, märks `assumed: true` i prognosen och listas med sin underhållsskuld i `gaps.assumedParts`. Det är samma princip som "okänt är inte nej" för egenskaperna, men åt andra hållet: för kostnaden är okänt inte noll.
 - **Billigare förnyelse.** En typ kan ha `forecastDefaults.cheaperRenewal`: när komponentens attribut finns i `when` eller är okända förnyas den i låg och typisk med profilen som `match` väljer, till den profilens kostnad och därefter med dess livslängd. Hög byter, eftersom inspektionen kan visa att det billigare inte går. För `sewer_pipes` är det relining av `cast_iron`, `concrete` och `clay`. Underhållsskulden räknas med samma kostnad per scenario. En del som redan är förnyad så, eller en bytesåtgärd med egen kostnad, förnyas inte billigare.
 - **Inspektion före förnyelse.** En typ kan ha `forecastDefaults.inspection` med kostnad och källor, som filmning av avloppet. Inspektionen läggs en gång per hus och typ, året före den första förnyelsen i hög av en del utan `inspected_year`, men tidigast startåret, och kostar lika i alla scenarier. Den ingår inte i underhållsskulden. En besiktningsåtgärd om samma inspektion räknas inte bort.
 - **Spann.** Låg använder `lifespanMaxYears` och `costLowSek`, hög använder `lifespanMinYears` och `costHighSek`. Varje post bär en lista över indata som saknas eller har `confidence` under 0,7.
 - **Standardantaganden** när användaren inte satt egna: horisont 15 år, startår innevarande år, ingen kapitalkostnad, ingen drifttrend.
+
+### Brådska ur besiktningen
+
+Besiktningsprotokollet är det bästa underlaget för när något måste göras. En överlåtelsebesiktning är okulär, och köparen har en långtgående undersökningsplikt (jordabalken 4 kap. 19 §); det besiktningsmannen inte kunde se täcks i bästa fall av säljarens dolda fel-försäkring. Protokollen säger därför uttryckligen när något kräver mer: "fördjupad undersökning" eller "fortsatt teknisk utredning", en risk i riskanalysen eller ett fel som ska åtgärdas. En del som besiktningen såg utan sådan anmärkning fungerar, hur gammal den än är.
+
+- **Allvar på åtgärder.** `WorkItem.severity` följer protokollets egna nivåer: `MINOR` mindre brist eller notering (Anticimex blå symbol: kräver ingen fördjupad undersökning), `RISK` risk i riskanalysen, `DEFECT` fel eller skada som bör åtgärdas, `SEVERE` allvarligt fel eller akut skada. En rekommenderad fördjupad undersökning är `kind: INVESTIGATION` med allvaret för det den gäller. Claude sätter allvaret ur protokollet och hittar inte på brådska som protokollet inte anger.
+- **En del som passerat sin livslängd** placeras efter vad besiktningen sagt om den (`seenByInspection` i `forecast.ts`):
+
+| Besiktningen | Bytet, år efter startåret (låg / typisk / hög) |
+| --- | --- |
+| Allvarligt fel (`SEVERE`) på delen | 0 / 0 / 0 |
+| Huset besiktigat, delen dokumenterad och bara `MINOR` på den | 30 % / 20 % / 10 % av livslängden, minst 1 |
+| Ingen besiktning, en antagen del, en undersökning, ett fel eller en risk på delen, eller en åtgärd utan allvar | 20 % / 10 % av livslängden / 0 |
+
+  Underhållsskulden ändras inte: den räknar den förbrukade delen oavsett när bytet görs.
 
 ### Underhållsskuld och underhållsjusterat pris
 
@@ -391,7 +406,7 @@ Koden ligger i `src/server/forecast/`: `plan.ts` räknar fram profil, installati
 - **Gissat installationsår.** Utan `installation_year` och `construction_year` är delen ny i `low`, halvvägs i `typical` och vid `lifespanMinYears` i `high`.
 - **Mängd ur boytan.** `quantityPerLivingM2` gånger `living_area` avser hela huset. Det som typens övriga komponenter inte anger delas lika mellan dem som saknar mängd, så att ett hus vars underlag listar delar utan antal inte blir billigare. Blir andelen under 1 för `EACH` blir mängden 1 och flaggas; under 0 för yta och längd blir posten utan kostnad.
 - **Bytesåtgärd.** En åtgärd med `kind: REPLACEMENT` på en komponent bestämmer komponentens första byte: året mitt i `yearMin`–`yearMax` och åtgärdens kostnad om den finns, annars profilens. Den räknas inte en gång till som åtgärd.
-- **Åtgärder utan år eller kostnad.** Utan år läggs de på startåret, utan kostnad räknas de som noll; båda flaggas.
+- **Åtgärder utan år eller kostnad.** Utan år läggs de ut efter sitt allvar (`severity`): `SEVERE` på startåret, `DEFECT` på 2 år, `RISK` på 4 och `MINOR` på 5 från startåret; utan allvar på startåret. Utan kostnad räknas de som noll. Alla flaggas.
 - **Driften.** Prospektets poster i första hand (`heating_cost_sek_per_year`, `household_electricity_cost_sek_per_year`, `water_sewage_cost_sek_per_year`, `waste_cost_sek_per_year`, `insurance_cost_sek_per_year`, `chimney_sweeping_cost_sek_per_year`), och det som återstår av `operating_cost_sek_per_year` som en egen post. `property_fee_sek_per_year` är alltid en egen post. Uppvärmningen räknas fram bara när prospektet varken har en kostnad för den eller en total: `heating_kwh_per_year` gånger elpriset eller fjärrvärmepriset efter huvudsaklig uppvärmning, annars primärenergitalet gånger `living_area` gånger Fgeo delat med viktningsfaktorn (BBR 29: el 1,8, fjärrvärme 0,7). Spannet är 0 för säkra värden, ±20 % under `confidence` 0,7, ±15 % (±30 % om osäkert) för energi gånger pris och ±30 % för skattningen ur primärenergitalet.
 - **Energipriser.** Användarens antagande, annars kommunens pris i `prisma/data/municipalities.mts`. Pellets har inget pris.
 - **Drifttrend.** Medelvärdet av kommunens årliga förändringar i Nils Holgersson per kategori, ränta på ränta. VA, sophämtning, el (bara nätavgiften) och fjärrvärme trendas. Förändringarna är nominella medan prognosen är i startårets kronor, så trenden överdriver något.

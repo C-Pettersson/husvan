@@ -206,6 +206,7 @@ export function registerReadTools(
           id: w.id,
           componentId: w.componentId ?? undefined,
           kind: w.kind,
+          severity: w.severity ?? undefined,
           description: w.description,
           yearMin: w.yearMin ?? undefined,
           yearMax: w.yearMax ?? undefined,
