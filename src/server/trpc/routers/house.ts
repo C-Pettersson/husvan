@@ -103,6 +103,7 @@ export const houseRouter = createTRPCRouter({
         ...costSummary(a),
         forecast: a.forecast,
         debtByType: debtRangesByType(a),
+        annual: a.annual,
         runningCostsKnown: a.runningCostsKnown,
         assumptions: a.assumptions,
         risks: a.risks,

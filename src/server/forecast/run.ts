@@ -10,6 +10,7 @@ import {
 import { pickPrice, risks, valueOf } from '@/server/houses/derive'
 import { getHouse } from '@/server/houses/getHouse'
 import { forecastDefaultsSchema } from '@/server/library/schema'
+import { annualCost } from './annual'
 import { maintenanceDebt } from './debt'
 import { flag, type Flag } from './flags'
 import { computeForecast, workItemCost } from './forecast'
@@ -233,6 +234,8 @@ export async function analyseHouse(
     price,
     forecast,
     debt,
+    // Wear and running costs per year, independent of when they are paid.
+    annual: annualCost(plans, running.lines, capital),
     adjustedPrice: price
       ? {
           low: price.sek + debt.total.low,

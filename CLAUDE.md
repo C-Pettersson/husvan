@@ -321,7 +321,7 @@ Webben läser genom samma kod som MCP-verktygen (`getHouse`, `analyseHouse`, `co
 | --- | --- |
 | `/` | Den publika startsidan: vad Husvan räknar och hur det används. |
 | `/houses` | Husen med pris, underhållsskuld och underhållsjusterat pris med spann. Filter på egenskaper döljer bara hus där svaret är nej och visar hus med okänt svar för sig. 2–6 hus markeras för jämförelse. |
-| `/houses/[id]` | Kostnaden (nyckeltal med spann, vad summan saknar eller gissar, kostnad per år som diagram och tabell, underhållsskuld per del, prognosens poster med flaggor), egenskaper och risker, värden, komponenter, åtgärder, dokument, området och antagandena. `?draft=` visar ett utkast på plats. |
+| `/houses/[id]` | Kostnaden (nyckeltal med spann, vad summan saknar eller gissar, kostnad per år som diagram och tabell, eller fördelad över livslängden, underhållsskuld per del, prognosens poster med flaggor), egenskaper och risker, värden, komponenter, åtgärder, dokument, området och antagandena. `?draft=` visar ett utkast på plats. |
 | `/compare?ids=` | Husen sida vid sida som `compare`: nyckeltal, skillnaden mot det första per del, fel från besiktningen med okänt för obesiktigade hus, största skillnaderna i prognosen, egenskaper, risker och området. |
 
 **Rättningar** (`src/server/houses/correct.ts`) är godkända direkt med källa `USER` och valideras som ett utkast, så att webben inte kan spara det MCP skulle vägra:
@@ -371,6 +371,15 @@ Prognosen säger vad som händer inom horisonten. För att jämföra köp behöv
 - **K/T-tal** = pris / `assessed_value_sek`. Taxeringsvärdet ska motsvara 75 % av marknadsvärdet året före taxeringsåret, så talet visas med `assessment_year`.
 - **Förklaring av prisskillnad.** Mellan två hus delas skillnaden i underhållsskuld upp per komponenttyp, största först. Skillnader under 20 000 kr slås ihop till "Övrigt". Prisskillnaden plus delarna ger skillnaden i underhållsjusterat pris.
 - Grunden ger ingen term i `U`. En riskkonstruktion flaggas i jämförelsen men räknas inte om till kronor.
+
+### Kostnad fördelad över livslängden
+
+Prognosen visar när pengarna går ut. Ett badrum för 200 000 kr som byts år 2 ger en topp det året, fast det håller i 25 år. Den fördelade kostnaden (`annual.ts`) visar i stället vad huset slits per år, oberoende av när något förfaller:
+
+- **Slitage** = Σ `cᵢ / Lᵢ` för varje del med kostnad, plus ommålningskostnaden delad med ommålningsintervallet. `Lᵢ` är hela livslängden utan skickjustering, eftersom det gäller kommande byten. Låg använder `costLowSek` och `lifespanMaxYears`, hög `costHighSek` och `lifespanMinYears`. Förnyas delen billigare i ett scenario används den förnyelsens kostnad och livslängd, som i prognosen.
+- **Per månad** = (slitage + drift + ränta) / 12. Driften är prognosens första år utan trend.
+- **Åtgärder ingår inte.** De är eftersatt underhåll och räknas i underhållsskulden. Underhållsjusterat pris och fördelad kostnad hör ihop: skulden är det som redan är förbrukat när huset köps, den fördelade kostnaden det som förbrukas därefter.
+- Antagna delar ingår, delar utan kostnad inte. Svaren har `annualCost` (`forecast` och `compare`) och `annualCostByPart` (`forecast`).
 
 ### Hur prognosen är byggd
 

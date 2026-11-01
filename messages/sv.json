@@ -287,7 +287,12 @@
     "indexYear": "Belopp i {year} års priser, uppräknade med byggkostnadsindex.",
     "flags": "Om underlaget",
     "loadFailed": "Prognosen gick inte att räkna fram.",
-    "part": "Del"
+    "part": "Del",
+    "view": {
+      "label": "Visa kostnaden",
+      "paid": "När det betalas",
+      "spread": "Fördelat över livslängden"
+    }
   },
   "forecastCategory": {
     "running": "Drift",
@@ -446,7 +451,8 @@
       "repair": "Åtgärder",
       "replacement": "Bytesåtgärder",
       "investigation": "Undersökningar"
-    }
+    },
+    "annualPerMonth": "Per månad, fördelat"
   },
   "edit": {
     "edit": "Ändra",
@@ -528,5 +534,21 @@
       "not_found": "Dokumentet finns inte.",
       "generic": "Det gick inte att ladda upp filen."
     }
+  },
+  "annual": {
+    "title": "Kostnad per år, fördelad över livslängden",
+    "perMonth": "Per månad, fördelat",
+    "part": {
+      "wear": "Slitage {sek} per år",
+      "running": "drift {sek} per år",
+      "capital": "ränta {sek} per år"
+    },
+    "cost": "Kostnad",
+    "lasts": "Håller",
+    "perYear": "Per år",
+    "years": "{years} år",
+    "yearsRange": "{min}–{max} år",
+    "renewedAs": "Förnyas billigare i låg och typisk: {how}",
+    "note": "Varje byte och ommålning delas på de år den håller, så ett badrum för 200 000 kr som håller i 25 år blir 8 000 kr om året oavsett när det betalas. Åtgärder från besiktningen ingår inte: de är eftersatt underhåll och räknas i underhållsskulden."
   }
 }
