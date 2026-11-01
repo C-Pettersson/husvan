@@ -4,6 +4,7 @@ Husvan (husvan.se) är ett verktyg för att förstå vad ett hus kostar över ti
 
 - **Version 1: köpunderlag.** Ägaren lägger in hus han är intresserad av, ser kostnaden framåt och jämför husen.
 - **Senare: underhåll.** När ett hus är köpt blir samma hus utgångspunkt för underhållsplan, påminnelser och kvitton. Inga data flyttas, huset får bara status `PURCHASED`.
+- **Fullversion: hela Sverige.** Version 1 seedar bara Luleå och Boden, men ingen kod får anta det. Allt som skiljer mellan orter är referensdata nycklad på kommunkod, och en kommun utan data ger en flaggad post, inte ett fel.
 
 Fullständig bakgrund, marknadsanalys och resonemang finns i dokumentet:
 https://claude.ai/artifact/U5dP4Qjzr9PywekiWPKxp9
@@ -95,6 +96,8 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 | `replacesId` på den nya komponenten | `replaced_on`/`replaced_by` på den gamla | Ett utkast kan då uttrycka ett byte med bara en insert. Den gamla raden rörs aldrig. |
 | `LifespanProfile` med kurerade värden och `sources` som JSON | En rad per typ och källa som vägs ihop vid körning | Sammanvägningen är redaktionellt arbete som görs en gång, inte en beräkning per prognos. Råvärdena finns kvar för spårbarhet. |
 | `MunicipalTariffChange` och `PriceIndex` som egna tabeller | `tariff_changes` som JSON på kommunen | Typade värden med unika nycklar. En nullbar kommunkolumn i ett unikt index släpper igenom dubbletter i Postgres. |
+| `MunicipalTaxRate` och `TaxParameter` per år | Skattesatser som kolumner på kommunen, nationella belopp som konstanter i koden | Takbeloppet för fastighetsavgiften ändras varje år och skattesatserna kan ändras. Med en rad per år och källa går en gammal prognos att förklara, och ett nytt år är en import, inte en release. |
+| `LeaseholdPolicy` med `validFrom` | Friköpsandel som kolumn på kommunen | Policyn är ett politiskt beslut som ändras. Historiken behövs för att se vad som gällde, och metoden skiljer sig mellan kommuner (andel av marktaxeringsvärdet, marknadsvärde, inget friköp). |
 | `yearMin`/`yearMax` på åtgärder | Ett `year` | Besiktningen säger "inom 1–3 år", aldrig ett årtal. |
 | Inga tabeller för händelser och relationer mellan komponenter | Tabellerna med i schemat men oanvända | Oanvända tabeller är otestade gissningar. De läggs till med en migration när underhållsläget byggs. |
 | `ownerId` på `House` redan nu | Lägga till vid flera användare | Better Auth ger ändå en användartabell, och en backfill senare kostar mer än en kolumn nu. |
@@ -117,7 +120,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 - Attributnycklar och typnamn i datan är engelska, ASCII i snake_case (`installation_year`, `underfloor_heating`).
 - Datum i ISO 8601. Belopp i kronor (`Decimal`, suffix `Sek`). Enheter anges explicit (`m2`, `kWh`, `W/m2K`).
 - Datatyper för attribut: `text`, `number` (med enhet), `year`, `date`, `choice` (lista), referens till `actor`, `document` eller `component`.
-- Nycklar som prognosen läser och som därför måste heta lika i alla typer: `installation_year`, `condition` (1–5, 5 är nytt), `area` (m2), `length` (m), `quantity` (antal). På huset: `construction_year`, `living_area`, `heating_kwh_per_year`, `electricity_kwh_per_year`, `operating_cost_sek_per_year`.
+- Nycklar som prognosen läser och som därför måste heta lika i alla typer: `installation_year`, `condition` (1–5, 5 är nytt), `area` (m2), `length` (m), `quantity` (antal). På huset: `construction_year`, `living_area`, `heating_kwh_per_year`, `electricity_kwh_per_year`, `operating_cost_sek_per_year`, `asking_price_sek`, `tax_assessment_value_sek` (taxeringsvärde), `land_assessment_value_sek` (marktaxeringsvärde), `value_year` (värdeår), `mortgage_deeds_sek` (befintliga pantbrev), `tenure` (`freehold` eller `leasehold`, tomträtt), `ground_lessor` (upplåtare), `ground_rent_sek_per_year` (tomträttsavgäld), `ground_rent_revision_year` (nästa omreglering).
 - Enumvärden är `UPPER_CASE` i databasen och får en översättningsnyckel per värde i webben (`house.status.purchased`).
 
 ### Språk
@@ -173,7 +176,7 @@ Fönster registreras styck för styck när underlaget tillåter det, annars som 
 | `propose_changes` | Nya komponenter och observationer, alla med källa. Returnerar ett utkast | Skriver utkast |
 | `confirm_changes` | Godkänner eller avslår ett utkast | Skriver |
 | `add_work_item` | Åtgärd från besiktningen eller eget val | Skriver utkast |
-| `set_assumption` | Horisont, startår, ränta, energipriser, drifttrend | Skriver |
+| `set_assumption` | Horisont, startår, ränta, lån, antal låntagare, energipriser, drifttrend, köpeskilling, hushållets inkomst, friköpsår | Skriver |
 | `forecast` | Kostnad per år och post för ett hus | Läser |
 | `compare` | Flera hus sida vid sida, med de största skillnaderna först | Läser |
 
@@ -189,7 +192,8 @@ Per hus och år över vald horisont, i startårets kronor:
 2. **Åtgärder från besiktning och prospekt.** Engångsposter, utlagda jämnt över `yearMin`–`yearMax`.
 3. **Drift.** Uppvärmning, el, VA, sophämtning, försäkring, sotning. Från prospektet eller energideklarationen, trendat per kommun om användaren valt det.
 4. **Regionalt.** Snöröjning och takskottning efter snözon. Saknas energidata: grov skattning av uppvärmning med Fgeo.
-5. **Kapitalkostnad (valfri).** Ränta på lånet med användarens ränta.
+5. **Kapitalkostnad (valfri).** Ränta på lånet med användarens ränta, minus ränteavdrag.
+6. **Skatter och avgifter.** Fastighetsavgift varje år. Lagfart och pantbrev som engångsposter startåret. Tomträttsavgäld så länge huset står på tomträtt, och friköp om användaren valt ett friköpsår. Kommunalskatt bara om användaren angett hushållets inkomst.
 
 Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg–hög) som blir bredare ju fler värden som saknas eller är osäkra. Jämförelsen visar först de poster som skiljer mest. Prognoser sparas så att man ser hur bedömningen av ett hus ändras.
 
@@ -200,7 +204,14 @@ Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg�
 - **Skick** flyttar bytesåret. Standardregel, justerbar per typ i `forecastDefaults`: skick 5 använder `lifespanMaxYears`, 4 och 3 `lifespanTypicalYears`, 2 `lifespanMinYears`, 1 byte inom två år. Utan skick används `lifespanTypicalYears`.
 - **Passerad livslängd** ger inte ett byte i det förflutna. Bytesår före startåret läggs på startåret och flaggas.
 - **Spann.** Låg använder `lifespanMaxYears` och `costLowSek`, hög använder `lifespanMinYears` och `costHighSek`. Varje post bär en lista över indata som saknas eller har `confidence` under 0,7.
-- **Standardantaganden** när användaren inte satt egna: horisont 15 år, startår innevarande år, ingen kapitalkostnad, ingen drifttrend.
+- **Standardantaganden** när användaren inte satt egna: horisont 15 år, startår innevarande år, ingen kapitalkostnad, ingen drifttrend, köpeskilling lika med `asking_price_sek`, en låntagare, inget friköp, ingen kommunalskatt.
+- **Skatteparametrar** hämtas ur `TaxParameter` för det senaste året till och med startåret och hålls fasta över horisonten, eftersom prognosen räknas i startårets kronor. Samma sak gäller `MunicipalTaxRate`.
+- **Fastighetsavgift** är `property_fee_rate` × `tax_assessment_value_sek`, högst `property_fee_cap_sek`. Hus med `value_year` från `property_fee_exempt_from_value_year` och framåt betalar inget de första `property_fee_exempt_years` åren efter värdeåret. Startåret är avgiften noll, eftersom den som äger huset 1 januari betalar hela året. Samma regler gäller hus på tomträtt. Saknas taxeringsvärdet används taket och posten markeras som gissad.
+- **Lagfart** är `title_stamp_duty_rate` × köpeskillingen plus `title_fee_sek`. **Pantbrev** är `mortgage_deed_stamp_duty_rate` × den del av lånet som befintliga pantbrev inte täcker, plus `mortgage_deed_fee_sek`. Inget nytt pantbrev, ingen avgift. Saknas `mortgage_deeds_sek` räknas med noll och posten markeras som gissad.
+- **Tomträttsavgäld** följer `ground_rent_sek_per_year` fram till `ground_rent_revision_year`. Därefter ligger samma belopp kvar men markeras som osäkert, eftersom den nya avgälden inte går att räkna ut i förväg.
+- **Friköp** följer kommunens `LeaseholdPolicy` på friköpsdagen. `LAND_ASSESSMENT_SHARE` ger `buyoutFactor` × `land_assessment_value_sek`, plus lagfart på friköpspriset. Avgälden upphör från friköpsåret. Gäller bara när kommunen är upplåtare. Vid `MARKET_VALUE`, annan upplåtare eller saknad policy visas friköpet som okänt med en flagga.
+- **Ränteavdrag** är `interest_deduction_rate` på räntan och tomträttsavgälden upp till `interest_deduction_limit_sek` per låntagare, och `interest_deduction_reduced_rate` på resten.
+- **Kommunalskatt** är hushållets inkomst × (`municipalRate` + `regionalRate`). Jämförelsen visar bara skillnaden mellan husen, eftersom inkomstskatten betalas oavsett hus. Begravnings- och kyrkoavgift räknas inte med.
 
 ## Byggordning
 
@@ -208,7 +219,7 @@ Varje milstolpe ska gå att visa i Claude eller i webbläsaren innan nästa påb
 
 0. **Verifiera kopplingen.** Next.js-app med Better Auth (`mcp`, `cimd`, `jwt`), en seedad användare och en MCP-route med ett verktyg, körd över HTTPS. Läggs till som egen koppling i claude.ai med "Use Claude's published identity". Avgör protokollversion och om `legacy: "reject"` går att använda.
 1. **Grund.** Prisma-schema och första migration, Compose med Postgres för lokal körning, Dockerfile och bygg-workflow, Vitest.
-2. **Data.** Kommuner (Luleå 2580, Boden 2582), typbibliotek, livslängdsprofiler med källor, BKI-serie. Det mest arbetskrävande steget, och det ligger inte i kod.
+2. **Data.** Kommuner (Luleå 2580, Boden 2582), typbibliotek, livslängdsprofiler med källor, BKI-serie, skatteparametrar och tomträttspolicyer för båda kommunerna. Kommunalskatten importeras för alla 290 kommuner från SCB:s årstabell, eftersom det kostar lika lite som att importera två. Det mest arbetskrävande steget, och det ligger inte i kod.
 3. **Läsverktyg** mot seedad data: `list_houses`, `get_house`, `type_library`.
 4. **Skrivverktyg** med utkast och godkännande.
 5. **Prognos och jämförelse.**
@@ -226,3 +237,5 @@ Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för f�
 - Går SMHI:s Snötyngd att hämta som data?
 - Fgeo, DVUT och snözon för Luleå och Boden med källa (BBR-tabell), samt standardvärden för energipriser.
 - Vilka pristyper i Handelsbankens, Planimas och Villaägarnas underlag går att översätta till `costUnit`?
+- Följer pantbreven i en tomträtt med till fastigheten vid friköp, eller måste nya tas ut? Avgör om friköpet kostar stämpelskatt för pantbrev.
+- Tomträttspolicyer för hela Sverige saknar en nationell källa. Hur samlas och hålls 290 kommuners policyer aktuella i fullversionen?

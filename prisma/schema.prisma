@@ -50,8 +50,48 @@ model Municipality {
   cloudburstMapUrl   String?
   updatedAt          DateTime @updatedAt
 
-  houses        House[]
-  tariffChanges MunicipalTariffChange[]
+  houses            House[]
+  tariffChanges     MunicipalTariffChange[]
+  taxRates          MunicipalTaxRate[]
+  leaseholdPolicies LeaseholdPolicy[]
+}
+
+// Municipal and regional income tax rate per year, from SCB's yearly table of
+// all municipalities. Used only when the user has set a household income.
+model MunicipalTaxRate {
+  municipalityCode String
+  year             Int
+  municipalRate    Decimal @db.Decimal(6, 4) // 0.2250 = 22.50 %
+  regionalRate     Decimal @db.Decimal(6, 4)
+  sourceUrl        String?
+
+  municipality Municipality @relation(fields: [municipalityCode], references: [code])
+
+  @@id([municipalityCode, year])
+}
+
+// How a municipality sells leasehold land (tomträtt) for small houses to the
+// leaseholder (friköp). Curated from each municipality's own pages; there is
+// no national source. The policy in force on a date is the newest validFrom
+// before it. Applies only when the municipality is the lessor.
+model LeaseholdPolicy {
+  id               String                @id @default(uuid(7)) @db.Uuid
+  municipalityCode String
+  validFrom        DateTime              @db.Date
+  buyoutMethod     LeaseholdBuyoutMethod
+  buyoutFactor     Decimal?              @db.Decimal(4, 3) // 0.700 = 70 % of the land assessment value
+  sourceUrl        String
+  note             String? // conditions, e.g. 'only on the first day of a quarter'
+
+  municipality Municipality @relation(fields: [municipalityCode], references: [code])
+
+  @@unique([municipalityCode, validFrom])
+}
+
+enum LeaseholdBuyoutMethod {
+  LAND_ASSESSMENT_SHARE // buyoutFactor x marktaxeringsvärde
+  MARKET_VALUE // valued case by case, no formula
+  NOT_OFFERED
 }
 
 // Year-on-year change per municipality and cost category, from the Nils
@@ -85,6 +125,23 @@ model PriceIndex {
   sourceUrl String?
 
   @@id([series, period])
+}
+
+// National tax rules that change by year. The forecast uses the newest year
+// up to the start year. Keys are validated in code:
+// property_fee_rate (0.0075), property_fee_cap_sek (cap per small house),
+// property_fee_exempt_years (15), property_fee_exempt_from_value_year (2012),
+// title_stamp_duty_rate (0.015), title_fee_sek (825),
+// mortgage_deed_stamp_duty_rate (0.02), mortgage_deed_fee_sek (375),
+// interest_deduction_rate (0.30), interest_deduction_reduced_rate (0.21),
+// interest_deduction_limit_sek (100000, per borrower).
+model TaxParameter {
+  key       String
+  year      Int
+  value     Decimal @db.Decimal(14, 4)
+  sourceUrl String
+
+  @@id([key, year])
 }
 
 // Type library ----------------------------------------------------------------
@@ -357,9 +414,10 @@ enum WorkItemStatus {
 
 // Append only; the newest approved row per (houseId, key) wins. houseId null
 // is the default for all houses. Keys and their value shapes are validated in
-// code: horizon_years, start_year, interest_rate, loan_sek,
+// code: horizon_years, start_year, interest_rate, loan_sek, borrower_count,
 // electricity_price_sek_kwh, district_heating_price_sek_kwh,
-// operating_cost_trend ('none' | 'municipality').
+// operating_cost_trend ('none' | 'municipality'), purchase_price_sek,
+// household_income_sek, leasehold_buyout_year (null = keep the leasehold).
 model Assumption {
   id          String   @id @default(uuid(7)) @db.Uuid
   houseId     String?  @db.Uuid
