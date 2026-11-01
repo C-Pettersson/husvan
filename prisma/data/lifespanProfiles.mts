@@ -15,6 +15,14 @@
 // src/server/library/profiles.ts; a profile with an empty match is the type's
 // default.
 import type { LifespanProfileDefinition } from '../../src/server/library/schema.ts'
+import {
+  doorRepaint,
+  doorRepaintSources,
+  woodFacadeRepaint,
+  woodFacadeRepaintSources,
+  woodWindowRepaint,
+  woodWindowRepaintSources,
+} from './repaint.mts'
 
 export const lifespanProfiles: LifespanProfileDefinition[] = [
   // Typical 45 is a researcher midpoint. Underlay felt (underlagspapp) often
@@ -415,10 +423,9 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
       },
     ],
   },
-  // Replacement of the panel. Repainting every 8-15 years (Offerta 8-12,
-  // OnceWall 8-15) is the dominant recurring cost but is not a replacement;
-  // Handelsbanken's 15-year 'fasad' figure most likely reflects repainting.
-  // Typical 45 is a midpoint.
+  // Replacement of the panel, plus repainting (repaint.mts), the dominant
+  // recurring cost. Handelsbanken's 15-year 'fasad' figure most likely
+  // reflects repainting. Typical 45 is a midpoint.
   {
     type: 'facade',
     match: {
@@ -431,7 +438,9 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
     costHighSek: 2500,
     costUnit: 'M2',
     priceYear: 2026,
+    ...woodFacadeRepaint,
     sources: [
+      ...woodFacadeRepaintSources,
       {
         name: 'Byggfirma Sölvesborg, Hur länge håller olika fasadmaterial (2026-10)',
         url: 'https://byggfirma-solvesborg.se/blogg/hur-lange-haller-olika-typer-av-fasadmaterial/',
@@ -647,8 +656,8 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
       },
     ],
   },
-  // Costs not split by material in any source; same range as default. Needs
-  // repainting about every 10 years (Nordea, Fönsterexperter).
+  // Costs not split by material in any source; same range as default.
+  // Exterior repainting from repaint.mts.
   {
     type: 'window',
     match: {
@@ -661,7 +670,9 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
     costHighSek: 18000,
     costUnit: 'EACH',
     priceYear: 2026,
+    ...woodWindowRepaint,
     sources: [
+      ...woodWindowRepaintSources,
       {
         name: 'Enomic, Hur ofta bör man byta fönster? (2025-05-23)',
         url: 'https://enomic.se/hur-ofta-byta-fonster/',
@@ -795,6 +806,62 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
     costUnit: 'EACH',
     priceYear: 2026,
     sources: [
+      {
+        name: 'Planima, Underhållskostnader',
+        url: 'https://planima.se/insikter/underhallskostnader',
+        lifespanYears: 30,
+        costSek: 19000,
+        note: 'Byta aluminiumdörr 19 000 kr/st, interval 30 år',
+      },
+      {
+        name: 'Villalife, Ytterdörr 2026 (updated 2026-09-04)',
+        url: 'https://villalife.se/renovering-bygge/vagledning-for-unika-och-sakra-dorrar-lat-ditt-hem-andas/',
+        lifespanYears: null,
+        lifespanYearsRange: [30, 50],
+        costSek: null,
+        costSekRange: [15000, 35000],
+        note: 'Steel, fibreglass and maintained wood 30-50 år; total incl. montering for a normal villa',
+      },
+      {
+        name: 'Sonochfar/Bygghantverkarna, Byta ytterdörr kostnad 2026 (2026-04-07)',
+        url: 'https://sonochfar.se/blog/byta-ytterdorr-kostnad/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [12000, 30000],
+        note: 'Simple door incl. montering 12-22k; door + new frame 16-30k; before ROT',
+      },
+      {
+        name: 'Klarfönster (2026-10-21)',
+        url: 'https://klarfonster.se/blog/kostnad-byta-ytterdorr',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [11900, 13600],
+        note: 'Own average prices incl. installation, wood vs wood/alu; ROT status not stated',
+      },
+      {
+        name: 'BraByggfirmor (2026-03)',
+        url: 'https://www.brabyggfirmor.se/guider/byta-ytterdorr',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [20000, 50000],
+        note: 'After ROT, includes security/designer doors',
+      },
+    ],
+  },
+  // A wooden door: the default door's replacement figures plus repainting.
+  {
+    type: 'exterior_door',
+    match: { material: 'wood' },
+    lifespanMinYears: 30,
+    lifespanTypicalYears: 40,
+    lifespanMaxYears: 50,
+    costLowSek: 12000,
+    costHighSek: 35000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    ...doorRepaint,
+    sources: [
+      ...doorRepaintSources,
       {
         name: 'Planima, Underhållskostnader',
         url: 'https://planima.se/insikter/underhallskostnader',
@@ -1649,19 +1716,28 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
     ],
   },
   // EACH = one section component (CLAUDE.md models one sewer_pipes per
-  // section). Default cost = indoor section. Whole-villa stambyte incl.
-  // wet-room restoration is 150 000-550 000 (Sonochfar).
+  // section). Default cost = the indoor pipes, replaced with the wet rooms
+  // opened and simply restored (Sonochfar 150 000-400 000 for one or two
+  // bathrooms); tiles and fittings are the bathroom's.
   {
     type: 'sewer_pipes',
     match: {},
     lifespanMinYears: 50,
     lifespanTypicalYears: 50,
     lifespanMaxYears: 70,
-    costLowSek: 120000,
-    costHighSek: 220000,
+    costLowSek: 150000,
+    costHighSek: 400000,
     costUnit: 'EACH',
     priceYear: 2026,
     sources: [
+      {
+        name: 'Sonochfar, Byta avloppsstam villa kostnad (2026-04-07)',
+        url: 'https://sonochfar.se/blog/byta-avloppsstam-kostnad-villa/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [150000, 400000],
+        note: 'Indoor stambyte incl. demolition and simple restoration (filling, paint, simple floor; not tiles or fittings), before ROT: 1 bathroom + kitchen 150-250k, 2 bathrooms + kitchen + laundry 250-400k; demolition and restoration 30-40 % of the total; 30-50k less with a bathroom renovation at the same time',
+      },
       {
         name: 'Sonochfar, Byta avlopp kostnad 2026 (2026-04-07)',
         url: 'https://sonochfar.se/blog/byta-avlopp-kostnad/',
@@ -1698,11 +1774,19 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
     lifespanMinYears: 30,
     lifespanTypicalYears: 50,
     lifespanMaxYears: 80,
-    costLowSek: 120000,
-    costHighSek: 220000,
+    costLowSek: 150000,
+    costHighSek: 400000,
     costUnit: 'EACH',
     priceYear: 2026,
     sources: [
+      {
+        name: 'Sonochfar, Byta avloppsstam villa kostnad (2026-04-07)',
+        url: 'https://sonochfar.se/blog/byta-avloppsstam-kostnad-villa/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [150000, 400000],
+        note: 'Indoor stambyte incl. demolition and simple restoration (filling, paint, simple floor; not tiles or fittings), before ROT: 1 bathroom + kitchen 150-250k, 2 bathrooms + kitchen + laundry 250-400k; demolition and restoration 30-40 % of the total; 30-50k less with a bathroom renovation at the same time',
+      },
       {
         name: 'Villaägarna, Dags för stambyte? (2024-09-06)',
         url: 'https://www.villaagarna.se/radgivning-och-tips/vvs/artiklar/dags-for-stambyte/',
@@ -1752,11 +1836,19 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
     lifespanMinYears: 30,
     lifespanTypicalYears: 50,
     lifespanMaxYears: 80,
-    costLowSek: 120000,
-    costHighSek: 220000,
+    costLowSek: 150000,
+    costHighSek: 400000,
     costUnit: 'EACH',
     priceYear: 2026,
     sources: [
+      {
+        name: 'Sonochfar, Byta avloppsstam villa kostnad (2026-04-07)',
+        url: 'https://sonochfar.se/blog/byta-avloppsstam-kostnad-villa/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [150000, 400000],
+        note: 'Indoor stambyte incl. demolition and simple restoration (filling, paint, simple floor; not tiles or fittings), before ROT: 1 bathroom + kitchen 150-250k, 2 bathrooms + kitchen + laundry 250-400k; demolition and restoration 30-40 % of the total; 30-50k less with a bathroom renovation at the same time',
+      },
       {
         name: 'Rörfiness (2026-09-02)',
         url: 'https://rorfiness.nu/blogg/avloppsror-plast-gjutjarn/',
@@ -1799,11 +1891,19 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
     lifespanMinYears: 30,
     lifespanTypicalYears: 40,
     lifespanMaxYears: 60,
-    costLowSek: 120000,
-    costHighSek: 220000,
+    costLowSek: 150000,
+    costHighSek: 400000,
     costUnit: 'EACH',
     priceYear: 2026,
     sources: [
+      {
+        name: 'Sonochfar, Byta avloppsstam villa kostnad (2026-04-07)',
+        url: 'https://sonochfar.se/blog/byta-avloppsstam-kostnad-villa/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [150000, 400000],
+        note: 'Indoor stambyte incl. demolition and simple restoration (filling, paint, simple floor; not tiles or fittings), before ROT: 1 bathroom + kitchen 150-250k, 2 bathrooms + kitchen + laundry 250-400k; demolition and restoration 30-40 % of the total; 30-50k less with a bathroom renovation at the same time',
+      },
       {
         name: 'Renoa/Länsförsäkringar (2022-11-29)',
         url: 'https://renoa.se/artiklar/vad-ar-den-tekniska-livslangden-for-avloppet-i-ett-hus',

@@ -5,7 +5,8 @@
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { PrismaClient } from '@prisma/client'
-import { areaStatistics, type AreaRef } from '@/server/houses/area'
+import { areaStatistics, houseAreas } from '@/server/houses/area'
+import { analyseHouse, type Analysis } from '@/server/forecast/run'
 import {
   FEATURES,
   bathroomCount,
@@ -18,14 +19,11 @@ import {
 import {
   getHouse,
   type ComponentView,
-  type HouseView,
   type KeyValueView,
   type ValueRow,
 } from '@/server/houses/getHouse'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
 import { result, toolError } from './result'
-
-type View = NonNullable<HouseView>
 
 const row = (r: ValueRow, withQuote: boolean) => ({
   value: r.value,
@@ -73,7 +71,7 @@ const KEY_FIGURES = [
   'energy_class',
 ]
 
-function summary(view: View) {
+function summary({ view, debt, adjustedPrice }: Analysis) {
   return {
     id: view.id,
     address: view.address,
@@ -87,20 +85,10 @@ function summary(view: View) {
     // Risk constructions, older electrical systems and radon together.
     flaggedRisks: risks(view.components, view.values).length,
     openDrafts: view.drafts.length,
+    maintenanceDebt: Math.round(debt.total.typical),
+    maintenanceAdjustedPrice:
+      adjustedPrice && Math.round(adjustedPrice.typical),
   }
-}
-
-function areasOf(view: View): AreaRef[] {
-  const areas: AreaRef[] = []
-  const deso = valueOf(view.values, 'deso_code')
-  if (typeof deso === 'string') areas.push({ level: 'DESO', code: deso })
-  const police = valueOf(view.values, 'police_area_code')
-  if (typeof police === 'string')
-    areas.push({ level: 'POLICE_AREA', code: police })
-  if (view.municipality)
-    areas.push({ level: 'MUNICIPALITY', code: view.municipality.code })
-  areas.push({ level: 'NATION', code: 'SE' })
-  return areas
 }
 
 // The day the user names, through its end (UTC).
@@ -124,7 +112,7 @@ export function registerReadTools(
         'Price is final_price_sek, else highest_bid_sek, else asking_price_sek, and price.kind says which. ' +
         'Optionally filter on features (pool, sauna, deck, sunroom, garage, wood_stove, heat_pump_air_air, basement, or any component type): ' +
         'a house is left out only when a feature is known to be absent; houses where a feature is unknown come back separately under "unknown". ' +
-        'Maintenance debt and maintenance-adjusted price arrive with the forecast tools.',
+        'maintenanceDebt and maintenanceAdjustedPrice (price + debt) are the typical figures; forecast and compare give their ranges.',
       inputSchema: z.object({
         status: z
           .array(z.enum(['CANDIDATE', 'DECLINED', 'PURCHASED', 'SOLD']))
@@ -157,18 +145,19 @@ export function registerReadTools(
         select: { id: true },
         orderBy: { createdAt: 'asc' },
       })
-      const views = (
+      const analyses = (
         await Promise.all(
           houses.map((h) =>
-            getHouse(prisma, { ownerId: userId, houseId: h.id })
+            analyseHouse(prisma, { ownerId: userId, houseId: h.id })
           )
         )
-      ).filter((v): v is View => v !== null)
+      ).filter((a): a is Analysis => a !== null)
 
       const matching = []
       const unknown = []
       let excluded = 0
-      for (const view of views) {
+      for (const analysis of analyses) {
+        const { view } = analysis
         const answers = (features ?? []).map((f) => ({
           feature: f,
           answer: featureAnswer(f, view.components, view.values),
@@ -176,12 +165,12 @@ export function registerReadTools(
         if (answers.some((a) => a.answer === 'no')) excluded++
         else if (answers.some((a) => a.answer === 'unknown'))
           unknown.push({
-            ...summary(view),
+            ...summary(analysis),
             unknownFeatures: answers
               .filter((a) => a.answer === 'unknown')
               .map((a) => a.feature),
           })
-        else matching.push(summary(view))
+        else matching.push(summary(analysis))
       }
       return result({ houses: matching, unknown, excludedCount: excluded })
     }
@@ -241,7 +230,7 @@ export function registerReadTools(
         bathrooms: bathroomCount(view.components),
         heating: heating(view.components),
         risks: risks(view.components, view.values),
-        area: await areaStatistics(prisma, areasOf(view)),
+        area: await areaStatistics(prisma, houseAreas(view)),
         workItems: view.workItems.map((w) => ({
           id: w.id,
           componentId: w.componentId ?? undefined,

@@ -8,6 +8,10 @@ import type {
   AttributeDefinition,
   ComponentTypeDefinition,
 } from '../../src/server/library/schema.ts'
+import {
+  facadeRepaintByPaintType,
+  joineryRepaintByPaintType,
+} from './repaint.mts'
 
 type Attributes = Record<string, AttributeDefinition>
 
@@ -87,9 +91,10 @@ const orientation: Attributes = {
 }
 
 // Painted wood needs repainting every 8 to 15 years, far more often than it
-// is replaced, so the year it was last painted is kept apart from
-// installation_year.
-const lastPainted: Attributes = {
+// is replaced, so the paint has its own year apart from installation_year.
+// The forecast repaints from last_painted_year at the interval of the
+// profile, or of the paint type when it is known.
+const paint: Attributes = {
   last_painted_year: {
     label: { sv: 'Senast målad', en: 'Last painted' },
     description: {
@@ -97,6 +102,36 @@ const lastPainted: Attributes = {
       en: 'Year the surface was last repainted, for painted wood',
     },
     datatype: 'year',
+  },
+  paint_type: choice('Färgtyp', 'Paint type', {
+    linseed_oil: ['Linoljefärg', 'Linseed oil paint'],
+    alkyd_oil: ['Alkydoljefärg', 'Alkyd oil paint'],
+    acrylic: ['Akrylat- eller latexfärg', 'Acrylic or latex paint'],
+    slurry_paint: [
+      'Slamfärg, t.ex. Falu Rödfärg',
+      'Slurry paint, e.g. Falu red',
+    ],
+    stain: ['Lasyr', 'Stain'],
+  }),
+  paint_product: {
+    label: { sv: 'Färgprodukt', en: 'Paint product' },
+    description: {
+      sv: 'Tillverkare och produkt, t.ex. Alcro Bestå Utsikt',
+      en: 'Maker and product, e.g. Alcro Bestå Utsikt',
+    },
+    datatype: 'text',
+  },
+  paint_colour: {
+    label: { sv: 'Kulör', en: 'Colour' },
+    description: {
+      sv: 'Kulörkod eller namn, t.ex. NCS S 0502-Y',
+      en: 'Colour code or name, e.g. NCS S 0502-Y',
+    },
+    datatype: 'text',
+  },
+  painted_by: {
+    label: { sv: 'Målad av', en: 'Painted by' },
+    datatype: 'actor',
   },
 }
 
@@ -200,7 +235,10 @@ export const componentTypes: ComponentTypeDefinition[] = [
     attributeSchema: { ...replaceable, ...inspectedYear, ...length },
     // Metres of foundation perimeter: an 8 x 10 m foundation is 36 m, and a
     // 1.5-storey house has less perimeter per m2 living area than a 1-storey.
-    forecastDefaults: { quantityPerLivingM2: 0.35 },
+    forecastDefaults: {
+      assumeUndocumented: true,
+      quantityPerLivingM2: 0.35,
+    },
   },
   {
     type: 'foundation_waterproofing',
@@ -241,6 +279,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
     // and a pitch of about 27 degrees; about 0.7 for two storeys. Geometry,
     // not a source.
     forecastDefaults: {
+      assumeUndocumented: true,
       quantityPerLivingM2: 1.3,
       profileKeyOrder: ['material', 'sheet_profile'],
     },
@@ -260,11 +299,15 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
       ...area,
       ...modelName,
-      ...lastPainted,
+      ...paint,
     },
     // Wall area less openings for a 1-storey 9 x 15 m house is about 125 m2
     // for 120 m2 living area.
-    forecastDefaults: { quantityPerLivingM2: 1.0 },
+    forecastDefaults: {
+      assumeUndocumented: true,
+      quantityPerLivingM2: 1.0,
+      repaintByPaintType: facadeRepaintByPaintType,
+    },
   },
   {
     type: 'window',
@@ -294,22 +337,36 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
       ...modelName,
       ...orientation,
-      ...lastPainted,
+      ...paint,
     },
     // Windows per m2 living area: glass at least 10 % of floor area (BBR
     // 6:322) with windows of about 1.2 m2 and 75 % glass, about 14 windows
     // for 130 m2.
-    forecastDefaults: { quantityPerLivingM2: 0.11 },
+    forecastDefaults: {
+      assumeUndocumented: true,
+      quantityPerLivingM2: 0.11,
+      repaintByPaintType: joineryRepaintByPaintType,
+    },
   },
   {
     type: 'exterior_door',
     label: { sv: 'Ytterdörr', en: 'Exterior door' },
     category: 'envelope',
     attributeSchema: {
+      material: choice('Material', 'Material', {
+        wood: ['Trä', 'Wood'],
+        steel: ['Stål', 'Steel'],
+        aluminium: ['Aluminium', 'Aluminium'],
+        composite: ['Komposit', 'Composite'],
+      }),
       ...quantity,
       ...replaceable,
       ...modelName,
-      ...lastPainted,
+      ...paint,
+    },
+    forecastDefaults: {
+      assumeUndocumented: true,
+      repaintByPaintType: joineryRepaintByPaintType,
     },
   },
 
@@ -453,6 +510,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
       ...inspectedYear,
     },
+    forecastDefaults: { assumeUndocumented: true },
   },
   {
     type: 'sewer_pipes',
@@ -488,8 +546,37 @@ export const componentTypes: ComponentTypeDefinition[] = [
     },
     // A relined pipe keeps its old material but ages as its liner, and a
     // ground section costs more than an indoor one of the same material.
+    // Old cast-iron, concrete and clay pipes are filmed first, and most can
+    // be relined instead of replaced; a collapsed or badly deformed pipe
+    // cannot, which is the high scenario.
     forecastDefaults: {
+      assumeUndocumented: true,
       profileKeyOrder: ['renovation_method', 'material', 'section'],
+      cheaperRenewal: {
+        when: { material: ['cast_iron', 'concrete', 'clay'] },
+        match: { renovation_method: 'relined' },
+      },
+      inspection: {
+        costLowSek: 3000,
+        costHighSek: 8000,
+        priceYear: 2026,
+        sources: [
+          {
+            name: 'Reliningbolaget, Rörinspektion, vad kostar det? (riktvärden 2026)',
+            url: 'https://reliningbolaget.se/kunskap/rorinspektion-kostnad',
+            costSek: null,
+            costSekRange: [3000, 8000],
+            note: 'Villa: one main drain up to 30 m 3 000-5 000, whole system incl. storm water 5 000-8 000; filmed to see whether relining is enough',
+          },
+          {
+            name: 'Spolbil Direkt, Rörinspektion pris 2026',
+            url: 'https://spolbildirekt.se/vad-kostar-rorinspektion/',
+            costSek: null,
+            costSekRange: [2800, 3200],
+            note: 'From 1 323 kr/h, minimum 2 h; villa example with flushing and camera 2 800-3 200; travel may be added',
+          },
+        ],
+      },
     },
   },
 
@@ -509,7 +596,10 @@ export const componentTypes: ComponentTypeDefinition[] = [
     },
     allowedSubcomponents: ['electrical_panel'],
     // Rewiring is priced per m2 living area.
-    forecastDefaults: { quantityPerLivingM2: 1.0 },
+    forecastDefaults: {
+      assumeUndocumented: true,
+      quantityPerLivingM2: 1.0,
+    },
   },
   {
     type: 'electrical_panel',
@@ -529,6 +619,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
       },
       ...replaceable,
     },
+    forecastDefaults: { assumeUndocumented: true },
   },
 
   // Interior ------------------------------------------------------------------
@@ -537,6 +628,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
     label: { sv: 'Kök', en: 'Kitchen' },
     category: 'interior',
     attributeSchema: { ...replaceable, ...modelName },
+    forecastDefaults: { assumeUndocumented: true },
   },
   {
     type: 'bathroom',
@@ -549,6 +641,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
       wet_room_certified: yesNo('Våtrumsintyg', 'Wet room certificate'),
     },
     allowedSubcomponents: ['underfloor_heating'],
+    forecastDefaults: { assumeUndocumented: true },
   },
   {
     type: 'garage_door',

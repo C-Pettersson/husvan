@@ -59,6 +59,29 @@ export const conditionRuleSchema = z.object({
   '5': z.enum(['min', 'typical', 'max', 'soon']).optional(),
 })
 
+const sourceSchema = z.object({
+  name: z.string().min(1),
+  url: z.url(),
+  // What the figures are about; replacement unless stated.
+  about: z.enum(['replacement', 'repaint']).optional(),
+  lifespanYears: z.number().positive().nullable().optional(),
+  costSek: z.number().nonnegative().nullable().optional(),
+  // When the source gives a range instead of one figure.
+  lifespanYearsRange: z.tuple([z.number(), z.number()]).nullable().optional(),
+  costSekRange: z.tuple([z.number(), z.number()]).nullable().optional(),
+  note: z.string().optional(),
+})
+
+const years = z.number().int().positive()
+
+// A repaint interval, min <= typical <= max years.
+const intervalSchema = z
+  .object({ minYears: years, typicalYears: years, maxYears: years })
+  .refine(
+    (i) => i.minYears <= i.typicalYears && i.typicalYears <= i.maxYears,
+    'intervals must satisfy min <= typical <= max'
+  )
+
 export const forecastDefaultsSchema = z.object({
   // Quantity per m2 living area when the component's own quantity is
   // missing, in the unit of the profile's costUnit.
@@ -67,6 +90,42 @@ export const forecastDefaultsSchema = z.object({
   // Which match keys weigh most when several profiles fit, first wins (see
   // selectProfile). Required when a type's profiles match on different keys.
   profileKeyOrder: z.array(keySchema).optional(),
+  // Repaint interval per paint_type option, used instead of the profile's
+  // when the paint type is known.
+  repaintByPaintType: z
+    .record(
+      keySchema,
+      intervalSchema.and(z.object({ sources: z.array(sourceSchema).min(1) }))
+    )
+    .optional(),
+  // Every house has one: when no component of the type is documented and
+  // absent_features does not name it, the forecast assumes one from the
+  // construction year.
+  assumeUndocumented: z.boolean().optional(),
+  // A cheaper renewal than replacement when the component's attributes are
+  // among `when` or unknown, such as relining a cast-iron pipe. Low and typical renew
+  // with the profile that `match` selects; high replaces.
+  cheaperRenewal: z
+    .object({
+      when: z.record(keySchema, z.array(z.string()).min(1)),
+      match: z.record(keySchema, z.string()),
+    })
+    .optional(),
+  // An inspection that shows whether and how the parts must be renewed,
+  // such as filming the sewer pipes. Once per house, before the first
+  // renewal of a part without an inspected_year.
+  inspection: z
+    .object({
+      costLowSek: z.number().nonnegative(),
+      costHighSek: z.number().nonnegative(),
+      priceYear: z.number().int().min(1990),
+      sources: z.array(sourceSchema).min(1),
+    })
+    .refine(
+      (i) => i.costLowSek <= i.costHighSek,
+      'costLowSek must not exceed costHighSek'
+    )
+    .optional(),
 })
 
 export const componentTypeSchema = z.object({
@@ -80,17 +139,6 @@ export const componentTypeSchema = z.object({
 
 export type ComponentTypeDefinition = z.input<typeof componentTypeSchema>
 
-const sourceSchema = z.object({
-  name: z.string().min(1),
-  url: z.url(),
-  lifespanYears: z.number().positive().nullable().optional(),
-  costSek: z.number().nonnegative().nullable().optional(),
-  // When the source gives a range instead of one figure.
-  lifespanYearsRange: z.tuple([z.number(), z.number()]).nullable().optional(),
-  costSekRange: z.tuple([z.number(), z.number()]).nullable().optional(),
-  note: z.string().optional(),
-})
-
 export const lifespanProfileSchema = z
   .object({
     type: keySchema,
@@ -102,6 +150,12 @@ export const lifespanProfileSchema = z
     costHighSek: z.number().nonnegative().nullable(),
     costUnit: z.enum(['EACH', 'M2', 'LINEAR_M', 'HOUSE']),
     priceYear: z.number().int().min(1990).nullable(),
+    // Recurring repainting, in the same costUnit and priceYear.
+    repaintMinYears: years.nullable().default(null),
+    repaintTypicalYears: years.nullable().default(null),
+    repaintMaxYears: years.nullable().default(null),
+    repaintCostLowSek: z.number().nonnegative().nullable().default(null),
+    repaintCostHighSek: z.number().nonnegative().nullable().default(null),
     sources: z.array(sourceSchema).min(1),
   })
   .refine(
@@ -122,6 +176,23 @@ export const lifespanProfileSchema = z
       (p.costLowSek === null && p.costHighSek === null) || p.priceYear !== null,
     'a profile with costs needs a priceYear'
   )
+  .refine((p) => {
+    const interval = [
+      p.repaintMinYears,
+      p.repaintTypicalYears,
+      p.repaintMaxYears,
+    ]
+    const costs = [p.repaintCostLowSek, p.repaintCostHighSek]
+    if (interval.every((v) => v === null)) return costs.every((v) => v === null)
+    return (
+      interval.every((v) => v !== null) &&
+      p.repaintMinYears! <= p.repaintTypicalYears! &&
+      p.repaintTypicalYears! <= p.repaintMaxYears! &&
+      costs.every((v) => v !== null) &&
+      p.repaintCostLowSek! <= p.repaintCostHighSek! &&
+      p.priceYear !== null
+    )
+  }, 'repainting needs all of min <= typical <= max years, low <= high cost and a priceYear, or none of them')
 
 export type LifespanProfileDefinition = z.input<typeof lifespanProfileSchema>
 
@@ -158,6 +229,41 @@ export function validateLibrary(
         )
       }
     }
+  }
+
+  // Paint types with their own repaint interval must be options of the
+  // type's paint_type.
+  for (const t of types) {
+    const paintTypes = Object.keys(t.forecastDefaults?.repaintByPaintType ?? {})
+    if (!paintTypes.length) continue
+    const attr = t.attributeSchema.paint_type
+    for (const paintType of paintTypes) {
+      if (attr?.datatype !== 'choice' || !(paintType in attr.options))
+        errors.push(
+          `${t.type}: repaint interval for unknown paint_type ${paintType}`
+        )
+    }
+  }
+
+  // A cheaper renewal must name choice options and select a profile.
+  for (const t of types) {
+    const renewal = t.forecastDefaults?.cheaperRenewal
+    if (!renewal) continue
+    for (const [key, values] of [
+      ...Object.entries(renewal.when),
+      ...Object.entries(renewal.match).map(([k, v]) => [k, [v]] as const),
+    ]) {
+      const attr = t.attributeSchema[key]
+      for (const value of values)
+        if (attr?.datatype !== 'choice' || !(value in attr.options))
+          errors.push(
+            `${t.type}: cheaperRenewal names ${key}=${value}, not a choice option`
+          )
+    }
+    const matches = (p: LifespanProfileDefinition) =>
+      Object.entries(renewal.match).every(([k, v]) => p.match?.[k] === v)
+    if (!profiles.some((p) => p.type === t.type && matches(p)))
+      errors.push(`${t.type}: no profile matches cheaperRenewal`)
   }
 
   // Profiles matching on different keys can both fit one component, e.g.

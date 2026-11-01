@@ -81,6 +81,12 @@ export const componentValuesInput = z.object({
 })
 
 export const workItemInput = z.object({
+  replaces: z
+    .uuid()
+    .optional()
+    .describe(
+      'Id of an existing work item this one restates, e.g. with a cost estimate or better years. The old one stays as history and is no longer counted. Restate the description, kind and years; the component is taken from the old item unless given.'
+    ),
   component: z
     .string()
     .optional()
@@ -139,12 +145,18 @@ export type LibraryType = {
 
 // What a draft may point at. components holds the house's current
 // components (approved, or in the draft being added to), id to type;
-// replaced holds those another visible component has replaced.
+// replaced holds those another visible component has replaced. workItems
+// and replacedWorkItems do the same for work items, id to component id.
+// pendingReplacements holds components and work items another open draft
+// replaces, id to that draft, so approving both cannot count one twice.
 export type ChangeContext = {
   types: Map<string, LibraryType>
   components: Map<string, string>
   replaced: Set<string>
   documents: Set<string>
+  workItems: Map<string, string | null>
+  replacedWorkItems: Set<string>
+  pendingReplacements: Map<string, string>
 }
 
 export type Problems = { errors: string[]; warnings: string[] }
@@ -250,8 +262,21 @@ export function validateChanges(
     if (type) checkValues(c.values, path, type)
   })
 
+  const restating = new Set<string>()
   input.workItems.forEach((w, i) => {
     const path = `workItems[${i}]`
+    if (w.replaces) {
+      const at = `${path}.replaces`
+      if (ctx.replacedWorkItems.has(w.replaces))
+        errors.push(`${at}: work item ${w.replaces} has been replaced`)
+      else if (!ctx.workItems.has(w.replaces))
+        errors.push(
+          `${at}: no work item ${w.replaces} in this house; use get_house`
+        )
+      if (restating.has(w.replaces))
+        errors.push(`${at}: ${w.replaces} is replaced twice`)
+      restating.add(w.replaces)
+    }
     if (w.component) resolve(w.component, `${path}.component`)
     if (w.documentId && !ctx.documents.has(w.documentId))
       errors.push(`${path}: no document ${w.documentId} saved for this house`)
@@ -264,6 +289,14 @@ export function validateChanges(
     )
       errors.push(`${path}: costLowSek exceeds costHighSek`)
   })
+
+  for (const id of [...replacing, ...restating]) {
+    const draft = ctx.pendingReplacements.get(id)
+    if (draft)
+      errors.push(
+        `${id} is already replaced in open draft ${draft}; add to that draft with draftId, or let the user decide it first`
+      )
+  }
 
   const empty =
     !input.houseValues.length &&
