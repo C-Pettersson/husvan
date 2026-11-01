@@ -34,7 +34,7 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | Autentisering | **Better Auth** med pluginen `mcp` (OAuth 2.1-auktoriseringsserver i samma app), `cimd` och `jwt`. Ersätter NextAuth, som inte kan agera auktoriseringsserver. Inloggning med e-post och lösenord, registrering avstängd, en användare seedas. |
 | Test | Vitest. |
 | Drift | k3s på användarens VPS, styrt från `C:\projects\infra-gitops` med Argo CD, Kustomize, KSOPS och Kargo. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. Se "Leverans och drift". |
-| Lokal körning | `docker compose up -d postgres` och `yarn dev`, som i brfjamforelse. Compose innehåller Postgres och en valfri app-image för att testa containern; det är inte produktionsmiljön. |
+| Lokal körning | `docker compose up -d postgres` och `yarn dev`, som i brfjamforelse. Postgres 16 lyssnar på `localhost:5433` (5432 används av andra projekt); kopiera `.env.example` till `.env`. Compose får senare en valfri app-image för att testa containern; det är inte produktionsmiljön. |
 
 Skillnader mot brfjamforelse: ingen organisationsmodell, inga kvoter, ingen egen AI-anropning, ingen publik yta utöver startsidan. Det som inte behövs byggs inte.
 
