@@ -9,12 +9,17 @@ import {
 } from '@/server/houses/assumptions'
 import { pickPrice, risks, valueOf } from '@/server/houses/derive'
 import { getHouse } from '@/server/houses/getHouse'
-import { forecastDefaultsSchema } from '@/server/library/schema'
+import {
+  attributeSchemaMap,
+  forecastDefaultsSchema,
+  type AttributeDefinition,
+} from '@/server/library/schema'
 import { annualCost } from './annual'
 import { maintenanceDebt } from './debt'
 import { flag, type Flag } from './flags'
 import { computeForecast, workItemCost } from './forecast'
 import { planComponents, type Library, type ProfileRow } from './plan'
+import { openQuestions } from './questions'
 import { runningCosts } from './running'
 
 const BKI = 'bki_small_houses'
@@ -27,10 +32,15 @@ const num = (d: { toString(): string } | null) =>
 export async function loadLibrary(
   prisma: PrismaClient,
   startYear: number
-): Promise<Library & { indexYear: number }> {
+): Promise<
+  Library & {
+    indexYear: number
+    attributes: Map<string, Record<string, AttributeDefinition>>
+  }
+> {
   const [types, profiles, index] = await Promise.all([
     prisma.componentType.findMany({
-      select: { type: true, forecastDefaults: true },
+      select: { type: true, forecastDefaults: true, attributeSchema: true },
     }),
     prisma.lifespanProfile.findMany(),
     prisma.priceIndex.findMany({ where: { series: BKI } }),
@@ -51,6 +61,12 @@ export async function loadLibrary(
 
   return {
     indexYear,
+    attributes: new Map(
+      types.map((t) => [
+        t.type,
+        attributeSchemaMap.safeParse(t.attributeSchema).data ?? {},
+      ])
+    ),
     defaults: new Map(
       types.map((t) => [
         t.type,
@@ -215,16 +231,16 @@ export async function analyseHouse(
     prices,
     num(municipality?.fgeo ?? null)
   )
-  const forecast = computeForecast({
+  const forecastInput = {
     startYear,
     horizonYears: a.horizon_years,
-    plans,
     workItems,
     running: running.lines,
     trend,
     capital,
-    inspected: view.documents.some((d) => d.type === 'INSPECTION'),
-  })
+    inspected,
+  }
+  const forecast = computeForecast({ ...forecastInput, plans })
   const debt = maintenanceDebt(plans, workItems, startYear)
   const price = pickPrice(view.values)
   const assessed = valueOf(view.values, 'assessed_value_sek')
@@ -273,6 +289,16 @@ export async function analyseHouse(
     },
     flags: [...flags, ...running.flags],
     indexYear: library.indexYear,
+    // What the analysis does not know yet and how much each answer could
+    // move it. Worked out on demand, since it reruns the house per answer.
+    openQuestions: () =>
+      openQuestions({
+        components: view.components,
+        houseValues: view.values,
+        library,
+        attributes: library.attributes,
+        forecast: forecastInput,
+      }),
   }
 }
 

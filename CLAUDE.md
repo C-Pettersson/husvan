@@ -156,6 +156,8 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 | `save_document` | `APPROVED` direkt. | Ett dokument är bevis, inte ett påstående om huset. Servern tolkar det inte. |
 | `set_assumption` | `APPROVED` direkt. | Användarens eget val, uttalat i chatten. |
 | `propose_changes`, `add_work_item` | `DRAFT` tills `confirm_changes`. | Påståenden om huset som Claude läst ut. |
+| `answer_questions` | `DRAFT` tills `confirm_changes`. | Svaren går genom Claude, som kan ha missförstått dem. |
+| Svar på en öppen fråga på webben | `APPROVED` direkt med källa `USER`. | Användaren svarar själv. |
 | Rättning på webbsidan | `APPROVED` direkt med källa `USER`. | Användaren gör ändringen själv. Se "Webben". |
 
 `confirm_changes` tar `approve` eller `reject`. Avslagna rader finns kvar men syns aldrig. Utkast valideras mot typbiblioteket redan vid `propose_changes`, så att Claude får felet medan den har dokumentet framför sig.
@@ -323,15 +325,17 @@ Varje värde visas bredvid kommunens och rikets, med år och nivå. Ett kommunv�
 | `add_work_item` | Åtgärd från besiktningen eller eget val | Skriver utkast |
 | `set_assumption` | Horisont, startår, ränta, energipriser, drifttrend | Skriver |
 | `forecast` | Kostnad per år och post för ett hus | Läser |
+| `open_questions` | Det analysen inte vet än om ett hus och hur mycket varje svar kan flytta underhållsskulden och prognosen, med snabbval och fritt värde per fråga: underlaget för en checklista inför visning | Läser |
+| `answer_questions` | Användarens svar på öppna frågor, per fråge-id, som ett utkast | Skriver utkast |
 | `compare` | Flera hus sida vid sida: pris, underhållsskuld och underhållsjusterat pris, prisskillnaden förklarad per komponent, därefter de största skillnaderna, egenskaper och området | Läser |
 
 Verktygens beskrivningar och svar till Claude är på engelska. Claude svarar ändå användaren på svenska.
 
 Läsverktygen ligger i `src/server/mcp/readTools.ts` och läser genom samma kod som webben: `getHouse` (med `asOf` för huset ett visst datum), regeln för aktuellt värde i `currentValue.ts` och det som härleds vid läsning i `derive.ts` (pris, egenskaper ja/nej/okänt, uppvärmning, antal badrum, riskkonstruktioner, äldre elsystem och radon över referensnivån). Nycklarna på huset finns för Claude i `src/server/library/houseKeys.ts` och returneras av `type_library` tillsammans med komponenttyperna. Verktyget `whoami` från milstolpe 0 är borttaget.
 
-`forecast` och `compare` ligger i `src/server/mcp/forecastTools.ts`; jämförelsen räknas i `compareHouses` (`src/server/forecast/compare.ts`), som webben också använder. `forecast` sparar varje prognos i `Forecast` och returnerar den förra som `previous`, så att Claude kan säga hur bedömningen ändrats. Engångsantaganden (`overrides`) sparas inte som antaganden och märks `this_forecast`. `compare` sorterar husen efter underhållsjusterat pris och förklarar skillnaden mot det första; ett hus utan kända driftkostnader har `runningCostsKnown: false` och `null` för driften i `largestForecastDifferences`. `list_houses` visar underhållsskuld och underhållsjusterat pris (typiskt värde).
+`forecast`, `open_questions` och `compare` ligger i `src/server/mcp/forecastTools.ts`; jämförelsen räknas i `compareHouses` (`src/server/forecast/compare.ts`), som webben också använder. `forecast` sparar varje prognos i `Forecast` och returnerar den förra som `previous`, så att Claude kan säga hur bedömningen ändrats. Engångsantaganden (`overrides`) sparas inte som antaganden och märks `this_forecast`. `compare` sorterar husen efter underhållsjusterat pris och förklarar skillnaden mot det första; ett hus utan kända driftkostnader har `runningCostsKnown: false` och `null` för driften i `largestForecastDifferences`. `list_houses` visar underhållsskuld och underhållsjusterat pris (typiskt värde).
 
-Skrivverktygen ligger i `src/server/mcp/writeTools.ts` och skriver genom `createHouse`, `saveDocument`, `proposeChanges` (som även `add_work_item` använder), `confirmChangeset` och `setAssumptions` i `src/server/houses/`. Ett utkast returneras med `draftId` och `reviewUrl` (husets sida med `?draft=`), och `get_house` med `draftId` visar utkastets rader märkta `draft: true`, så att Claude kan berätta vad ett godkännande lägger till innan användaren bestämmer sig.
+Skrivverktygen ligger i `src/server/mcp/writeTools.ts` och skriver genom `createHouse`, `saveDocument`, `proposeChanges` (som även `add_work_item` använder), `answerQuestions` (för `answer_questions`), `confirmChangeset` och `setAssumptions` i `src/server/houses/`. Ett utkast returneras med `draftId` och `reviewUrl` (husets sida med `?draft=`), och `get_house` med `draftId` visar utkastets rader märkta `draft: true`, så att Claude kan berätta vad ett godkännande lägger till innan användaren bestämmer sig.
 
 Ett anrop i protokollet 2026-07-28 kräver headrarna `Mcp-Protocol-Version`, `Mcp-Method` (och `Mcp-Name` för `tools/call`) och `params._meta` med `io.modelcontextprotocol/protocolVersion` och `io.modelcontextprotocol/clientCapabilities`. Det behövs för att anropa routen för hand.
 
@@ -345,7 +349,7 @@ Webben läser genom samma kod som MCP-verktygen (`getHouse`, `analyseHouse`, `co
 | --- | --- |
 | `/` | Den publika startsidan: vad Husvan räknar och hur det används. |
 | `/houses` | Husen med pris, underhållsskuld och underhållsjusterat pris med spann. Filter på egenskaper döljer bara hus där svaret är nej och visar hus med okänt svar för sig. 2–6 hus markeras för jämförelse. |
-| `/houses/[id]` | Kostnaden (nyckeltal med spann, vad summan saknar eller gissar, kostnad per år som diagram och tabell, eller fördelad över livslängden, underhållsskuld per del, prognosens poster med flaggor), egenskaper och risker, värden, komponenter, åtgärder, dokument, området och antagandena. `?draft=` visar ett utkast på plats. |
+| `/houses/[id]` | Flikar som stannar överst när man skrollar, en i taget (`?tab=`): **Kostnad** (nyckeltal med spann, vad summan saknar eller gissar, kostnad per år som diagram och tabell, eller fördelad över livslängden, underhållsskuld per del, prognosens poster med flaggor, och antagandena), **Inför visningen** (`viewing`, checklistan), **Huset** (`house`: egenskaper och risker, värden, komponenter, åtgärder), **Dokument** och **Området**. Utan `?tab=` öppnas Kostnad, eller Huset när `?draft=` visar ett utkast på plats. |
 | `/compare?ids=` | Husen sida vid sida som `compare`: nyckeltal, skillnaden mot det första per del, fel från besiktningen med okänt för obesiktigade hus, största skillnaderna i prognosen, egenskaper, risker och området. |
 
 **Rättningar** (`src/server/houses/correct.ts`) är godkända direkt med källa `USER` och valideras som ett utkast, så att webben inte kan spara det MCP skulle vägra:
@@ -356,7 +360,7 @@ Webben läser genom samma kod som MCP-verktygen (`getHouse`, `analyseHouse`, `co
 - **Huset.** Status, adress, fastighetsbeteckning och kommun ändras på plats, med samma kontroll mot dubbletter som `create_house` (`isSameHouse`).
 - **Antaganden.** Som `set_assumption`, för huset eller alla hus.
 
-Nya komponenter skapas inte på webben i version 1; det gör Claude med `propose_changes`.
+Nya komponenter skapas inte på webben i version 1; det gör Claude med `propose_changes`. Undantaget är svaret på en öppen fråga om en del som underlaget inte nämner, som lägger till delen med svaret som enda värde.
 
 **Originalfiler** laddas upp till `POST /api/houses/[id]/documents` (`uploadDocument` i `src/server/houses/uploadDocument.ts`) och visas via `GET /api/documents/[id]/file`. PDF, JPEG, PNG, WebP, HEIC och text, högst 25 MB. Filen kopplas till dokumentet med samma `sha256`, annars till dokumentet användaren valt (vägras om Claude angett en annan hash eller om dokumentet redan har en fil), annars blir den ett nytt dokument med källa `USER`. Samma fil igen gör ingenting. Objektnyckeln är `<STORAGE_PREFIX>houses/<husets id>/<sha256><filändelse>`. Servern läser inte filen; användaren ber Claude tolka den. Signeringen mot R2 (`src/server/storage/s3.ts`) är Signature V4 för hand, testad mot AWS:s exempel.
 
@@ -421,6 +425,43 @@ Prognosen visar när pengarna går ut. Ett badrum för 200 000 kr som byts år 2
 - **Per månad** = (slitage + drift + ränta) / 12. Driften är prognosens första år utan trend.
 - **Åtgärder ingår inte.** De är eftersatt underhåll och räknas i underhållsskulden. Underhållsjusterat pris och fördelad kostnad hör ihop: skulden är det som redan är förbrukat när huset köps, den fördelade kostnaden det som förbrukas därefter.
 - Antagna delar ingår, delar utan kostnad inte. Svaren har `annualCost` (`forecast` och `compare`) och `annualCostByPart` (`forecast`).
+
+### Öppna frågor
+
+Inför en visning vill användaren veta vilka få saker som gör bedömningen mycket säkrare: när taket lades om, vilket skick badrummet har, om elcentralen har jordfelsbrytare. Servern räknar ut vad varje svar kan betyda; Claude väljer vilka frågor som går att få svar på vid visningen och skriver listan. Det följer "Ge underlag, inte slutsatser": servern sorterar efter ett belopp den har räknat fram, men avgör inte vad som är viktigt.
+
+`openQuestions` (`src/server/forecast/questions.ts`) räknar om huset en gång per tänkbart svar, en uppgift i taget, med resten av huset som det är. För varje svar ger den underhållsskulden och prognosens summa i typiskt scenario, och `swing` är största minus minsta. Ett svar räknas som användarens eget värde med säkerhet 1. Frågorna:
+
+| Uppgift | Frågas när | Svar som prövas |
+| --- | --- | --- |
+| Val och ja/nej i typens `attributeSchema` (material, `paint_type`, `foundation_type`, `rcd` …) | Värdet saknas eller har `confidence` under 0,7 | Alla val, eller ja och nej |
+| `installation_year` på en del med profil | Som ovan | Husets byggår (annars startåret minus `lifespanMaxYears`), halva typiska livslängden sedan, startåret |
+| `condition` | Som ovan | 2–5. Skick 1, byte inom två år, är ett fel som besiktningen anger som åtgärd; prövat skulle det få varje del att se trasig ut. Det går ändå att svara med. |
+| `last_painted_year` på en del som målas om | Som ovan | Installationsåret, halva typiska intervallet sedan, startåret |
+| `floor_count` på huset | Som ovan | 1, 1,5 och 2 |
+
+En fråga som inget svar flyttar tas bort, utom när svaret avgör en flaggad risk (`decides`): `foundation_type` och variantens attribut på grunden, `wiring` och `rcd`. Delar som underlaget inte nämner frågas också om, med id `assumed:<typ>` och `documented: false`: de antagna delarna, och typer som andra delar läser som kontext (grunden, som prissätter dräneringen). Svaret prövas som en antagen del med det enda värdet, så att inget annat ändras.
+
+Det som inte går att pröva listas med `swing: null` efter de andra: `radon_bq_m3` som saknas, om inte `radon_measured` är `false` (avgör radon), `construction_year` och `living_area` som saknas, ett antal (`quantity`) som är uppskattat eller en mängd som saknas helt, kända driftkostnader som saknas och åtgärder utan kostnad. En yta eller längd uppskattad ur boytan frågas inte om, eftersom ingen mäter ett tak vid en visning. En driftkostnad som räknats fram ur energin, eller som är osäker, får sitt spann över horisonten som `swing`, och frågan gäller den faktiska kostnaden.
+
+Ordningen är efter den största av de två summorna, sedan riskerna, sedan resten. Ett hus utan besiktningsprotokoll har `inspected: false`; ingen fråga ersätter en besiktning. En besvarad fråga försvinner, eftersom listan räknas fram vid läsning och inget sparas.
+
+#### Hur en fråga besvaras
+
+Vid en visning har man telefonen i handen och några minuter per rum. Varje fråga bär därför sitt eget formulär, så att webben och en artifact som Claude bygger frågar likadant:
+
+- **`id`** är `<komponentens id eller house>:<nyckel>`, eller `work_item:<id>` för en åtgärds kostnad. Det gäller så länge frågan är öppen.
+- **`how`** är `look` (syns i huset: skick, material, elcentralen, grunden, antal) eller `ask` (frågas mäklaren eller säljaren: årtal, mätningar, kostnader). Det är en standard; Claude får bedöma annorlunda.
+- **`options`** är snabbval med värde, säkerhet, en engelsk etikett för Claude och en `meaning` som webben översätter. Val och ja/nej har säkerhet 0,9 (sett), skick 0,8 (bedömt med ögat). Ett årtal erbjuds som originaldelen (byggåret) och som spann bakåt: 0–5, 5–15 och 15–30 år sedan, för målning 0–3, 3–8 och 8–15. Spannet sparas som mittåret med säkerhet 0,7, som är gränsen för osäkert: svaret avgör frågan men räknas som ungefärligt. "Inte mätt" för radon sparas som `radon_measured: false`.
+- **`manual`** säger vad som får skrivas in i stället (år, tal med enhet, kronor för en åtgärd), eller `null` när bara snabbvalen gäller.
+
+**Svaren** går genom `answerQuestions` (`src/server/houses/answerQuestions.ts`), som räknar fram frågorna igen och bara tar emot svar på öppna frågor, med ett av snabbvalen eller ett värde när `manual` tillåter det. Svaret hamnar där frågan pekar: ett värde på huset eller en del, en ny komponent för en del med `documented: false` (alla svar om den på samma komponent), eller en åtgärd som ersätts av en med kostnaden. Säkerheten är snabbvalets, eller 1 för ett inskrivet värde, om inte anroparen anger en annan. Allt valideras som ett utkast; vid minsta fel skrivs inget. Från MCP (`answer_questions`) blir svaren ett utkast med källa `CLAUDE`, från webben godkända värden med källa `USER`.
+
+**Webben** visar frågorna som en checklista i fält, med Field Maps och Survey123 som förebild: flikarna "Titta efter" och "Fråga mäklaren", en kort rad per fråga med delen först, frågan under och beloppet till höger, och en rad i taget utfälld med snabbvalen som stora knappar och ett fält för annat värde. Ett svar sparas direkt och nästa rad fälls ut. "Vet inte" lägger frågan åt sidan i den här webbläsaren (`localStorage`), så att den inte är i vägen under visningen men finns kvar. De sex första raderna visas; resten ligger bakom "Visa fler".
+
+**Ångra.** Efter varje svar visas "Sparat" med Ångra, och listan Besvarade har Ångra på varje svar; listan sparas i `localStorage`, så att den finns kvar efter en omladdning. Ett svar från webben får ändringsset med `comment` "Answer to an open question", och att ångra det (`undoAnswer`) sätter ändringssetet till `REJECTED` i efterhand. Det tar med allt svaret lade till, även en ny komponent, som `retractedAt` inte kan, eftersom komponenter inte återkallas. Bara användarens egna svar kan ångras, och inte ett som en senare ändring bygger på, till exempel ett andra svar om delen som det första lade till; då ångras det senare först. Ett ångrat svar finns kvar i tabellerna men syns aldrig, som ett avslaget utkast. Andra värden tas bort som förut, med `retractedAt` på fliken Huset.
+
+**En artifact** är tänkt som det vanliga sättet: Claude bygger checklistan ur `open_questions` för telefonen, användaren svarar under visningen och skickar svaren tillbaka i chatten, och Claude sparar dem med `answer_questions` och visar utkastet för godkännande.
 
 ### Hur prognosen är byggd
 

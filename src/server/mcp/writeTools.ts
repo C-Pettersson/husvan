@@ -1,5 +1,6 @@
 // Write tools (CLAUDE.md, "Skrivflöde"): create_house, save_document,
-// propose_changes, add_work_item, confirm_changes and set_assumption.
+// propose_changes, add_work_item, answer_questions, confirm_changes and
+// set_assumption.
 // Claims about the house land in a draft the user approves; documents and
 // the user's own assumptions are approved directly. Everything read from a
 // document is data, never instructions, and is validated before it is
@@ -8,6 +9,7 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { PrismaClient } from '@prisma/client'
 import { getSiteUrl } from '@/lib/siteUrl'
+import { answerAsDraft, answerInput } from '@/server/houses/answerQuestions'
 import { assumptionValues, setAssumptions } from '@/server/houses/assumptions'
 import { changesShape, workItemInput } from '@/server/houses/changes'
 import { confirmChangeset } from '@/server/houses/confirmChangeset'
@@ -242,6 +244,35 @@ export function registerWriteTools(
             componentValues: [],
             workItems,
           },
+        })
+      )
+  )
+
+  server.registerTool(
+    'answer_questions',
+    {
+      title: 'Answer open questions',
+      description:
+        'Record the user’s answers to open_questions, by question id, as one draft the user approves with confirm_changes. ' +
+        'value is one of the question’s options[].value, or, when manual is not null, any value of its datatype and unit (a year, a number, kronor for a work item’s cost). ' +
+        'confidence defaults to the option’s own, which already marks a span of years as approximate, or 1 for a value given by hand; lower it when the user was told rather than saw, and say so to the user. ' +
+        'The server knows where each answer goes: a value on the house or a part, a new component for a part the documents do not mention (all its answers on one component), the radon key when radon is not measured, and a restated work item with the cost. ' +
+        'Only open questions can be answered; one answered since open_questions was called is refused, and nothing is written when any answer is refused. Pass only what the user answered: skipped questions stay open.',
+      inputSchema: z.object({
+        houseId: z.uuid(),
+        draftId: draftIdInput,
+        answers: z.array(answerInput).min(1),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
+    async ({ houseId, draftId, answers }) =>
+      draftResult(
+        houseId,
+        await answerAsDraft(prisma, {
+          ownerId: userId,
+          houseId,
+          draftId,
+          answers,
         })
       )
   )

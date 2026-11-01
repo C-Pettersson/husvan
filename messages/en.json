@@ -186,7 +186,15 @@
     "rejectBody": "The rows are kept but never shown. Claude can propose a new draft.",
     "cancel": "Cancel",
     "decisionFailed": "The decision could not be saved. Reload the page and try again.",
-    "notFound": "The house does not exist."
+    "notFound": "The house does not exist.",
+    "tabsLabel": "Parts of the page",
+    "tab": {
+      "cost": "Cost",
+      "viewing": "Before the viewing",
+      "house": "The house",
+      "documents": "Documents",
+      "area": "The area"
+    }
   },
   "source": {
     "user": "You",
@@ -293,6 +301,111 @@
       "paid": "When it is paid",
       "spread": "Spread over the lifespan"
     }
+  },
+  "questions": {
+    "title": {
+      "installation_year": "When was it replaced or installed?",
+      "condition": "What condition is it in?",
+      "last_painted_year": "When was it last painted?",
+      "quantity": "How many are there?",
+      "area": "How large is the area?",
+      "length": "How long is it?",
+      "floor_count": "How many floors does the house have?",
+      "radon_bq_m3": "Has radon been measured, and at what level?",
+      "construction_year": "What year was the house built?",
+      "living_area": "How large is the living area?",
+      "heating_cost_sek_per_year": "What does heating cost per year?",
+      "operating_cost_sek_per_year": "What is the running cost per year?",
+      "household_electricity_cost_sek_per_year": "What does household electricity cost per year?",
+      "water_sewage_cost_sek_per_year": "What do water and sewage cost per year?",
+      "insurance_cost_sek_per_year": "What does the insurance cost per year?",
+      "material": "What material is it?",
+      "frame_material": "What are the frames made of?",
+      "paint_type": "What kind of paint is it painted with?",
+      "cost": "Roughly what does the work cost?",
+      "foundation": {
+        "foundation_type": "What foundation does the house have?",
+        "slab_insulation": "Where is the slab insulated?",
+        "crawl_space_ventilation": "How is the crawl space ventilated?",
+        "basement_wall_insulation": "Are the basement walls insulated outside or inside?"
+      },
+      "electrical_installation": {
+        "wiring": "What wiring is there?"
+      },
+      "electrical_panel": {
+        "rcd": "Is there a residual current device?",
+        "panel_type": "Fuses or circuit breakers?"
+      },
+      "other": "{label}?"
+    },
+    "intro": "Answer what you can at the viewing. Each answer counts at once. The amount is how much the answer can change the estimate; largest first.",
+    "notInspected": "The house has no inspection protocol, so its defects are unknown. No question here replaces an inspection.",
+    "progress": "{answered} of {total} answered",
+    "howLabel": "How the question is answered",
+    "look": "Look for ({count})",
+    "ask": "Ask the agent ({count})",
+    "lookHelp": "What you can see yourself as you walk through the house.",
+    "askHelp": "What the agent or seller usually knows: years, measurements and costs.",
+    "none": "No open questions here.",
+    "more": "Show {count} more",
+    "fewer": "Show fewer",
+    "answeredTitle": "Answered",
+    "skippedTitle": "Don't know",
+    "restore": "Bring back",
+    "house": "The house",
+    "workItem": "Work item without a cost",
+    "status": {
+      "missing": "Not in the documents.",
+      "uncertain": "The documents say {value}, but it is uncertain.",
+      "estimated": "Estimated; the actual cost is missing.",
+      "counted": "The number is estimated from the living area.",
+      "noCost": "The cost is missing and counts as zero.",
+      "conditionAssumed": "Unknown. The estimate assumes normal wear.",
+      "installedAssumed": "Unknown. The estimate assumes it is from {year}.",
+      "paintedAssumed": "Unknown. The estimate assumes it was painted in {year}.",
+      "notDocumented": "The documents do not mention the part; your answer adds it."
+    },
+    "hint": {
+      "electrical_panel": {
+        "rcd": "Look in the fuse box for a switch with a test button, often marked T.",
+        "panel_type": "Screw-in fuses or circuit breakers with switches?"
+      },
+      "electrical_installation": {
+        "wiring": "Grounded sockets have earth clips. Cloth-covered cords and ungrounded sockets in dry rooms suggest older wiring."
+      },
+      "foundation": {
+        "foundation_type": "Basement, crawl space with a hatch, slab on the ground or plinths?"
+      },
+      "quantity": "Count them as you walk through."
+    },
+    "impact": "{sek}",
+    "impactDebt": "The answer can change the maintenance debt by up to {sek}.",
+    "impactForecast": "The cost over the next {years} years can change by up to {sek}.",
+    "decides": "Decides: {risk}",
+    "condition": {
+      "5": "As new",
+      "4": "Good",
+      "3": "Normal wear",
+      "2": "Worn",
+      "1": "Needs replacing"
+    },
+    "original": "Original ({year})",
+    "notSince": "Not since {year}",
+    "lastYears": "Last {to} years",
+    "yearsAgo": "{from}–{to} years ago",
+    "notMeasured": "Not measured",
+    "otherYear": "Enter year",
+    "otherValue": "Enter another value",
+    "year": "Year",
+    "value": "Value",
+    "save": "Save",
+    "skip": "Don't know",
+    "failed": "The answer could not be saved.",
+    "loadFailed": "The questions could not be worked out.",
+    "undo": "Undo",
+    "saved": "Saved: {answer}",
+    "undoFailed": "The answer could not be undone.",
+    "undoDependedOn": "A later answer builds on this one. Undo that first."
   },
   "forecastCategory": {
     "running": "Running",

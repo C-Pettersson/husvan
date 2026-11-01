@@ -186,7 +186,15 @@
     "rejectBody": "Raderna sparas men visas aldrig. Claude kan föreslå ett nytt utkast.",
     "cancel": "Avbryt",
     "decisionFailed": "Det gick inte att spara beslutet. Ladda om sidan och försök igen.",
-    "notFound": "Huset finns inte."
+    "notFound": "Huset finns inte.",
+    "tabsLabel": "Delar av sidan",
+    "tab": {
+      "cost": "Kostnad",
+      "viewing": "Inför visningen",
+      "house": "Huset",
+      "documents": "Dokument",
+      "area": "Området"
+    }
   },
   "source": {
     "user": "Du",
@@ -293,6 +301,111 @@
       "paid": "När det betalas",
       "spread": "Fördelat över livslängden"
     }
+  },
+  "questions": {
+    "title": {
+      "installation_year": "När byttes eller installerades den?",
+      "condition": "Vilket skick är den i?",
+      "last_painted_year": "När målades den senast?",
+      "quantity": "Hur många finns det?",
+      "area": "Hur stor yta är det?",
+      "length": "Hur lång är den?",
+      "floor_count": "Hur många våningar har huset?",
+      "radon_bq_m3": "Är radon mätt, och vilken halt?",
+      "construction_year": "Vilket år byggdes huset?",
+      "living_area": "Hur stor är boytan?",
+      "heating_cost_sek_per_year": "Vad kostar uppvärmningen per år?",
+      "operating_cost_sek_per_year": "Vad är driftkostnaden per år?",
+      "household_electricity_cost_sek_per_year": "Vad kostar hushållselen per år?",
+      "water_sewage_cost_sek_per_year": "Vad kostar vatten och avlopp per år?",
+      "insurance_cost_sek_per_year": "Vad kostar försäkringen per år?",
+      "material": "Vilket material är det?",
+      "frame_material": "Vad är karmarna gjorda av?",
+      "paint_type": "Vilken sorts färg är den målad med?",
+      "cost": "Vad kostar åtgärden ungefär?",
+      "foundation": {
+        "foundation_type": "Vilken grund har huset?",
+        "slab_insulation": "Var sitter isoleringen i plattan?",
+        "crawl_space_ventilation": "Hur ventileras krypgrunden?",
+        "basement_wall_insulation": "Är källarväggarna isolerade utvändigt eller invändigt?"
+      },
+      "electrical_installation": {
+        "wiring": "Vilka elledningar finns?"
+      },
+      "electrical_panel": {
+        "rcd": "Finns det jordfelsbrytare?",
+        "panel_type": "Proppar eller automatsäkringar?"
+      },
+      "other": "{label}?"
+    },
+    "intro": "Svara på det du kan under visningen. Varje svar räknas in direkt. Beloppet är hur mycket svaret kan ändra kalkylen; störst först.",
+    "notInspected": "Huset saknar besiktningsprotokoll, så felen är okända. Ingen fråga här ersätter en besiktning.",
+    "progress": "{answered} av {total} besvarade",
+    "howLabel": "Hur frågan besvaras",
+    "look": "Titta efter ({count})",
+    "ask": "Fråga mäklaren ({count})",
+    "lookHelp": "Det du kan se själv när du går runt i huset.",
+    "askHelp": "Det mäklaren eller säljaren brukar veta: årtal, mätningar och kostnader.",
+    "none": "Inga öppna frågor här.",
+    "more": "Visa {count} till",
+    "fewer": "Visa färre",
+    "answeredTitle": "Besvarade",
+    "skippedTitle": "Vet inte",
+    "restore": "Ta tillbaka",
+    "house": "Huset",
+    "workItem": "Åtgärd utan kostnad",
+    "status": {
+      "missing": "Saknas i underlaget.",
+      "uncertain": "Underlaget säger {value}, men det är osäkert.",
+      "estimated": "Uppskattat; den faktiska kostnaden saknas.",
+      "counted": "Antalet är uppskattat ur boytan.",
+      "noCost": "Kostnaden saknas och räknas som noll.",
+      "conditionAssumed": "Okänt. Kalkylen räknar med normalt slitage.",
+      "installedAssumed": "Okänt. Kalkylen räknar med att den är från {year}.",
+      "paintedAssumed": "Okänt. Kalkylen räknar med att den målades {year}.",
+      "notDocumented": "Underlaget nämner inte delen; ditt svar lägger till den."
+    },
+    "hint": {
+      "electrical_panel": {
+        "rcd": "Titta i elcentralen efter en brytare med testknapp, ofta märkt T.",
+        "panel_type": "Skruvade proppar eller automatsäkringar med vippor?"
+      },
+      "electrical_installation": {
+        "wiring": "Jordade uttag har jordbleck. Tygklädda sladdar och ojordade uttag i torra rum tyder på äldre el."
+      },
+      "foundation": {
+        "foundation_type": "Källare, krypgrund med inspektionslucka, platta på mark eller plintar?"
+      },
+      "quantity": "Räkna dem när du går runt."
+    },
+    "impact": "{sek}",
+    "impactDebt": "Svaret kan ändra underhållsskulden med upp till {sek}.",
+    "impactForecast": "Kostnaden de närmaste {years} åren kan ändras med upp till {sek}.",
+    "decides": "Avgör: {risk}",
+    "condition": {
+      "5": "Som nytt",
+      "4": "Gott",
+      "3": "Normalt slitage",
+      "2": "Slitet",
+      "1": "Behöver bytas"
+    },
+    "original": "Original ({year})",
+    "notSince": "Inte sedan {year}",
+    "lastYears": "Senaste {to} åren",
+    "yearsAgo": "{from}–{to} år sedan",
+    "notMeasured": "Inte mätt",
+    "otherYear": "Ange år",
+    "otherValue": "Ange annat värde",
+    "year": "År",
+    "value": "Värde",
+    "save": "Spara",
+    "skip": "Vet inte",
+    "failed": "Svaret gick inte att spara.",
+    "loadFailed": "Frågorna gick inte att räkna fram.",
+    "undo": "Ångra",
+    "saved": "Sparat: {answer}",
+    "undoFailed": "Svaret gick inte att ångra.",
+    "undoDependedOn": "Ett senare svar bygger på det här. Ångra det först."
   },
   "forecastCategory": {
     "running": "Drift",

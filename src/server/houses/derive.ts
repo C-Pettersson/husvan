@@ -108,7 +108,10 @@ export const RADON_REFERENCE_BQ_M3 = 200
 // Foundations whose type and variant are known risk constructions, older
 // electrical systems, and radon measured above the reference level. Flagged,
 // never turned into kronor beyond the replacement cost.
-const RISK_FOUNDATIONS: Record<string, [attribute: string, value: string]> = {
+export const RISK_FOUNDATIONS: Record<
+  string,
+  [attribute: string, value: string]
+> = {
   slab_on_ground: ['slab_insulation', 'above'],
   crawl_space: ['crawl_space_ventilation', 'outdoor_air'],
   basement: ['basement_wall_insulation', 'interior'],

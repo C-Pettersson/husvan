@@ -1,9 +1,11 @@
-// Forecast and comparison tools (CLAUDE.md, "Kostnadsprognos" and
-// "Underhållsskuld och underhållsjusterat pris"). Every forecast is saved,
-// so the user can see how the assessment of a house changes.
+// Forecast, open questions and comparison tools (CLAUDE.md,
+// "Kostnadsprognos", "Underhållsskuld och underhållsjusterat pris" and
+// "Öppna frågor"). Every forecast is saved, so the user can see how the
+// assessment of a house changes.
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { Prisma, PrismaClient } from '@prisma/client'
+import { getSiteUrl } from '@/lib/siteUrl'
 import {
   compareHouses,
   costSummary,
@@ -140,6 +142,42 @@ export function registerForecastTools(
           maintenanceAdjustedPrice: before?.maintenanceAdjustedPrice,
         },
       })
+    }
+  )
+
+  server.registerTool(
+    'open_questions',
+    {
+      title: 'Open questions',
+      description:
+        'What the analysis of one house does not know yet, and how much each answer could move it: the basis for a short, prioritised checklist before a viewing, so that the user can tick off the few things that make the assessment markedly more certain. ' +
+        'Each question is one input the forecast reads that is missing, guessed or uncertain (why), on a part (componentId, type, name) or on the house (type "house"). answers gives the maintenance debt and the forecast total (typical, start-year kronor, the whole house) with each possible answer, the rest of the house as it is now; swing is the largest minus the smallest. One input at a time: the swing of a condition is small while the installation year is unknown, since an old part is used up whatever its condition. usedNow is what the forecast assumes meanwhile, such as the construction year. ' +
+        'documented false means the documents do not mention the part, and componentId is assumed:<type>: the forecast assumes it from the construction year, or reads it as context (the foundation type prices the drainage). ' +
+        'decides names a flagged risk the answer settles (risk construction, older electrical system, radon), which has no kronor but matters for the purchase. swing null means nothing can be computed: a quantity estimated from the living area, a work item without a cost, unknown running costs. A running cost worked out from energy has a swing that is its range over the horizon. ' +
+        'Sorted by the larger of the two swings, then risks, then the rest. inspected false means there is no inspection protocol, so defects are unknown; no question here settles that. ' +
+        'Each question says how it is answered. id is what answer_questions takes. how is look (seen at the house) or ask (asked of the agent or seller), a default you may override. options are quick answers with an English label, a meaning for wording them and a confidence: a span of years ago is stored as its middle year at 0.7, a condition grade at 0.8. manual, when not null, allows any other value of its datatype and unit; null means only the options. ' +
+        'You choose what goes on the list: usually five to ten items the user can see, count or ask about at a viewing (the age of the roof, windows and heating, the fuse box, the foundation, recent renovations, the heating bills), with roughly what each is worth. Leave out what needs a professional unless it is the largest open item. A swing is how far the figure can move, not a saving. ' +
+        'For use at the viewing, an artifact works best: a phone-sized checklist in Swedish, one compact row per question led by the part, the amount at stake on the right, one row open at a time with its options as large buttons, a field for manual, and "Vet inte" to skip; split into look and ask, with progress, and the next row opening after each answer. Give it the question ids and, at the end, the answers as a list the user sends back to you. ' +
+        'Record the answers with answer_questions, which puts each where it belongs; the user can also answer at checklistUrl.',
+      inputSchema: z.object({ houseId: z.uuid() }),
+      annotations: { readOnlyHint: true },
+    },
+    async ({ houseId }) => {
+      const a = await analyseHouse(prisma, { ownerId: userId, houseId })
+      if (!a) return toolError(`No house with id ${houseId}.`)
+      const open = a.openQuestions()
+      return result(
+        rounded({
+          house: { id: a.view.id, address: a.view.address },
+          // The same checklist on the web, for answering by hand.
+          checklistUrl: `${getSiteUrl()}/houses/${a.view.id}?tab=viewing`,
+          startYear: a.forecast.startYear,
+          horizonYears: a.forecast.horizonYears,
+          now: open.now,
+          inspected: open.inspected,
+          questions: open.questions,
+        }) as Record<string, unknown>
+      )
     }
   )
 

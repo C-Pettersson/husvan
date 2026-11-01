@@ -10,11 +10,16 @@ import {
 } from '@/server/forecast/compare'
 import { analyseHouse, type Analysis } from '@/server/forecast/run'
 import { areaStatistics, houseAreas } from '@/server/houses/area'
+import {
+  answerAsUser,
+  answerInput,
+  undoAnswer,
+} from '@/server/houses/answerQuestions'
 import { assumptionShape, setAssumptions } from '@/server/houses/assumptions'
 import { valueInput, workItemInput } from '@/server/houses/changes'
 import { confirmChangeset } from '@/server/houses/confirmChangeset'
 import { correct, retract, updateCore } from '@/server/houses/correct'
-import { bathroomCount, heating } from '@/server/houses/derive'
+import { bathroomCount, heating, valueOf } from '@/server/houses/derive'
 import { getHouse, type Label } from '@/server/houses/getHouse'
 import type { AttributeDefinition } from '@/server/library/schema'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
@@ -116,6 +121,50 @@ export const houseRouter = createTRPCRouter({
         // Labels for every type, since assumed parts are not in the house.
         types: await typeLabels(ctx.prisma),
       }
+    }),
+
+  // What the analysis does not know yet and how much each answer could
+  // move it, as the open_questions tool gives it.
+  questions: protectedProcedure
+    .input(z.object({ id: z.uuid() }))
+    .query(async ({ ctx, input }) => {
+      const a = await analyseHouse(ctx.prisma, {
+        ownerId: ctx.user.id,
+        houseId: input.id,
+      })
+      if (!a) throw notFound()
+      return {
+        ...a.openQuestions(),
+        horizonYears: a.forecast.horizonYears,
+        constructionYear: valueOf(a.view.values, 'construction_year') ?? null,
+        types: await typeLabels(ctx.prisma),
+      }
+    }),
+
+  // One answer the user gives to an open question, approved at once.
+  answerQuestion: protectedProcedure
+    .input(z.object({ houseId: z.uuid(), answer: answerInput }))
+    .mutation(async ({ ctx, input }) => {
+      const r = await answerAsUser(ctx.prisma, {
+        ownerId: ctx.user.id,
+        houseId: input.houseId,
+        answers: [input.answer],
+      })
+      if (!r.ok) throw refused(r.errors)
+      return r
+    }),
+
+  // Takes back an answer the user gave on the web.
+  undoAnswer: protectedProcedure
+    .input(z.object({ houseId: z.uuid(), changesetId: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const r = await undoAnswer(ctx.prisma, {
+        ownerId: ctx.user.id,
+        ...input,
+      })
+      if (!r.ok && r.error === 'not_found') throw notFound()
+      if (!r.ok) throw new TRPCError({ code: 'CONFLICT', message: r.error })
+      return r
     }),
 
   compare: protectedProcedure

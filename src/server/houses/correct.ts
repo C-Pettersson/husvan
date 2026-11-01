@@ -23,7 +23,14 @@ export async function correct(
     ownerId,
     houseId,
     input,
-  }: { ownerId: string; houseId: string; input: ChangesInput }
+    comment,
+  }: {
+    ownerId: string
+    houseId: string
+    input: ChangesInput
+    // What the change is, such as an answer to an open question.
+    comment?: string
+  }
 ): Promise<CorrectResult> {
   if (!(await ownHouse(prisma, ownerId, houseId)))
     return { ok: false, errors: [`No house with id ${houseId}.`] }
@@ -38,6 +45,7 @@ export async function correct(
         source: 'USER',
         status: 'APPROVED',
         decidedAt: new Date(),
+        comment,
       },
     })
     await insertChanges(tx, {
