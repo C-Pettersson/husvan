@@ -1,0 +1,723 @@
+{
+  "meta": {
+    "title": "Husvan",
+    "description": "Understand what a house costs over time."
+  },
+  "nav": {
+    "houses": "Houses",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "language": "Language"
+  },
+  "home": {
+    "title": "What does the house cost over time?",
+    "lead": "Husvan is the house’s memory. Your own AI reads the listing and the inspection, Husvan keeps what is known about the house and works out maintenance, running costs and replacements, so you can compare the houses on equal terms.",
+    "open": "Go to your houses",
+    "signIn": "Sign in",
+    "split": "The thinking in your AI, the memory in Husvan",
+    "splitLead": "AI models keep getting better. Husvan gets better with them, because what takes judgement is done by your AI and what has to last is kept by Husvan.",
+    "chat": {
+      "label": "An example conversation",
+      "you": "You",
+      "ai": "Claude",
+      "husvan": "Husvan",
+      "messages": {
+        "upload": {
+          "files": "listing.pdf · inspection.pdf",
+          "text": "Here are the listing and the inspection report for Videvägen 7 in Boden."
+        },
+        "draft": {
+          "text": "I have read both. The house is from 1978 and has a ground source heat pump from 2012. The inspection notes damp in the crawl space and wants it dealt with within 1–3 years. The listing does not mention the roof, but the inspection says concrete tiles from when the house was built. I have entered 16 parts as a draft. Do you want to go through it?",
+          "note": "draft with 16 parts, every value sourced to a document and passage"
+        },
+        "approve": {
+          "text": "The heat pump was replaced in 2019, not 2012. Otherwise it looks right."
+        },
+        "approved": {
+          "text": "I have changed the heat pump to 2019 with you as the source and approved the draft.",
+          "note": "draft approved, 2012 kept as an alternative from the listing"
+        },
+        "cost": {
+          "text": "What will the house cost per year over the next 15 years?"
+        },
+        "forecast": {
+          "text": "Around 74,000 kronor a year in today’s money, with a range from 58,000 to 96,000. Most of it is running costs. The largest single item is the roof, which is nearing the end of its lifespan. The range is wide because the age of the ventilation is missing. Is it in the energy certificate?",
+          "note": "forecast by fixed rules, with a list of what is missing"
+        },
+        "compare": {
+          "text": "How does it compare with the house on Lingonstigen?"
+        },
+        "comparison": {
+          "text": "Lingonstigen costs 400,000 kronor more, but has a new roof and newer pipes. Counting the maintenance debt, Videvägen comes out 120,000 kronor more expensive. The difference is almost entirely the roof and the crawl space, so those are what I would ask the agent about.",
+          "note": "maintenance-adjusted price for both houses, item by item"
+        }
+      }
+    },
+    "how": "How it works",
+    "steps": {
+      "connect": {
+        "title": "Connect Husvan to Claude",
+        "body": "Husvan is a connector in your own Claude. All reading and interpreting happens there."
+      },
+      "upload": {
+        "title": "Upload the documents in the chat",
+        "body": "Listing, inspection report and energy certificate. Claude reads them and proposes parts, values and work items with their source."
+      },
+      "approve": {
+        "title": "Approve what Claude read",
+        "body": "Nothing counts until you approve the draft. On the web you see the same data and correct what came out wrong."
+      },
+      "compare": {
+        "title": "Ask and compare",
+        "body": "Ask Claude about cost per year, maintenance debt and maintenance-adjusted price. The answers build on Husvan’s figures, with a range from low to high."
+      }
+    },
+    "measures": "What it calculates",
+    "debt": {
+      "title": "Maintenance debt",
+      "body": "How much of each part is already used up, in kronor. A roof halfway through its lifespan is half a roof, whenever it is replaced."
+    },
+    "adjusted": {
+      "title": "Maintenance-adjusted price",
+      "body": "The price plus the maintenance debt. Two houses at the same price cost differently if one has a new roof and the other old pipes."
+    },
+    "forecast": {
+      "title": "Cost per year",
+      "body": "Replacements by lifespan, repainting, work items from the inspection and running costs, in today’s kronor over the horizon you choose."
+    },
+    "principles": "What it holds to",
+    "principle": {
+      "unknown": "Unknown is not no. A listing that does not mention a pool does not make it a no.",
+      "disclosure": "Saying less does not make a house cheaper. Parts every house has are counted even when the documents leave them out.",
+      "sources": "Every value has a source: which document, which passage and how sure the reading is.",
+      "model": "The server interprets no documents and calls no AI. Nothing in Husvan is built for a particular model, so a better AI gives better answers without anything being rebuilt."
+    },
+    "later": "Once the house is bought",
+    "laterBody": "The same house becomes the starting point for maintenance, with nothing moved. In time an AI can look after it like a property manager: keep the maintenance plan current, remind you of servicing and read in receipts. Everything it writes has a source and stays a draft until you approve it, and nothing it does can erase what is already known.",
+    "personal": "Husvan is a personal tool and does not take new users."
+  },
+  "login": {
+    "title": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "failed": "Wrong email or password."
+  },
+  "consent": {
+    "title": "Grant access",
+    "intro": "{client} wants to access Husvan on your behalf.",
+    "unknownClient": "An app",
+    "scopes": "Requested access",
+    "allow": "Allow",
+    "deny": "Deny",
+    "invalid": "The approval link is invalid or has expired. Start over from the app that asked for access.",
+    "failed": "Your answer could not be saved. Try again."
+  },
+  "scope": {
+    "openid": "Know who you are",
+    "profile": "Your name",
+    "email": "Your email address",
+    "offline_access": "Keep access while you are not active"
+  },
+  "houses": {
+    "title": "Your houses",
+    "empty": "No houses yet. Add a house by uploading the listing in Claude.",
+    "count": "{count, plural, one {# house} other {# houses}}",
+    "filter": "Must have",
+    "filterHint": "Houses without what you picked are hidden. Houses where it is unknown are shown apart, because unknown is not no.",
+    "unknownGroup": "Not known whether they have what you picked",
+    "unknownFeatures": "Unknown: {features}",
+    "hiddenCount": "{count, plural, one {# house lacks} other {# houses lack}} what you picked and {count, plural, one {is} other {are}} not shown.",
+    "compare": "Compare {count}",
+    "compareHint": "Tick 2–6 houses to compare them.",
+    "select": "Select {address} for comparison",
+    "noPrice": "No price",
+    "drafts": "{count, plural, one {# draft} other {# drafts}} waiting",
+    "risks": "{count, plural, one {# risk} other {# risks}}",
+    "notInspected": "Not inspected"
+  },
+  "house": {
+    "status": {
+      "candidate": "Candidate",
+      "declined": "Declined",
+      "purchased": "Purchased",
+      "sold": "Sold"
+    },
+    "key": {
+      "asking_price_sek": "Asking price",
+      "highest_bid_sek": "Highest bid",
+      "highest_bid_date": "Date of highest bid",
+      "final_price_sek": "Final price",
+      "sale_status": "Sale",
+      "sale_date": "Sold",
+      "ventilation_type": "Ventilation",
+      "assessed_value_sek": "Assessed value",
+      "assessed_building_value_sek": "Assessed building value",
+      "assessment_year": "Assessment year",
+      "property_fee_sek_per_year": "Property fee per year",
+      "house_type": "House type",
+      "tenure": "Tenure",
+      "room_count": "Rooms",
+      "bedroom_count": "Bedrooms",
+      "floor_count": "Floors",
+      "living_area": "Living area",
+      "secondary_area": "Secondary area",
+      "plot_area": "Plot area",
+      "construction_year": "Year built",
+      "energy_class": "Energy class",
+      "energy_performance_kwh_per_m2": "Primary energy number",
+      "energy_declaration_year": "Energy certificate year",
+      "heating_kwh_per_year": "Heating per year",
+      "electricity_kwh_per_year": "Electricity use per year",
+      "operating_cost_sek_per_year": "Running cost per year",
+      "heating_cost_sek_per_year": "Heating cost per year",
+      "household_electricity_cost_sek_per_year": "Electricity cost per year",
+      "water_sewage_cost_sek_per_year": "Water and sewage per year",
+      "waste_cost_sek_per_year": "Waste collection per year",
+      "absent_features": "Lacks",
+      "insurance_cost_sek_per_year": "Insurance per year",
+      "chimney_sweeping_cost_sek_per_year": "Chimney sweeping per year",
+      "radon_bq_m3": "Radon level",
+      "radon_measurement_year": "Radon measurement year",
+      "radon_measured": "Radon measured",
+      "deso_code": "DeSO area",
+      "police_area_code": "Local police area"
+    },
+    "value": {
+      "sale_status": {
+        "upcoming": "Upcoming",
+        "bidding": "Bidding",
+        "closed": "Closed"
+      },
+      "house_type": {
+        "detached": "Detached house"
+      },
+      "tenure": {
+        "freehold": "Freehold"
+      },
+      "ventilation_type": {
+        "natural_draft": "Natural draught"
+      }
+    }
+  },
+  "houseDetail": {
+    "back": "All houses",
+    "propertyDesignation": "Property",
+    "municipality": "{name} municipality",
+    "about": "About the house",
+    "components": "Components",
+    "workItems": "Actions",
+    "documents": "Documents",
+    "nothingApproved": "Nothing is approved yet.",
+    "noValues": "No details.",
+    "noDocuments": "No documents.",
+    "wholeHouse": "Whole house",
+    "noYear": "no year",
+    "noCost": "no cost",
+    "draft": "Draft",
+    "confidence": "confidence {value}%",
+    "alternative": "Also: {value} ({source})",
+    "draftWaiting": "A draft is waiting for your approval: {components} components, {observations} values and {workItems} actions.",
+    "showDraft": "Show the draft",
+    "previewing": "You are looking at the draft with {components} components, {observations} values and {workItems} actions, marked as draft. None of it counts until you approve it.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "hideDraft": "Hide the draft",
+    "rejectTitle": "Reject the draft?",
+    "rejectBody": "The rows are kept but never shown. Claude can propose a new draft.",
+    "cancel": "Cancel",
+    "decisionFailed": "The decision could not be saved. Reload the page and try again.",
+    "notFound": "The house does not exist.",
+    "tabsLabel": "Parts of the page",
+    "tab": {
+      "cost": "Cost",
+      "viewing": "Before the viewing",
+      "house": "The house",
+      "documents": "Documents",
+      "area": "The area"
+    }
+  },
+  "source": {
+    "user": "You",
+    "claude": "Claude",
+    "import": "Import"
+  },
+  "documentType": {
+    "listing": "Listing",
+    "inspection": "Inspection",
+    "pipe_inspection": "Pipe inspection",
+    "electrical_inspection": "Electrical inspection",
+    "energy_certificate": "Energy certificate",
+    "invoice": "Invoice",
+    "receipt": "Receipt",
+    "manual": "Manual",
+    "warranty": "Warranty",
+    "drawing": "Drawing",
+    "photo": "Photo",
+    "other": "Other"
+  },
+  "workItemKind": {
+    "replacement": "Replacement",
+    "repair": "Repair",
+    "investigation": "Investigation"
+  },
+  "category": {
+    "envelope": "Building envelope",
+    "heating": "Heating",
+    "ventilation": "Ventilation",
+    "plumbing": "Water and sewage",
+    "electrical": "Electrical",
+    "interior": "Interior",
+    "feature": "Features"
+  },
+  "value": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "error": {
+    "generic": "Something went wrong."
+  },
+  "feature": {
+    "pool": "Pool",
+    "sauna": "Sauna",
+    "deck": "Deck",
+    "sunroom": "Sunroom",
+    "garage": "Garage",
+    "wood_stove": "Wood stove",
+    "heat_pump_air_air": "Air-to-air heat pump",
+    "basement": "Basement"
+  },
+  "featureAnswer": {
+    "yes": "Yes",
+    "no": "No",
+    "unknown": "Unknown"
+  },
+  "cost": {
+    "title": "Cost",
+    "price": "Price",
+    "noPrice": "No price",
+    "debt": "Maintenance debt",
+    "debtHelp": "The used-up share of every part, plus the work items. Independent of the horizon, so a roof due in 20 years still counts.",
+    "adjusted": "Maintenance-adjusted price",
+    "adjustedHelp": "Price plus maintenance debt.",
+    "perMonth": "Forecast per month",
+    "perMonthHelp": "Mean over {years} years from {start}, running costs included.",
+    "perMonthHelpNoRunning": "Mean over {years} years from {start}. Running costs are unknown and not included.",
+    "ratio": "Price to assessed value",
+    "ratioHelp": "Price divided by the assessed value, assessment year {year}.",
+    "range": "{low}–{high}",
+    "rangeLabel": "low–high",
+    "chartTitle": "Cost per year",
+    "chartScenario": "Typical scenario",
+    "chartNote": "Each scenario has its own replacement years, so in a single year low or high can fall on either side of typical. The totals are ordered.",
+    "total": "Total",
+    "showTable": "Show as table",
+    "hideTable": "Hide the table",
+    "year": "Year",
+    "debtByType": "Maintenance debt by part",
+    "items": "Forecast items",
+    "item": "Item",
+    "low": "Low",
+    "typical": "Typical",
+    "high": "High",
+    "assumed": "Assumed",
+    "assumedHelp": "The documents do not mention the part, but every house has one. It is counted from the construction year.",
+    "renewedAs": "Renewed more cheaply in low and typical",
+    "gapsTitle": "What the total leaves out or guesses",
+    "gap": {
+      "notInspected": "No inspection protocol: defects are unknown, not none.",
+      "workItemsWithoutCost": "{count, plural, one {# work item} other {# work items}} without a cost count as zero.",
+      "assumedParts": "Assumed parts the documents do not mention: {parts}.",
+      "partsWithoutInstallationYear": "{count, plural, one {# part has} other {# parts have}} the construction year as installation year.",
+      "partsWithoutCost": "{count, plural, one {# part has} other {# parts have}} no cost.",
+      "runningUnknown": "Running costs are unknown and not included."
+    },
+    "notModelled": "Not included yet: snow removal and roof snow clearing, and scaffolding for facade repainting.",
+    "indexYear": "Amounts in {year} prices, indexed by the construction cost index.",
+    "flags": "About the inputs",
+    "loadFailed": "The forecast could not be calculated.",
+    "part": "Part",
+    "view": {
+      "label": "Show the cost",
+      "paid": "When it is paid",
+      "spread": "Spread over the lifespan"
+    }
+  },
+  "questions": {
+    "title": {
+      "installation_year": "When was it replaced or installed?",
+      "condition": "What condition is it in?",
+      "last_painted_year": "When was it last painted?",
+      "quantity": "How many are there?",
+      "area": "How large is the area?",
+      "length": "How long is it?",
+      "floor_count": "How many floors does the house have?",
+      "radon_bq_m3": "Has radon been measured, and at what level?",
+      "construction_year": "What year was the house built?",
+      "living_area": "How large is the living area?",
+      "heating_cost_sek_per_year": "What does heating cost per year?",
+      "operating_cost_sek_per_year": "What is the running cost per year?",
+      "household_electricity_cost_sek_per_year": "What does household electricity cost per year?",
+      "water_sewage_cost_sek_per_year": "What do water and sewage cost per year?",
+      "insurance_cost_sek_per_year": "What does the insurance cost per year?",
+      "material": "What material is it?",
+      "frame_material": "What are the frames made of?",
+      "paint_type": "What kind of paint is it painted with?",
+      "cost": "Roughly what does the work cost?",
+      "foundation": {
+        "foundation_type": "What foundation does the house have?",
+        "slab_insulation": "Where is the slab insulated?",
+        "crawl_space_ventilation": "How is the crawl space ventilated?",
+        "basement_wall_insulation": "Are the basement walls insulated outside or inside?"
+      },
+      "electrical_installation": {
+        "wiring": "What wiring is there?"
+      },
+      "electrical_panel": {
+        "rcd": "Is there a residual current device?",
+        "panel_type": "Fuses or circuit breakers?"
+      },
+      "other": "{label}?"
+    },
+    "intro": "Answer what you can at the viewing. Each answer counts at once. The amount is how much the answer can change the estimate; largest first.",
+    "notInspected": "The house has no inspection protocol, so its defects are unknown. No question here replaces an inspection.",
+    "progress": "{answered} of {total} answered",
+    "howLabel": "How the question is answered",
+    "look": "Look for ({count})",
+    "ask": "Ask the agent ({count})",
+    "lookHelp": "What you can see yourself as you walk through the house.",
+    "askHelp": "What the agent or seller usually knows: years, measurements and costs.",
+    "none": "No open questions here.",
+    "more": "Show {count} more",
+    "fewer": "Show fewer",
+    "answeredTitle": "Answered",
+    "skippedTitle": "Don't know",
+    "restore": "Bring back",
+    "house": "The house",
+    "workItem": "Work item without a cost",
+    "status": {
+      "missing": "Not in the documents.",
+      "uncertain": "The documents say {value}, but it is uncertain.",
+      "estimated": "Estimated; the actual cost is missing.",
+      "counted": "The number is estimated from the living area.",
+      "noCost": "The cost is missing and counts as zero.",
+      "conditionAssumed": "Unknown. The estimate assumes normal wear.",
+      "installedAssumed": "Unknown. The estimate assumes it is from {year}.",
+      "paintedAssumed": "Unknown. The estimate assumes it was painted in {year}.",
+      "notDocumented": "The documents do not mention the part; your answer adds it."
+    },
+    "hint": {
+      "electrical_panel": {
+        "rcd": "Look in the fuse box for a switch with a test button, often marked T.",
+        "panel_type": "Screw-in fuses or circuit breakers with switches?"
+      },
+      "electrical_installation": {
+        "wiring": "Grounded sockets have earth clips. Cloth-covered cords and ungrounded sockets in dry rooms suggest older wiring."
+      },
+      "foundation": {
+        "foundation_type": "Basement, crawl space with a hatch, slab on the ground or plinths?"
+      },
+      "quantity": "Count them as you walk through."
+    },
+    "impact": "{sek}",
+    "impactDebt": "The answer can change the maintenance debt by up to {sek}.",
+    "impactForecast": "The cost over the next {years} years can change by up to {sek}.",
+    "decides": "Decides: {risk}",
+    "condition": {
+      "5": "As new",
+      "4": "Good",
+      "3": "Normal wear",
+      "2": "Worn",
+      "1": "Needs replacing"
+    },
+    "original": "Original ({year})",
+    "notSince": "Not since {year}",
+    "lastYears": "Last {to} years",
+    "yearsAgo": "{from}–{to} years ago",
+    "notMeasured": "Not measured",
+    "otherYear": "Enter year",
+    "otherValue": "Enter another value",
+    "year": "Year",
+    "value": "Value",
+    "save": "Save",
+    "skip": "Don't know",
+    "failed": "The answer could not be saved.",
+    "loadFailed": "The questions could not be worked out.",
+    "undo": "Undo",
+    "saved": "Saved: {answer}",
+    "undoFailed": "The answer could not be undone.",
+    "undoDependedOn": "A later answer builds on this one. Undo that first."
+  },
+  "forecastCategory": {
+    "running": "Running",
+    "replacement": "Replacements",
+    "repaint": "Repainting",
+    "work_item": "Work items",
+    "inspection": "Inspection",
+    "capital": "Interest"
+  },
+  "runningKey": {
+    "heating_from_energy_use": "Heating (energy × price)",
+    "heating_estimated": "Heating (estimated)",
+    "other_operating_cost": "Other operating cost"
+  },
+  "flag": {
+    "uncertain": "{key} is uncertain ({confidence} %)",
+    "assumed_part": "Not in the documents; assumed, as every house has one",
+    "construction_year_used": "Installation year missing; the construction year is used",
+    "installation_year_unknown": "Installation year unknown; the range covers the whole lifespan",
+    "quantity_estimated": "{key} estimated from the living area",
+    "quantity_estimated_shared": "{key} estimated from the living area and shared among {count} parts",
+    "quantity_one_assumed": "Quantity missing; 1 assumed",
+    "quantity_missing": "{key} missing; no cost",
+    "profile_without_cost": "The lifespan profile has no cost",
+    "last_painted_missing": "Last painted missing; the installation year is used",
+    "overdue_replacement": "Past its lifespan and flagged as serious by the inspection; replaced in the start year",
+    "timed_by_work_item": "Timed by the work item: {description}",
+    "replacement_not_costed": "The replacement has no cost",
+    "cheaper_renewal": "Low and typical renew it more cheaply ({match}); high replaces it",
+    "repaint_overdue": "Repainting overdue; put in the start year",
+    "inspection_added": "Added by Husvan for {count, plural, one {# part} other {# parts}} without an inspection year; it decides whether and how they are renewed",
+    "work_item_no_year": "No year or severity; put in the start year",
+    "work_item_before_start": "Due before the start year",
+    "work_item_no_cost": "No cost; counts as zero",
+    "trended": "Trended {percent} % a year",
+    "no_tariff_changes": "No tariff changes for the municipality; no trend",
+    "interest_without_loan": "Interest without a loan; no capital cost",
+    "not_inspected": "No inspection protocol: defects are unknown, not none",
+    "operating_cost_less_parts": "The listing’s operating cost less the parts it names",
+    "heating_no_pellet_price": "Heating unknown: no price for pellets",
+    "heating_no_energy_price": "Heating unknown: no energy price for the municipality",
+    "heating_from_energy_use": "Energy use × {price} kr/kWh",
+    "heating_estimated": "Estimated from primary energy × living area × Fgeo {fgeo} / {weight}: about {kwh} kWh",
+    "heating_unknown": "Heating unknown: no cost, energy use or energy class",
+    "running_costs_unknown": "Running costs are unknown",
+    "overdue_seen_ok": "Past its lifespan, but the inspection saw it without a serious finding; given part of a lifespan more",
+    "overdue_unjudged": "Past its lifespan and not judged by an inspection; replaced within the coming years, in high at once",
+    "work_item_timed_by_severity": "No year; spread over {years, plural, one {# year} other {# years}} by its severity ({severity})",
+    "quantity_from_footprint": "{key} estimated from the living area over {floors} floors",
+    "quantity_from_footprint_shared": "{key} estimated from the living area over {floors} floors and shared among {count} parts",
+    "priced_by_context": "Priced by the house's {key}: {value}",
+    "one_of_several": "The house has {count} of these; while another one works, this one is less urgent"
+  },
+  "risk": {
+    "title": "Risks",
+    "none": "No known risks.",
+    "note": "Risks are flagged but not turned into kronor.",
+    "risk_construction": "Risk construction",
+    "older_electrical": "Older electrical system",
+    "radon": "Radon above the reference level of 200 Bq/m³"
+  },
+  "facts": {
+    "title": "Features",
+    "note": "Unknown is not no: it means the documents say nothing.",
+    "heating": "Heating",
+    "complementary": "Complement: {types}",
+    "unknownHeating": "Unknown",
+    "bathrooms": "Bathrooms"
+  },
+  "area": {
+    "title": "The area",
+    "note": "Each figure is shown with its level and year. A municipal figure covers the whole municipality, not the house’s neighbourhood.",
+    "none": "No statistics for the house.",
+    "source": "Source: {sources}",
+    "level": {
+      "DESO": "DeSO area",
+      "POLICE_AREA": "Local police area",
+      "MUNICIPALITY": "Municipality",
+      "NATION": "Sweden"
+    },
+    "key": {
+      "population_total": "Population",
+      "population_share_age_0_19": "Share aged 0–19",
+      "population_share_age_65_plus": "Share aged 65 and over",
+      "median_economic_standard_sek": "Median economic standard per year",
+      "share_low_economic_standard": "Share with low economic standard",
+      "share_high_economic_standard": "Share with high economic standard",
+      "share_post_secondary_education": "Share with post-secondary education",
+      "share_post_secondary_3y_plus": "Share with 3+ years of post-secondary education",
+      "reported_crimes_per_100k": "Reported crimes per 100,000 inhabitants",
+      "reported_crimes_count": "Reported crimes",
+      "ntu_unsafe_outdoors_evening_share": "Feel unsafe outdoors late in the evening",
+      "ntu_worry_burglary_share": "Worry about burglary",
+      "ntu_victim_personal_crime_share": "Victims of crime against the person",
+      "ntu_household_burglary_share": "Households subject to burglary",
+      "ntu_problem_gangs_share": "See gangs as a problem in the area",
+      "ntu_problem_open_drug_dealing_share": "See open drug dealing as a problem"
+    }
+  },
+  "assumptions": {
+    "title": "Assumptions",
+    "key": {
+      "horizon_years": "Horizon",
+      "start_year": "Start year",
+      "interest_rate": "Interest rate",
+      "loan_sek": "Loan",
+      "electricity_price_sek_kwh": "Electricity price",
+      "district_heating_price_sek_kwh": "District heating price",
+      "operating_cost_trend": "Running cost trend"
+    },
+    "source": {
+      "house": "for the house",
+      "all_houses": "for all houses",
+      "default": "default",
+      "this_forecast": "this forecast only"
+    },
+    "trend": {
+      "none": "None",
+      "municipality": "Municipal tariffs"
+    },
+    "years": "{count} years",
+    "perKwh": "{price} kr/kWh",
+    "fromMunicipality": "the municipality’s",
+    "notSet": "Not set",
+    "edit": "Change assumptions",
+    "scope": "Applies to",
+    "scopeHouse": "This house only",
+    "scopeAll": "All houses",
+    "interestPercent": "Interest rate (%)",
+    "loanSek": "Loan (kr)",
+    "pricePerKwh": "{name} (kr/kWh)",
+    "unchangedNote": "Empty fields are left as they are. A new assumption takes the place of the old one; nothing is overwritten.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "failed": "Could not save: {error}"
+  },
+  "compare": {
+    "title": "Compare houses",
+    "pick": "Pick 2–6 houses in the list to compare them.",
+    "sorted": "Sorted by maintenance-adjusted price, lowest first.",
+    "againstFirst": "Difference against {address}",
+    "priceDiff": "Price",
+    "debtDiff": "Maintenance debt",
+    "adjustedDiff": "Maintenance-adjusted price",
+    "other": "Other",
+    "base": "Baseline",
+    "largest": "Largest differences in the forecast",
+    "largestNote": "Typical scenario, total over the horizon.",
+    "findings": "Inspection findings",
+    "findingsNote": "A house without an inspection protocol has unknown defects, not none. A finding in one house may well apply to an uninspected one too, and its lower figure may come from knowing less.",
+    "notInspected": "Not inspected",
+    "noFindings": "None",
+    "findingsCell": "{items, plural, one {# finding} other {# findings}}",
+    "unpriced": "{count} without a cost",
+    "runningUnknown": "Unknown",
+    "runningUnknownNote": "Running costs are unknown for {addresses}, so the forecast is lower for that reason alone.",
+    "features": "Features",
+    "risks": "Risks",
+    "area": "The area",
+    "noArea": "No statistics",
+    "wholeHouse": "Whole house",
+    "workItems": {
+      "repair": "Repairs",
+      "replacement": "Replacement work items",
+      "investigation": "Investigations"
+    },
+    "annualPerMonth": "Per month, spread"
+  },
+  "edit": {
+    "edit": "Change",
+    "editLabel": "Change {key}",
+    "title": "Change {key}",
+    "addTitle": "Add a value",
+    "add": "Add value",
+    "key": "Value",
+    "value": "Value",
+    "unit": "in {unit}",
+    "save": "Save",
+    "cancel": "Cancel",
+    "failed": "Could not save.",
+    "userWins": "Your value is saved as a new entry and wins over Claude’s. The old one stays as an alternative.",
+    "retract": "Remove the value",
+    "retractLabel": "Remove {key}",
+    "retractTitle": "Remove the value?",
+    "retractBody": "The value is kept but no longer counts. If there is another value for the same key, that one is used instead.",
+    "listHint": "One per line",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "workItemEdit": {
+    "add": "Add work item",
+    "addTitle": "New work item",
+    "edit": "Change",
+    "editLabel": "Change the work item {description}",
+    "editTitle": "Change the work item",
+    "restateNote": "The change is saved as a new work item that replaces the old one, so it is not counted twice.",
+    "dismiss": "Dismiss",
+    "dismissLabel": "Dismiss the work item {description}",
+    "dismissTitle": "Dismiss the work item?",
+    "dismissBody": "The work item is kept but no longer counts in the forecast or the maintenance debt.",
+    "kind": "Kind",
+    "description": "Description",
+    "component": "Part",
+    "wholeHouse": "Whole house",
+    "yearMin": "Earliest year",
+    "yearMax": "Latest year",
+    "costLow": "Cost from (kr)",
+    "costHigh": "Cost to (kr)",
+    "save": "Save",
+    "cancel": "Cancel",
+    "severity": "Severity in the inspection",
+    "noSeverity": "Not given"
+  },
+  "core": {
+    "edit": "Change the house",
+    "title": "Change the house",
+    "address": "Address",
+    "propertyDesignation": "Property designation",
+    "municipality": "Municipality",
+    "none": "None",
+    "status": "Status",
+    "statusHelp": "Your decision about the house. The state of the sale is a value of its own.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "duplicate": "Another house has the same address or property designation: {address}",
+    "failed": "Could not save."
+  },
+  "upload": {
+    "open": "Open the original",
+    "attach": "Upload the original",
+    "attachLabel": "Upload the original of {title}",
+    "type": "Document type",
+    "new": "Upload a document",
+    "hint": "PDF, image or text, at most 25 MB. If Claude has already saved the document, the file is attached to it. The server does not read the file; ask Claude to interpret it in the chat.",
+    "uploading": "Uploading …",
+    "done": {
+      "sha256": "The file was attached to the document Claude saved.",
+      "document": "The file was attached to the document.",
+      "new": "The document was saved."
+    },
+    "error": {
+      "type": "That file type is not accepted. Upload a PDF, an image or a text file.",
+      "too_large": "The file is larger than 25 MB.",
+      "other_house": "The same file already belongs to another house.",
+      "hash_mismatch": "This is not the file Claude saved for the document.",
+      "already_uploaded": "The document already has a file.",
+      "storage": "File storage is not set up.",
+      "not_found": "The document does not exist.",
+      "generic": "The file could not be uploaded."
+    }
+  },
+  "annual": {
+    "title": "Cost per year, spread over the lifespan",
+    "perMonth": "Per month, spread",
+    "part": {
+      "wear": "Wear {sek} a year",
+      "running": "running {sek} a year",
+      "capital": "interest {sek} a year"
+    },
+    "cost": "Cost",
+    "lasts": "Lasts",
+    "perYear": "Per year",
+    "years": "{years} years",
+    "yearsRange": "{min}–{max} years",
+    "renewedAs": "Renewed more cheaply in low and typical: {how}",
+    "note": "Each replacement and repaint is divided by the years it lasts, so a bathroom for 200,000 kr that lasts 25 years is 8,000 kr a year whenever it is paid. Work items from the inspection are left out: they are overdue maintenance and count in the maintenance debt."
+  },
+  "severity": {
+    "MINOR": "Minor defect",
+    "RISK": "Risk",
+    "DEFECT": "Defect",
+    "SEVERE": "Serious defect"
+  }
+}

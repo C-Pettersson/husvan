@@ -1,0 +1,25 @@
+# Local development only. Production runs on k3s from infra-gitops, see CLAUDE.md.
+#
+#   docker compose up -d postgres
+#
+# Port 5433 on the host, so it does not collide with other projects' Postgres on 5432.
+name: husvan
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - '127.0.0.1:5433:5432'
+    environment:
+      POSTGRES_USER: husvan
+      POSTGRES_PASSWORD: husvan
+      POSTGRES_DB: husvan
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U husvan -d husvan']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
