@@ -92,7 +92,7 @@ Principerna, i den ordning de styr schemat:
 
 1. **Fast kärna, dynamiska fakta.** `House` har ägare, adress, kommun, fastighetsbeteckning och status. `Component` har hus, typ, förälder, vad den ersätter och ett namn. Allt annat som Claude läser ut är en `Observation`: nyckel, värde, källa, dokument, säkerhet.
 2. **Observationer, inte giltighetstider.** Att prospektet säger 1995 och besiktningen 2001 är inte en förändring över tid utan två påståenden. Därför finns ingen `valid_from`/`valid_to` på värden. Varje observation är en rad med `recordedAt`; det aktuella värdet väljs vid läsning. När något faktiskt byts ut är det komponentens livscykel som ändras, inte värdet.
-3. **Bara tillägg.** Ingen rad raderas, och inget påstående skrivs över. Ett bättre värde är en ny observation; ett felaktigt får `retractedAt`, och så gör en åtgärd som avfärdas. De enda fält som ändras på plats är `retractedAt`, ändringssetets status och husets kärnfält (adress, kommun, fastighetsbeteckning, status). En utbytt del är en ny `Component` med `replacesId` mot den gamla. Att en komponent är ersatt härleds, det lagras inte på den gamla raden.
+3. **Bara tillägg.** Ingen rad raderas, och inget påstående skrivs över. Ett bättre värde är en ny observation; ett felaktigt får `retractedAt`, och så gör en åtgärd som avfärdas. De enda fält som ändras på plats är `retractedAt`, ändringssetets status och husets kärnfält (adress, kommun, fastighetsbeteckning, status). En utbytt del är en ny `Component` med `replacesId` mot den gamla, och en åtgärd som preciseras, till exempel med en kostnad, är en ny `WorkItem` med `replacesId` mot den gamla. Att en rad är ersatt härleds, det lagras inte på den gamla raden.
 4. **Utkast är riktiga rader.** Allt som skrivs via MCP eller webben pekar på ett `Changeset`. Rader i ett `DRAFT`-ändringsset finns i tabellerna men filtreras bort vid läsning tills användaren godkänner. Godkännande ändrar en status; inget transformeras från JSON till rader. Samma kod renderar utkast och godkända data.
 5. **Källa är vem, inte vad.** `ValueSource` är `USER`, `CLAUDE` eller `IMPORT`. Vilken sorts dokument värdet kommer från är `Document.type`. Besiktningen är ett dokument, inte en källa.
 6. **Typbibliotek som växer.** `ComponentType.attributeSchema` säger vad Claude ska leta efter men begränsar inte vad som får sparas. Om en nyckel ligger utanför schemat räknas fram vid läsning, det lagras inte.
@@ -141,11 +141,13 @@ Ordningen i chatten: `create_house`, sedan `save_document` för varje dokument, 
 - **Allt eller inget.** Vid minsta fel skrivs ingenting, och svaret listar alla fel med sökväg, till exempel `components[3] roof_covering.values[0] material: must be one of …`.
 - **Typer och värden.** Komponenttypen måste finnas. En nyckel i typens `attributeSchema` eller i husets nycklar (`houseKeys.ts`) kontrolleras mot sin datatyp, sina val, `min`/`max` och sin enhet; utelämnad enhet blir nyckelns. En nyckel utanför schemat sparas med en varning. `absent_features` får bara nämna typer som finns, eller `basement`.
 - **Trädet.** `parent` är en `ref` som deklarerats tidigare i samma anrop eller id:t på en befintlig komponent, och förälderns typ måste ha barnets typ i `allowedSubcomponents`. `replaces` måste vara en befintlig komponent som inte redan är ersatt, och en ersatt komponent tar inte emot nya värden.
+- **Precisera en åtgärd.** `replaces` på en åtgärd pekar på en befintlig åtgärd som inte redan är ersatt; den nya tar komponenten från den gamla om den inte anger någon. Så prissätter Claude ett besiktningsfel utan kostnad utan att det räknas två gånger. Den gamla döljs vid läsning när den nya syns, och avslås utkastet syns den gamla igen.
+- **Ett byte i taget.** En komponent eller åtgärd som ett annat öppet utkast redan ersätter kan inte ersättas i ett nytt; Claude lägger till i det utkastet med `draftId` eller låter användaren avgöra det först. Annars skulle två godkända utkast ge två aktuella rader.
 - **Vad ett utkast får peka på.** Godkända komponenter och dokument i samma hus, och komponenterna i det utkast som `draftId` lägger till i. Ett tillägg låser utkastets rad, så att ett godkännande inte kan smita in emellan och göra nya rader synliga ogranskade.
 - **Upprepning.** `create_house` vägrar ett hus med samma gatuadress (delen före första kommatecknet, utan hänsyn till skiftläge) eller samma fastighetsbeteckning och returnerar det befintliga id:t. `save_document` med samma `sourceUrl` eller `sha256` returnerar det första dokumentet.
 - **Språk.** Komponenternas `name` och åtgärdernas `description` skrivs på svenska, eftersom användaren läser dem; `quote` är dokumentets egna ord.
 
-Värden från MCP får alltid källa `CLAUDE`. Att återkalla en observation eller avfärda en åtgärd (`retractedAt`) går inte via MCP i version 1; en bättre läsning är en ny observation, och rättningar görs på webbsidan i milstolpe 6.
+Värden från MCP får alltid källa `CLAUDE`. Att återkalla en observation eller avfärda en åtgärd (`retractedAt`) går inte via MCP i version 1; en bättre läsning är en ny observation, en bättre åtgärd ersätter den gamla med `replaces`, och rättningar görs på webbsidan i milstolpe 6.
 
 ### Konventioner
 
@@ -203,7 +205,9 @@ Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, 
 
 Fönster registreras styck för styck när underlaget tillåter det, annars som en komponent `window` med `quantity`.
 
-`facade`, `window` och `exterior_door` har `last_painted_year` skilt från `installation_year`, eftersom målat trä målas om var 8–15 år men byts mycket mer sällan. Hur ommålningen räknas in i prognosen avgörs i milstolpe 5 (se Öppna frågor).
+Delar som varje hus har får `forecastDefaults.assumeUndocumented`: `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `electrical_panel`, `kitchen` och `bathroom`. Nämner underlaget ingen sådan del räknar prognosen med en från byggåret, se "Delar som inte nämns" i "Regler för beräkningen". Uppvärmning och ventilation antas inte, eftersom typen inte går att gissa.
+
+`facade`, `window` och `exterior_door` har uppgifter om färgen skilda från `installation_year`, eftersom målat trä målas om var 8–15 år men byts mycket mer sällan: `last_painted_year`, `paint_type` (`linseed_oil` linoljefärg, `alkyd_oil` alkydoljefärg, `acrylic` akrylat- eller latexfärg, `slurry_paint` slamfärg, `stain` lasyr), `paint_product`, `paint_colour` och `painted_by`. Ommålningen är en egen återkommande kostnad i profilerna för träpanel (`facade` med `material: wood_panel`), träfönster (`frame_material: wood`) och trädörrar (`exterior_door` med `material: wood`); en del vars material är okänt målas inte om i prognosen. Intervall och kostnader med källor finns i `prisma/data/repaint.mts`, och en källa om ommålning har `about: repaint`. Se "Regler för beräkningen".
 
 ### Grunden
 
@@ -234,7 +238,7 @@ Det som har hänt med rören och elen uttrycks med de mekanismer som redan finns
 - **Relinat.** En ny `sewer_pipes` med `replacesId` mot den gamla, `renovation_method: relined` och `installation_year` = året för reliningen. Ett relinat rör har en egen `LifespanProfile` med `match: {"renovation_method": "relined"}`.
 - **Bytt.** En ny komponent med `replacesId`, `renovation_method: replaced` och det nya materialet. Det gäller också en ny elcentral, som ersätter den gamla `electrical_panel` men inte ledningarna.
 
-Profilen väljs efter material och metod (`LifespanProfile.match`), eftersom gjutjärn, plast, koppar och relinade rör håller olika länge. **Äldre elsystem** (`cloth_insulated` eller `two_wire`, eller ingen jordfelsbrytare) räknas fram vid läsning och flaggas som riskkonstruktionerna, utan kronvärde utöver byteskostnaden.
+Profilen väljs efter material och metod (`LifespanProfile.match`), eftersom gjutjärn, plast, koppar och relinade rör håller olika länge. Gamla avlopp av gjutjärn, betong och lera filmas först och relinas oftast i stället för att bytas; prognosen gör likadant, se "Billigare förnyelse" i "Regler för beräkningen". **Äldre elsystem** (`cloth_insulated` eller `two_wire`, eller ingen jordfelsbrytare) räknas fram vid läsning och flaggas som riskkonstruktionerna, utan kronvärde utöver byteskostnaden.
 
 ### Egenskaper
 
@@ -301,6 +305,8 @@ Verktygens beskrivningar och svar till Claude är på engelska. Claude svarar ä
 
 Läsverktygen ligger i `src/server/mcp/readTools.ts` och läser genom samma kod som webben: `getHouse` (med `asOf` för huset ett visst datum), regeln för aktuellt värde i `currentValue.ts` och det som härleds vid läsning i `derive.ts` (pris, egenskaper ja/nej/okänt, uppvärmning, antal badrum, riskkonstruktioner, äldre elsystem och radon över referensnivån). Nycklarna på huset finns för Claude i `src/server/library/houseKeys.ts` och returneras av `type_library` tillsammans med komponenttyperna. Verktyget `whoami` från milstolpe 0 är borttaget.
 
+`forecast` och `compare` ligger i `src/server/mcp/forecastTools.ts`. `forecast` sparar varje prognos i `Forecast` och returnerar den förra som `previous`, så att Claude kan säga hur bedömningen ändrats. Engångsantaganden (`overrides`) sparas inte som antaganden och märks `this_forecast`. `compare` sorterar husen efter underhållsjusterat pris och förklarar skillnaden mot det första; ett hus utan kända driftkostnader har `runningCostsKnown: false` och `null` för driften i `largestForecastDifferences`. `list_houses` visar underhållsskuld och underhållsjusterat pris (typiskt värde).
+
 Skrivverktygen ligger i `src/server/mcp/writeTools.ts` och skriver genom `createHouse`, `saveDocument`, `proposeChanges` (som även `add_work_item` använder), `confirmChangeset` och `setAssumptions` i `src/server/houses/`. Ett utkast returneras med `draftId` och `reviewUrl` (husets sida med `?draft=`), och `get_house` med `draftId` visar utkastets rader märkta `draft: true`, så att Claude kan berätta vad ett godkännande lägger till innan användaren bestämmer sig.
 
 Ett anrop i protokollet 2026-07-28 kräver headrarna `Mcp-Protocol-Version`, `Mcp-Method` (och `Mcp-Name` för `tools/call`) och `params._meta` med `io.modelcontextprotocol/protocolVersion` och `io.modelcontextprotocol/clientCapabilities`. Det behövs för att anropa routen för hand.
@@ -325,6 +331,10 @@ Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg�
 - **Mängd** följer profilens `costUnit`: `M2` läser `area`, `LINEAR_M` läser `length`, `EACH` läser `quantity` (standard 1), `HOUSE` är alltid 1. Saknas mängden används typens `quantityPerLivingM2` gånger `living_area` om det finns, annars markeras posten som gissad.
 - **Skick** flyttar bytesåret. Standardregel, justerbar per typ i `forecastDefaults`: skick 5 använder `lifespanMaxYears`, 4 och 3 `lifespanTypicalYears`, 2 `lifespanMinYears`, 1 byte inom två år. Utan skick används `lifespanTypicalYears`.
 - **Passerad livslängd** ger inte ett byte i det förflutna. Bytesår före startåret läggs på startåret och flaggas.
+- **Ommålning.** En profil med `repaintMinYears`, `repaintTypicalYears`, `repaintMaxYears`, `repaintCostLowSek` och `repaintCostHighSek` (samma `costUnit` och `priceYear` som bytet) ger en ommålning med jämna mellanrum fram till nästa byte. Intervallet räknas från `last_painted_year`, annars `installation_year`, annars husets `construction_year`. Är `paint_type` känd används typens intervall i `forecastDefaults.repaintByPaintType`, annars profilens. Ett byte nollställer intervallet, eftersom en ny del levereras målad. Ommålning som passerat läggs på startåret och flaggas, som ett byte.
+- **Delar som inte nämns.** Ett hus ska inte bli billigare för att underlaget säger mindre. Saknar huset en godkänd komponent av en typ med `assumeUndocumented` och nämner `absent_features` inte typen, räknar prognosen och underhållsskulden med en sådan del från byggåret, med mängd ur `quantityPerLivingM2`. Delen lagras inte, har id `assumed:<typ>`, märks `assumed: true` i prognosen och listas med sin underhållsskuld i `gaps.assumedParts`. Det är samma princip som "okänt är inte nej" för egenskaperna, men åt andra hållet: för kostnaden är okänt inte noll.
+- **Billigare förnyelse.** En typ kan ha `forecastDefaults.cheaperRenewal`: när komponentens attribut finns i `when` eller är okända förnyas den i låg och typisk med profilen som `match` väljer, till den profilens kostnad och därefter med dess livslängd. Hög byter, eftersom inspektionen kan visa att det billigare inte går. För `sewer_pipes` är det relining av `cast_iron`, `concrete` och `clay`. Underhållsskulden räknas med samma kostnad per scenario. En del som redan är förnyad så, eller en bytesåtgärd med egen kostnad, förnyas inte billigare.
+- **Inspektion före förnyelse.** En typ kan ha `forecastDefaults.inspection` med kostnad och källor, som filmning av avloppet. Inspektionen läggs en gång per hus och typ, året före den första förnyelsen i hög av en del utan `inspected_year`, men tidigast startåret, och kostar lika i alla scenarier. Den ingår inte i underhållsskulden. En besiktningsåtgärd om samma inspektion räknas inte bort.
 - **Spann.** Låg använder `lifespanMaxYears` och `costLowSek`, hög använder `lifespanMinYears` och `costHighSek`. Varje post bär en lista över indata som saknas eller har `confidence` under 0,7.
 - **Standardantaganden** när användaren inte satt egna: horisont 15 år, startår innevarande år, ingen kapitalkostnad, ingen drifttrend.
 
@@ -332,12 +342,31 @@ Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg�
 
 Prognosen säger vad som händer inom horisonten. För att jämföra köp behövs också ett mått som inte beror på horisonten, så att ett tak som ska bytas år 16 ändå räknas.
 
-- **Underhållsskuld** `U = Σ cᵢ · min(1, aᵢ / Lᵢ) + Σ wⱼ`. `cᵢ` är komponentens bytekostnad i startårets kronor, `aᵢ` dess ålder och `Lᵢ` livslängden enligt reglerna ovan, alltså justerad efter skick. `wⱼ` är kostnaden för varje åtgärd från besiktning och prospekt som inte är återkallad. En åtgärd med `kind: REPLACEMENT` på en komponent ersätter komponentens term, så att inget räknas två gånger.
+- **Underhållsskuld** `U = Σ cᵢ · min(1, aᵢ / Lᵢ) + Σ wⱼ`. `cᵢ` är komponentens bytekostnad i startårets kronor, `aᵢ` dess ålder och `Lᵢ` livslängden enligt reglerna ovan, alltså justerad efter skick. `wⱼ` är kostnaden för varje åtgärd från besiktning och prospekt som inte är återkallad. En åtgärd med `kind: REPLACEMENT` på en komponent ersätter komponentens term, så att inget räknas två gånger. En komponent som målas om får också en term för färgen, med ommålningskostnaden, tiden sedan senaste målning och ommålningsintervallet.
 - **Underhållsjusterat pris** = pris + `U`. Det är huvudtalet i jämförelsen.
 - **Spann** som för prognosen: låg med `lifespanMaxYears` och `costLowSek`, hög med `lifespanMinYears` och `costHighSek`. Gissade installationsår och mängder breddar spannet på samma sätt.
 - **K/T-tal** = pris / `assessed_value_sek`. Taxeringsvärdet ska motsvara 75 % av marknadsvärdet året före taxeringsåret, så talet visas med `assessment_year`.
 - **Förklaring av prisskillnad.** Mellan två hus delas skillnaden i underhållsskuld upp per komponenttyp, största först. Skillnader under 20 000 kr slås ihop till "Övrigt". Prisskillnaden plus delarna ger skillnaden i underhållsjusterat pris.
 - Grunden ger ingen term i `U`. En riskkonstruktion flaggas i jämförelsen men räknas inte om till kronor.
+
+### Hur prognosen är byggd
+
+Koden ligger i `src/server/forecast/`: `plan.ts` räknar fram profil, installationsår, livslängd, mängd och kostnad per komponent en gång, så att prognosen (`forecast.ts`) och underhållsskulden (`debt.ts`) är överens; `running.ts` räknar driften och `run.ts` laddar huset, biblioteket, BKI och antagandena. Allt utom `run.ts` är rena funktioner med tester. Avgöranden utöver reglerna ovan:
+
+- **Tre scenarier.** `low`, `typical` och `high` räknas var för sig hela vägen, eftersom ett byte kan hamna på olika år i dem. `typical` tar medelvärdet av `costLowSek` och `costHighSek`.
+- **Gissat installationsår.** Utan `installation_year` och `construction_year` är delen ny i `low`, halvvägs i `typical` och vid `lifespanMinYears` i `high`.
+- **Mängd ur boytan.** `quantityPerLivingM2` gånger `living_area` avser hela huset. Det som typens övriga komponenter inte anger delas lika mellan dem som saknar mängd, så att ett hus vars underlag listar delar utan antal inte blir billigare. Blir andelen under 1 för `EACH` blir mängden 1 och flaggas; under 0 för yta och längd blir posten utan kostnad.
+- **Bytesåtgärd.** En åtgärd med `kind: REPLACEMENT` på en komponent bestämmer komponentens första byte: året mitt i `yearMin`–`yearMax` och åtgärdens kostnad om den finns, annars profilens. Den räknas inte en gång till som åtgärd.
+- **Åtgärder utan år eller kostnad.** Utan år läggs de på startåret, utan kostnad räknas de som noll; båda flaggas.
+- **Driften.** Prospektets poster i första hand (`heating_cost_sek_per_year`, `household_electricity_cost_sek_per_year`, `water_sewage_cost_sek_per_year`, `waste_cost_sek_per_year`, `insurance_cost_sek_per_year`, `chimney_sweeping_cost_sek_per_year`), och det som återstår av `operating_cost_sek_per_year` som en egen post. `property_fee_sek_per_year` är alltid en egen post. Uppvärmningen räknas fram bara när prospektet varken har en kostnad för den eller en total: `heating_kwh_per_year` gånger elpriset eller fjärrvärmepriset efter huvudsaklig uppvärmning, annars primärenergitalet gånger `living_area` gånger Fgeo delat med viktningsfaktorn (BBR 29: el 1,8, fjärrvärme 0,7). Spannet är 0 för säkra värden, ±20 % under `confidence` 0,7, ±15 % (±30 % om osäkert) för energi gånger pris och ±30 % för skattningen ur primärenergitalet.
+- **Energipriser.** Användarens antagande, annars kommunens pris i `prisma/data/municipalities.mts`. Pellets har inget pris.
+- **Drifttrend.** Medelvärdet av kommunens årliga förändringar i Nils Holgersson per kategori, ränta på ränta. VA, sophämtning, el (bara nätavgiften) och fjärrvärme trendas. Förändringarna är nominella medan prognosen är i startårets kronor, så trenden överdriver något.
+- **Kapitalkostnad.** `interest_rate` gånger `loan_sek` varje år, utan amortering. Ränta utan lån flaggas och ger ingen kostnad.
+- **Index.** Profilens pris förs från `priceYear` till startåret med årsmedel av BKI. Ett startår efter senaste data använder senaste året (`priceIndexYear` i svaret).
+- **Ordning per år.** Varje scenario är en egen väg med egna bytesår, så ett enskilt år kan låg eller hög hamna på fel sida om typisk. Summorna är i ordning. Verktygsbeskrivningen säger det.
+- **Luckor.** Svaret har `gaps` bredvid summorna: om det finns ett besiktningsprotokoll (`inspected`), åtgärder utan kostnad, antagna delar (`assumedParts`), dokumenterade delar med husets byggår som installationsår och delar utan kostnad, så att Claude säger vad summan saknar.
+- **Ojämn redovisning.** Ett hus med besiktningsprotokoll har en lista med fel; ett hus utan har okända fel, inte inga. `compare` visar därför `inspectionFindings` per komponenttyp och hus, med `null` för ett hus utan protokoll, och beskrivningen säger åt Claude att ett fel i ett hus kan finnas också i ett obesiktigat. Felen läggs inte på det obesiktigade huset i kronor, eftersom det inte finns underlag för hur mycket en besiktning brukar hitta.
+- **Inte med ännu.** Snöröjning och takskottning efter snözon, ställning vid fasadmålning. Verktygen säger det i `notModelled`.
 
 ## Byggordning
 
@@ -360,9 +389,14 @@ Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för f�
 ## Öppna frågor
 
 - Kostar Boverkets API för energideklarationer något? (Kräver avtal som företag.)
-- Var lagras standardpriser för energi? De skiljer sig per kommun (el 1,44 kr/kWh i Luleå och 1,53 i Boden, fjärrvärme 0,78 kr/kWh i Luleå, se `prisma/data/municipalities.mts`), men `Assumption` gäller ett hus eller alla hus. Avgörs i milstolpe 5. Bodens Energi publicerar inget kWh-pris för villor, bara tariffens delar.
-- Hur räknas återkommande underhåll som ommålning av fasad, fönster och dörrar? Profilerna har bara bytesintervall, och ommålningen (8–15 år) står i kommentarer i `lifespanProfiles.mts`. Avgörs i milstolpe 5; `last_painted_year` är startpunkten.
+- Fjärrvärme i Boden har inget pris per kWh: Bodens Energi publicerar bara tariffens delar. Ett hus där med fjärrvärme och bara energianvändning får ingen uppvärmningskostnad förrän användaren sätter `district_heating_price_sek_kwh`.
+- Snöröjning och takskottning efter snözon saknar kostnadsdata och ingår inte i prognosen.
 - Hur får huset sina koordinater, så att `deso_code` och snölasten kan räknas fram? Boverkets klimatlast-API ger `s_k` för en punkt (Luleå centrum 2,5 kN/m², resten av kommunen 3,0).
+
+Besvarat i milstolpe 5:
+
+- **Standardpriser för energi** ligger kvar i `prisma/data/municipalities.mts` med källor och används när användaren inte satt eget pris. `Assumption` behöver ingen nivå per kommun.
+- **Ommålning** är en återkommande kostnad i profilen, se "Regler för beräkningen".
 
 Besvarat i milstolpe 2:
 

@@ -93,6 +93,9 @@ export async function createHouse(
         components: new Map(),
         replaced: new Set(),
         documents: new Set(),
+        workItems: new Map(),
+        replacedWorkItems: new Set(),
+        pendingReplacements: new Map(),
       })
     : { errors: [], warnings: [] }
   if (problems.errors.length) return { ok: false, errors: problems.errors }

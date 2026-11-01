@@ -40,6 +40,9 @@ describe('checkValue', () => {
 const DOC = '01a19755-0000-7000-8000-000000000001'
 const ROOF = '01a19755-0000-7000-8000-000000000002'
 const OLD_PANEL = '01a19755-0000-7000-8000-000000000003'
+const FINDING = '01a19755-0000-7000-8000-000000000004'
+const OLD_FINDING = '01a19755-0000-7000-8000-000000000005'
+const NO_FINDING = '01a19755-0000-7000-8000-000000000006'
 
 const ctx: ChangeContext = {
   types: new Map<string, LibraryType>([
@@ -70,6 +73,9 @@ const ctx: ChangeContext = {
   components: new Map([[ROOF, 'roof_covering']]),
   replaced: new Set([OLD_PANEL]),
   documents: new Set([DOC]),
+  workItems: new Map([[FINDING, ROOF]]),
+  replacedWorkItems: new Set([OLD_FINDING]),
+  pendingReplacements: new Map(),
 }
 
 const check = (input: unknown) =>
@@ -155,5 +161,42 @@ describe('validateChanges', () => {
       }).errors
     ).toHaveLength(1)
     expect(check({}).errors).toEqual(['nothing to propose'])
+  })
+
+  it('restates a current work item, once', () => {
+    const restate = (replaces: string) => ({
+      replaces,
+      kind: 'REPAIR' as const,
+      description: 'Laga hängrännan',
+      costLowSek: 3000,
+      costHighSek: 6000,
+    })
+    expect(check({ workItems: [restate(FINDING)] }).errors).toEqual([])
+    expect(
+      check({
+        workItems: [
+          restate(FINDING),
+          restate(FINDING),
+          restate(OLD_FINDING),
+          restate(NO_FINDING),
+        ],
+      }).errors
+    ).toEqual([
+      `workItems[1].replaces: ${FINDING} is replaced twice`,
+      `workItems[2].replaces: work item ${OLD_FINDING} has been replaced`,
+      `workItems[3].replaces: no work item ${NO_FINDING} in this house; use get_house`,
+    ])
+  })
+
+  it('refuses what another open draft already replaces', () => {
+    const r = validateChanges(
+      changesInput.parse({
+        workItems: [{ replaces: FINDING, kind: 'REPAIR', description: 'x' }],
+      }),
+      { ...ctx, pendingReplacements: new Map([[FINDING, DOC]]) }
+    )
+    expect(r.errors).toEqual([
+      `${FINDING} is already replaced in open draft ${DOC}; add to that draft with draftId, or let the user decide it first`,
+    ])
   })
 })

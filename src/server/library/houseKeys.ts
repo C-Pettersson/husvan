@@ -171,6 +171,16 @@ export const HOUSE_KEYS: Record<string, HouseKey> = {
     datatype: 'number',
     unit: 'SEK',
   },
+  insurance_cost_sek_per_year: {
+    description: 'Home insurance per year',
+    datatype: 'number',
+    unit: 'SEK',
+  },
+  chimney_sweeping_cost_sek_per_year: {
+    description: 'Chimney sweeping and fire safety inspection per year',
+    datatype: 'number',
+    unit: 'SEK',
+  },
 
   // The area
   deso_code: {

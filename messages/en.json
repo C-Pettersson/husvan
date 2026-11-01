@@ -81,6 +81,8 @@
       "water_sewage_cost_sek_per_year": "Water and sewage per year",
       "waste_cost_sek_per_year": "Waste collection per year",
       "absent_features": "Lacks",
+      "insurance_cost_sek_per_year": "Insurance per year",
+      "chimney_sweeping_cost_sek_per_year": "Chimney sweeping per year",
       "radon_bq_m3": "Radon level",
       "radon_measurement_year": "Radon measurement year",
       "radon_measured": "Radon measured",

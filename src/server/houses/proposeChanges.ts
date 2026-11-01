@@ -43,7 +43,11 @@ export async function loadContext(
   const visible: Prisma.ChangesetWhereInput = draftId
     ? { OR: [{ status: 'APPROVED' }, { id: draftId }] }
     : { status: 'APPROVED' }
-  const [types, components, documents] = await Promise.all([
+  const otherDrafts: Prisma.ChangesetWhereInput = {
+    status: 'DRAFT',
+    ...(draftId && { id: { not: draftId } }),
+  }
+  const [types, components, documents, workItems, pending] = await Promise.all([
     loadLibrary(db),
     db.component.findMany({
       where: { houseId, changeset: visible },
@@ -53,7 +57,24 @@ export async function loadContext(
       where: { houseId, changeset: { status: 'APPROVED' } },
       select: { id: true },
     }),
+    db.workItem.findMany({
+      where: { houseId, changeset: visible, retractedAt: null },
+      select: { id: true, componentId: true, replacesId: true },
+    }),
+    Promise.all([
+      db.component.findMany({
+        where: { houseId, changeset: otherDrafts, replacesId: { not: null } },
+        select: { replacesId: true, changesetId: true },
+      }),
+      db.workItem.findMany({
+        where: { houseId, changeset: otherDrafts, replacesId: { not: null } },
+        select: { replacesId: true, changesetId: true },
+      }),
+    ]),
   ])
+  const replacedWorkItems = new Set(
+    workItems.flatMap((w) => (w.replacesId ? [w.replacesId] : []))
+  )
   const replaced = new Set(
     components.flatMap((c) => (c.replacesId ? [c.replacesId] : []))
   )
@@ -64,6 +85,15 @@ export async function loadContext(
     ),
     replaced,
     documents: new Set(documents.map((d) => d.id)),
+    workItems: new Map(
+      workItems
+        .filter((w) => !replacedWorkItems.has(w.id))
+        .map((w) => [w.id, w.componentId])
+    ),
+    replacedWorkItems,
+    pendingReplacements: new Map(
+      pending.flat().map((r) => [r.replacesId!, r.changesetId])
+    ),
   }
 }
 
@@ -147,10 +177,28 @@ export async function insertChanges(
       )
   }
   await tx.observation.createMany({ data: observations })
+  // A restated work item keeps the old one's component unless it names one.
+  const restated = input.workItems.flatMap((w) =>
+    w.replaces ? [w.replaces] : []
+  )
+  const componentOf = new Map(
+    (restated.length
+      ? await tx.workItem.findMany({
+          where: { id: { in: restated } },
+          select: { id: true, componentId: true },
+        })
+      : []
+    ).map((w) => [w.id, w.componentId])
+  )
   await tx.workItem.createMany({
     data: input.workItems.map((w) => ({
       houseId,
-      componentId: target(w.component),
+      componentId: w.component
+        ? target(w.component)
+        : w.replaces
+          ? (componentOf.get(w.replaces) ?? null)
+          : null,
+      replacesId: w.replaces ?? null,
       kind: w.kind,
       description: w.description,
       yearMin: w.yearMin ?? null,

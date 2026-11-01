@@ -141,6 +141,10 @@ export async function getHouse(
       ),
     ].map(([key, v]) => ({ key, ...v }))
 
+  // A work item another visible one restates is history.
+  const restated = new Set(workItems.map((w) => w.replacesId).filter(Boolean))
+  const currentWorkItems = workItems.filter((w) => !restated.has(w.id))
+
   // A component another visible component replaces is history, not part of
   // the house as it stands.
   const replaced = new Set(components.map((c) => c.replacesId).filter(Boolean))
@@ -183,8 +187,9 @@ export async function getHouse(
         },
       ])
     ),
-    workItems: workItems.map((w) => ({
+    workItems: currentWorkItems.map((w) => ({
       id: w.id,
+      replacesId: w.replacesId,
       componentId: w.componentId,
       kind: w.kind as WorkItemKind,
       description: w.description,

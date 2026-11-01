@@ -29,6 +29,27 @@ describe('seeded type library', () => {
     expect(validateLibrary(componentTypes, lifespanProfiles)).toEqual([])
   })
 
+  it('repaints painted wood, with an interval for every paint type on facades', () => {
+    const painted = lifespanProfiles
+      .filter((p) => p.repaintTypicalYears)
+      .map((p) => [p.type, p.match])
+    expect(painted).toEqual([
+      ['facade', { material: 'wood_panel' }],
+      ['window', { frame_material: 'wood' }],
+      ['exterior_door', { material: 'wood' }],
+    ])
+    const facade = componentTypes.find((t) => t.type === 'facade')!
+    const paintType = facade.attributeSchema.paint_type
+    expect(paintType.datatype).toBe('choice')
+    expect(
+      Object.keys(facade.forecastDefaults?.repaintByPaintType ?? {}).sort()
+    ).toEqual(
+      Object.keys(
+        paintType.datatype === 'choice' ? paintType.options : {}
+      ).sort()
+    )
+  })
+
   it('covers every type CLAUDE.md lists', () => {
     const listed = [
       'foundation',
@@ -95,6 +116,84 @@ describe('validateLibrary', () => {
     expect(
       validateLibrary([{ ...roof, allowedSubcomponents: ['gutter'] }], [])
     ).toEqual(['roof_covering: unknown subcomponent gutter'])
+  })
+
+  it('takes repainting whole or not at all', () => {
+    const repaint = {
+      repaintMinYears: 8,
+      repaintTypicalYears: 10,
+      repaintMaxYears: 15,
+      repaintCostLowSek: 200,
+      repaintCostHighSek: 400,
+    }
+    const priced = { ...profile, priceYear: 2026 }
+    expect(lifespanProfileSchema.safeParse(priced).success).toBe(true)
+    expect(
+      lifespanProfileSchema.safeParse({ ...priced, ...repaint }).success
+    ).toBe(true)
+    expect(
+      lifespanProfileSchema.safeParse({ ...profile, ...repaint }).success
+    ).toBe(false)
+    expect(
+      lifespanProfileSchema.safeParse({
+        ...priced,
+        ...repaint,
+        repaintCostHighSek: null,
+      }).success
+    ).toBe(false)
+    expect(
+      lifespanProfileSchema.safeParse({
+        ...priced,
+        ...repaint,
+        repaintMinYears: 20,
+      }).success
+    ).toBe(false)
+  })
+
+  it('rejects a repaint interval for a paint type that does not exist', () => {
+    const facade = componentTypes.find((t) => t.type === 'facade')!
+    const interval = {
+      minYears: 8,
+      typicalYears: 10,
+      maxYears: 12,
+      sources: [{ name: 'x', url: 'https://example.com' }],
+    }
+    expect(
+      validateLibrary(
+        [
+          {
+            ...facade,
+            forecastDefaults: {
+              repaintByPaintType: { acrylic: interval, tar: interval },
+            },
+          },
+        ],
+        []
+      )
+    ).toEqual(['facade: repaint interval for unknown paint_type tar'])
+  })
+
+  it('rejects a cheaper renewal on unknown options or without a profile', () => {
+    const sewer = componentTypes.find((t) => t.type === 'sewer_pipes')!
+    expect(
+      validateLibrary(
+        [
+          {
+            ...sewer,
+            forecastDefaults: {
+              cheaperRenewal: {
+                when: { material: ['cast_iron', 'lead'] },
+                match: { renovation_method: 'relined' },
+              },
+            },
+          },
+        ],
+        []
+      )
+    ).toEqual([
+      'sewer_pipes: cheaperRenewal names material=lead, not a choice option',
+      'sewer_pipes: no profile matches cheaperRenewal',
+    ])
   })
 
   it('requires a key order when profiles match on different keys', () => {

@@ -1,5 +1,6 @@
 import { McpServer, type McpRequestContext } from '@modelcontextprotocol/server'
 import prisma from '@/lib/prisma'
+import { registerForecastTools } from './forecastTools'
 import { registerReadTools } from './readTools'
 import { registerWriteTools } from './writeTools'
 
@@ -11,8 +12,9 @@ export function createHusvanMcpServer(ctx: McpRequestContext): McpServer {
     throw new Error('MCP request reached the server without a verified user')
   }
 
-  const server = new McpServer({ name: 'husvan', version: '0.4.0' })
+  const server = new McpServer({ name: 'husvan', version: '0.5.0' })
   registerReadTools(server, prisma, userId)
   registerWriteTools(server, prisma, userId)
+  registerForecastTools(server, prisma, userId)
   return server
 }

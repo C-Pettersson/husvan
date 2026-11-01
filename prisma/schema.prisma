@@ -365,6 +365,14 @@ model LifespanProfile {
   costHighSek          Decimal? @db.Decimal(12, 0)
   costUnit             CostUnit
   priceYear            Int?
+  // Repainting of painted wood, a recurring cost apart from replacement, in
+  // the same costUnit and priceYear. Null when the part is not repainted.
+  // A known paint_type uses the interval in the type's forecastDefaults.
+  repaintMinYears      Int?
+  repaintTypicalYears  Int?
+  repaintMaxYears      Int?
+  repaintCostLowSek    Decimal? @db.Decimal(12, 0)
+  repaintCostHighSek   Decimal? @db.Decimal(12, 0)
   sources              Json     @default("[]")
 
   componentType ComponentType @relation(fields: [type], references: [type])
@@ -587,15 +595,21 @@ model WorkItem {
   documentId  String?      @db.Uuid
   quote       String?
   retractedAt DateTime?
+  // This work item restates that one, e.g. with a cost estimate; the old
+  // row is untouched and hidden when read.
+  replacesId  String?      @db.Uuid
   changesetId String       @db.Uuid
   createdAt   DateTime     @default(now())
 
-  house     House      @relation(fields: [houseId], references: [id])
-  component Component? @relation(fields: [componentId], references: [id])
-  document  Document?  @relation(fields: [documentId], references: [id])
-  changeset Changeset  @relation(fields: [changesetId], references: [id])
+  house      House      @relation(fields: [houseId], references: [id])
+  component  Component? @relation(fields: [componentId], references: [id])
+  document   Document?  @relation(fields: [documentId], references: [id])
+  changeset  Changeset  @relation(fields: [changesetId], references: [id])
+  replaces   WorkItem?  @relation("WorkItemReplacement", fields: [replacesId], references: [id])
+  replacedBy WorkItem[] @relation("WorkItemReplacement")
 
   @@index([houseId])
+  @@index([replacesId])
 }
 
 // REPLACEMENT of a component takes the place of that component's term in the
