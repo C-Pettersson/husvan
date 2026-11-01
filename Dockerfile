@@ -28,8 +28,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./next.config.ts
-# prisma/ is needed for `yarn prisma migrate deploy` and the seed, run by hand
-# against the database (see CLAUDE.md, "Leverans och drift").
+# Migrations, the seed and the import scripts run from a checkout against the
+# database through a port-forward (CLAUDE.md, "Leverans och drift"). prisma/
+# is here for the generated client's schema.
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
