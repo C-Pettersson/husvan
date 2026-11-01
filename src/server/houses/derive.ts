@@ -93,23 +93,37 @@ export function bathroomCount(components: ComponentView[]) {
 }
 
 export type Risk = {
-  kind: 'risk_construction' | 'older_electrical'
-  componentId: string
+  kind: 'risk_construction' | 'older_electrical' | 'radon'
+  componentId: string | null // null = about the house itself
   type: string
   reason: string
 }
 
-// Foundations whose type and variant are known risk constructions, and
-// older electrical systems. Flagged, never turned into kronor beyond the
-// replacement cost.
+// Strålsäkerhetsmyndigheten's reference level for radon in homes.
+export const RADON_REFERENCE_BQ_M3 = 200
+
+// Foundations whose type and variant are known risk constructions, older
+// electrical systems, and radon measured above the reference level. Flagged,
+// never turned into kronor beyond the replacement cost.
 const RISK_FOUNDATIONS: Record<string, [attribute: string, value: string]> = {
   slab_on_ground: ['slab_insulation', 'above'],
   crawl_space: ['crawl_space_ventilation', 'outdoor_air'],
   basement: ['basement_wall_insulation', 'interior'],
 }
 
-export function risks(components: ComponentView[]): Risk[] {
+export function risks(
+  components: ComponentView[],
+  houseValues: KeyValueView[] = []
+): Risk[] {
   const result: Risk[] = []
+  const radon = valueOf(houseValues, 'radon_bq_m3')
+  if (typeof radon === 'number' && radon > RADON_REFERENCE_BQ_M3)
+    result.push({
+      kind: 'radon',
+      componentId: null,
+      type: 'house',
+      reason: `radon ${radon} Bq/m3, above the reference level ${RADON_REFERENCE_BQ_M3}`,
+    })
   for (const c of flatten(components)) {
     if (c.type === 'foundation') {
       const foundationType = valueOf(c.values, 'foundation_type')

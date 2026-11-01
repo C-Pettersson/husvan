@@ -5,7 +5,7 @@
 // limit what may be stored.
 export type HouseKey = {
   description: string
-  datatype: 'text' | 'number' | 'year' | 'date' | 'choice' | 'list'
+  datatype: 'text' | 'number' | 'year' | 'date' | 'boolean' | 'choice' | 'list'
   unit?: string
   options?: string[]
 }
@@ -97,6 +97,23 @@ export const HOUSE_KEYS: Record<string, HouseKey> = {
       'Ventilation without a component of its own, such as natural draught',
     datatype: 'choice',
     options: ['natural_draft'],
+  },
+  // Radon in indoor air. The reference level for homes is 200 Bq/m3
+  // (Strålsäkerhetsmyndigheten); a measured level above it is flagged.
+  radon_bq_m3: {
+    description:
+      'Measured radon level in indoor air, the annual mean the report states',
+    datatype: 'number',
+    unit: 'Bq/m3',
+  },
+  radon_measurement_year: {
+    description: 'Year of the radon measurement',
+    datatype: 'year',
+  },
+  radon_measured: {
+    description:
+      'Whether radon has been measured. false only when a document says it has not been; not mentioned is unknown',
+    datatype: 'boolean',
   },
   absent_features: {
     description:

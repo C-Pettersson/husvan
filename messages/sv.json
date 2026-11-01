@@ -81,6 +81,9 @@
       "water_sewage_cost_sek_per_year": "Vatten och avlopp per år",
       "waste_cost_sek_per_year": "Renhållning per år",
       "absent_features": "Saknar",
+      "radon_bq_m3": "Radonhalt",
+      "radon_measurement_year": "Radonmätning, år",
+      "radon_measured": "Radon mätt",
       "deso_code": "DeSO-område",
       "police_area_code": "Lokalpolisområde"
     },

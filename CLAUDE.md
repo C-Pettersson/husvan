@@ -136,6 +136,17 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 
 `confirm_changes` tar `approve` eller `reject`. Avslagna rader finns kvar men syns aldrig. Utkast valideras mot typbiblioteket redan vid `propose_changes`, så att Claude får felet medan den har dokumentet framför sig.
 
+Ordningen i chatten: `create_house`, sedan `save_document` för varje dokument, `type_library` och sist `propose_changes` där varje värde pekar på sitt `documentId`. Ett dokument kräver ett hus, så värden som skickas med `create_house` kan inte peka på något dokument; de är till för det användaren skriver i chatten. Valideringen (`validateChanges` i `src/server/houses/changes.ts`, värdena i `src/server/library/checkValue.ts`):
+
+- **Allt eller inget.** Vid minsta fel skrivs ingenting, och svaret listar alla fel med sökväg, till exempel `components[3] roof_covering.values[0] material: must be one of …`.
+- **Typer och värden.** Komponenttypen måste finnas. En nyckel i typens `attributeSchema` eller i husets nycklar (`houseKeys.ts`) kontrolleras mot sin datatyp, sina val, `min`/`max` och sin enhet; utelämnad enhet blir nyckelns. En nyckel utanför schemat sparas med en varning. `absent_features` får bara nämna typer som finns, eller `basement`.
+- **Trädet.** `parent` är en `ref` som deklarerats tidigare i samma anrop eller id:t på en befintlig komponent, och förälderns typ måste ha barnets typ i `allowedSubcomponents`. `replaces` måste vara en befintlig komponent som inte redan är ersatt, och en ersatt komponent tar inte emot nya värden.
+- **Vad ett utkast får peka på.** Godkända komponenter och dokument i samma hus, och komponenterna i det utkast som `draftId` lägger till i. Ett tillägg låser utkastets rad, så att ett godkännande inte kan smita in emellan och göra nya rader synliga ogranskade.
+- **Upprepning.** `create_house` vägrar ett hus med samma gatuadress (delen före första kommatecknet, utan hänsyn till skiftläge) eller samma fastighetsbeteckning och returnerar det befintliga id:t. `save_document` med samma `sourceUrl` eller `sha256` returnerar det första dokumentet.
+- **Språk.** Komponenternas `name` och åtgärdernas `description` skrivs på svenska, eftersom användaren läser dem; `quote` är dokumentets egna ord.
+
+Värden från MCP får alltid källa `CLAUDE`. Att återkalla en observation eller avfärda en åtgärd (`retractedAt`) går inte via MCP i version 1; en bättre läsning är en ny observation, och rättningar görs på webbsidan i milstolpe 6.
+
 ### Konventioner
 
 - Attributnycklar och typnamn i datan är engelska, ASCII i snake_case (`installation_year`, `underfloor_heating`).
@@ -145,6 +156,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 - Köpdata är observationer på huset, med källa som alla andra värden: `asking_price_sek` (utgångspris), `highest_bid_sek` och `highest_bid_date`, `final_price_sek` (slutpris), `sale_status` (`upcoming`, `bidding`, `closed`), `assessed_value_sek` (taxeringsvärde) och `assessment_year`. `sale_status` gäller försäljningen och är skilt från husets `status`.
 - **Pris** i prognos och jämförelse är `final_price_sek` om det finns, annars `highest_bid_sek`, annars `asking_price_sek`. Svaret säger alltid vilket av dem som användes.
 - Egenskaper som är observationer på huset: `room_count` (antal rum), `floor_count` (våningar), `energy_class` (`A`–`G`), `energy_performance_kwh_per_m2` (primärenergital) och `energy_declaration_year`, `absent_features` (lista med typnamn som huset uttryckligen saknar), `deso_code` (SCB:s demografiska statistikområde) och `police_area_code` (lokalpolisområde).
+- **Radon** är observationer på huset: `radon_bq_m3` (årsmedelvärde i inomhusluften, Bq/m³), `radon_measurement_year` och `radon_measured` (`false` bara när ett dokument säger att radon inte är mätt; inte nämnt är okänt). En uppmätt halt över referensnivån 200 Bq/m³ (Strålsäkerhetsmyndigheten) flaggas vid läsning som riskkonstruktionerna, utan kronvärde.
 - Husets `status` är `CANDIDATE`, `DECLINED` (avstått), `PURCHASED` eller `SOLD` och är ägarens beslut. Försäljningens läge är observationen `sale_status`, eftersom den kommer från annonsen och mäklaren och kan vara fel.
 - Enumvärden är `UPPER_CASE` i databasen och får en översättningsnyckel per värde i webben (`house.status.purchased`).
 
@@ -190,6 +202,8 @@ Typerna finns i `prisma/data/componentTypes.mts` och profilerna i `prisma/data/l
 Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`, `crawl_space_dehumidifier` (avfuktare i krypgrund). Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `electric_radiators` (direktverkande el), `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `electrical_panel`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`. Egenskaper, utan profil i version 1: `pool`, `sauna`, `deck`, `sunroom`, `garage`.
 
 Fönster registreras styck för styck när underlaget tillåter det, annars som en komponent `window` med `quantity`.
+
+`facade`, `window` och `exterior_door` har `last_painted_year` skilt från `installation_year`, eftersom målat trä målas om var 8–15 år men byts mycket mer sällan. Hur ommålningen räknas in i prognosen avgörs i milstolpe 5 (se Öppna frågor).
 
 ### Grunden
 
@@ -285,7 +299,9 @@ Varje värde visas bredvid kommunens och rikets, med år och nivå. Ett kommunv�
 
 Verktygens beskrivningar och svar till Claude är på engelska. Claude svarar ändå användaren på svenska.
 
-Läsverktygen ligger i `src/server/mcp/readTools.ts` och läser genom samma kod som webben: `getHouse` (med `asOf` för huset ett visst datum), regeln för aktuellt värde i `currentValue.ts` och det som härleds vid läsning i `derive.ts` (pris, egenskaper ja/nej/okänt, uppvärmning, antal badrum, riskkonstruktioner och äldre elsystem). Nycklarna på huset finns för Claude i `src/server/library/houseKeys.ts` och returneras av `type_library` tillsammans med komponenttyperna. Verktyget `whoami` från milstolpe 0 är borttaget.
+Läsverktygen ligger i `src/server/mcp/readTools.ts` och läser genom samma kod som webben: `getHouse` (med `asOf` för huset ett visst datum), regeln för aktuellt värde i `currentValue.ts` och det som härleds vid läsning i `derive.ts` (pris, egenskaper ja/nej/okänt, uppvärmning, antal badrum, riskkonstruktioner, äldre elsystem och radon över referensnivån). Nycklarna på huset finns för Claude i `src/server/library/houseKeys.ts` och returneras av `type_library` tillsammans med komponenttyperna. Verktyget `whoami` från milstolpe 0 är borttaget.
+
+Skrivverktygen ligger i `src/server/mcp/writeTools.ts` och skriver genom `createHouse`, `saveDocument`, `proposeChanges` (som även `add_work_item` använder), `confirmChangeset` och `setAssumptions` i `src/server/houses/`. Ett utkast returneras med `draftId` och `reviewUrl` (husets sida med `?draft=`), och `get_house` med `draftId` visar utkastets rader märkta `draft: true`, så att Claude kan berätta vad ett godkännande lägger till innan användaren bestämmer sig.
 
 Ett anrop i protokollet 2026-07-28 kräver headrarna `Mcp-Protocol-Version`, `Mcp-Method` (och `Mcp-Name` för `tools/call`) och `params._meta` med `io.modelcontextprotocol/protocolVersion` och `io.modelcontextprotocol/clientCapabilities`. Det behövs för att anropa routen för hand.
 
@@ -345,6 +361,7 @@ Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för f�
 
 - Kostar Boverkets API för energideklarationer något? (Kräver avtal som företag.)
 - Var lagras standardpriser för energi? De skiljer sig per kommun (el 1,44 kr/kWh i Luleå och 1,53 i Boden, fjärrvärme 0,78 kr/kWh i Luleå, se `prisma/data/municipalities.mts`), men `Assumption` gäller ett hus eller alla hus. Avgörs i milstolpe 5. Bodens Energi publicerar inget kWh-pris för villor, bara tariffens delar.
+- Hur räknas återkommande underhåll som ommålning av fasad, fönster och dörrar? Profilerna har bara bytesintervall, och ommålningen (8–15 år) står i kommentarer i `lifespanProfiles.mts`. Avgörs i milstolpe 5; `last_painted_year` är startpunkten.
 - Hur får huset sina koordinater, så att `deso_code` och snölasten kan räknas fram? Boverkets klimatlast-API ger `s_k` för en punkt (Luleå centrum 2,5 kN/m², resten av kommunen 3,0).
 
 Besvarat i milstolpe 2:
