@@ -340,7 +340,11 @@
     "running_costs_unknown": "Running costs are unknown",
     "overdue_seen_ok": "Past its lifespan, but the inspection saw it without a serious finding; given part of a lifespan more",
     "overdue_unjudged": "Past its lifespan and not judged by an inspection; replaced within the coming years, in high at once",
-    "work_item_timed_by_severity": "No year; spread over {years, plural, one {# year} other {# years}} by its severity ({severity})"
+    "work_item_timed_by_severity": "No year; spread over {years, plural, one {# year} other {# years}} by its severity ({severity})",
+    "quantity_from_footprint": "{key} estimated from the living area over {floors} floors",
+    "quantity_from_footprint_shared": "{key} estimated from the living area over {floors} floors and shared among {count} parts",
+    "priced_by_context": "Priced by the house's {key}: {value}",
+    "one_of_several": "The house has {count} of these; while another one works, this one is less urgent"
   },
   "risk": {
     "title": "Risks",

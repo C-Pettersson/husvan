@@ -86,6 +86,25 @@ export const forecastDefaultsSchema = z.object({
   // Quantity per m2 living area when the component's own quantity is
   // missing, in the unit of the profile's costUnit.
   quantityPerLivingM2: z.number().positive().optional(),
+  // Quantity from the footprint (living_area / floor_count) instead, when
+  // the number of floors is known: factor times the footprint's area, its
+  // perimeter, or its perimeter times the floors (wall height for a facade).
+  quantityFromFootprint: z
+    .object({
+      basis: z.enum(['area', 'perimeter', 'wall']),
+      factor: z.number().positive(),
+    })
+    .optional(),
+  // Attributes read from another component of the house, attribute to
+  // component type, such as drainage priced by the foundation type. The
+  // component's own value wins; profiles may match on them.
+  context: z.record(keySchema, keySchema).optional(),
+  // Not assumed when the context has one of these values, such as no
+  // drainage on a plinth foundation.
+  assumeUnless: z.record(keySchema, z.array(z.string()).min(1)).optional(),
+  // A house often has several, such as bathrooms: each one says how many,
+  // so the reader can weigh urgency.
+  oneOfSeveral: z.boolean().optional(),
   conditionRule: conditionRuleSchema.optional(),
   // Which match keys weigh most when several profiles fit, first wins (see
   // selectProfile). Required when a type's profiles match on different keys.
@@ -220,7 +239,10 @@ export function validateLibrary(
       continue
     }
     for (const [key, value] of Object.entries(p.match ?? {})) {
-      const attr = t.attributeSchema[key]
+      const from = t.forecastDefaults?.context?.[key]
+      const attr = from
+        ? byType.get(from)?.attributeSchema[key]
+        : t.attributeSchema[key]
       if (!attr)
         errors.push(`${p.type}: profile matches unknown attribute ${key}`)
       else if (attr.datatype !== 'choice' || !(value in attr.options)) {
@@ -228,6 +250,29 @@ export function validateLibrary(
           `${p.type}: profile matches ${key}=${value}, not a choice option`
         )
       }
+    }
+  }
+
+  // Context comes from a type that has the attribute, and what rules an
+  // assumption out names its options.
+  for (const t of types) {
+    const context = t.forecastDefaults?.context ?? {}
+    for (const [key, from] of Object.entries(context)) {
+      if (!byType.get(from)?.attributeSchema[key])
+        errors.push(`${t.type}: context ${key} not an attribute of ${from}`)
+    }
+    for (const [key, values] of Object.entries(
+      t.forecastDefaults?.assumeUnless ?? {}
+    )) {
+      const from = context[key]
+      const attr = from ? byType.get(from)?.attributeSchema[key] : undefined
+      if (!attr) errors.push(`${t.type}: assumeUnless ${key} is not context`)
+      else
+        for (const value of values)
+          if (attr.datatype !== 'choice' || !(value in attr.options))
+            errors.push(
+              `${t.type}: assumeUnless names ${key}=${value}, not a choice option`
+            )
     }
   }
 

@@ -340,7 +340,11 @@
     "running_costs_unknown": "Driftkostnaderna är okända",
     "overdue_seen_ok": "Livslängden har passerats, men besiktningen såg delen utan allvarlig anmärkning; den får en del av en livslängd till",
     "overdue_unjudged": "Livslängden har passerats och ingen besiktning har bedömt delen; byts inom de närmaste åren, i hög direkt",
-    "work_item_timed_by_severity": "Inget år; utlagd på {years, plural, one {# år} other {# år}} efter allvaret ({severity})"
+    "work_item_timed_by_severity": "Inget år; utlagd på {years, plural, one {# år} other {# år}} efter allvaret ({severity})",
+    "quantity_from_footprint": "{key} uppskattad ur boytan fördelad på {floors} våningar",
+    "quantity_from_footprint_shared": "{key} uppskattad ur boytan fördelad på {floors} våningar och delad på {count} delar",
+    "priced_by_context": "Prissatt efter husets {key}: {value}",
+    "one_of_several": "Huset har {count} sådana; medan en annan fungerar är den här mindre brådskande"
   },
   "risk": {
     "title": "Risker",

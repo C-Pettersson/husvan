@@ -703,3 +703,94 @@ describe('urgency from the inspection', () => {
     expect(f.items[1].typical).toEqual([{ year: 2026, sek: 1000 }])
   })
 })
+
+describe('parts that depend on the rest of the house', () => {
+  const lib: Library = {
+    ...library,
+    defaults: new Map([
+      ...library.defaults,
+      [
+        'drainage',
+        {
+          assumeUndocumented: true,
+          quantityPerLivingM2: 0.35,
+          quantityFromFootprint: { basis: 'perimeter' as const, factor: 1 },
+          context: { foundation_type: 'foundation' },
+          assumeUnless: { foundation_type: ['plinth'] },
+        },
+      ],
+      [
+        'roof_covering',
+        { quantityFromFootprint: { basis: 'area' as const, factor: 1.3 } },
+      ],
+      ['bathroom', { oneOfSeveral: true }],
+    ]),
+    profiles: [
+      ...library.profiles,
+      profile({ type: 'drainage', costUnit: 'LINEAR_M' }),
+      profile({
+        type: 'drainage',
+        match: { foundation_type: 'basement' },
+        costLowSek: 5000,
+        costHighSek: 8000,
+        costUnit: 'LINEAR_M',
+      }),
+      profile({ type: 'bathroom', costUnit: 'EACH' }),
+    ],
+  }
+  const foundation = (foundation_type: string) =>
+    comp('foundation', { foundation_type })
+  const drainage = (components: ComponentView[], values = house) =>
+    planComponents(components, values, lib, START).find(
+      (p) => p.type === 'drainage'
+    )
+
+  it('prices drainage by the foundation type and says so', () => {
+    const p = drainage([foundation('basement')])!
+    expect(p.profile).toEqual({ foundation_type: 'basement' })
+    expect(p.flags.map(flagText)).toContain(
+      "priced for the house's foundation_type = basement"
+    )
+    expect(drainage([foundation('slab_on_ground')])!.profile).toEqual({})
+  })
+
+  it('does not assume drainage where the foundation rules it out', () => {
+    expect(drainage([foundation('plinth')])).toBeUndefined()
+    expect(drainage([])).toBeDefined()
+  })
+
+  it('takes quantities from the footprint when the floors are known', () => {
+    // 120 m2 over 2 floors: a 60 m2 footprint, 4 × √60 m around it.
+    const twoFloors = [...house, kv('floor_count', 2)]
+    expect(drainage([], twoFloors)!.quantity).toBeCloseTo(4 * Math.sqrt(60))
+    expect(drainage([], house)!.quantity).toBeCloseTo(0.35 * 120)
+    const roof = planComponents(
+      [comp('roof_covering', { installation_year: 2000 })],
+      twoFloors,
+      lib,
+      START
+    )[0]
+    expect(roof.quantity).toBeCloseTo(1.3 * 60)
+    expect(roof.flags.map(flagText)).toContain(
+      'area estimated from living_area over 2 floor(s)'
+    )
+  })
+
+  it('says when a house has several of a part', () => {
+    const plans = planComponents(
+      [comp('bathroom'), comp('bathroom')],
+      house,
+      lib,
+      START
+    ).filter((p) => p.type === 'bathroom')
+    expect(plans).toHaveLength(2)
+    expect(plans[0].flags.map(flagText)).toContain(
+      'the house has 2 of these; while another one works, renewing this one is less urgent'
+    )
+    expect(
+      planComponents([comp('bathroom')], house, lib, START)
+        .find((p) => p.type === 'bathroom')!
+        .flags.some((f) => f.code === 'one_of_several')
+    ).toBe(false)
+  })
+})

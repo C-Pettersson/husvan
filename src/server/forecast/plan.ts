@@ -125,6 +125,11 @@ const costs = (low: number | null, high: number | null): ByScenario | null => {
 const scale = (c: ByScenario, f: number): ByScenario =>
   byScenario((s) => c[s] * f)
 
+// Perimeter of a footprint, in metres per square root of m2: a compact
+// rectangle, as in KlarOffert's drainage examples (100 m2 about 40 m,
+// 140 m2 about 48 m).
+export const PERIMETER_PER_SQRT_M2 = 4
+
 export function planComponents(
   components: ComponentView[],
   houseValues: KeyValueView[],
@@ -133,10 +138,30 @@ export function planComponents(
 ): ComponentPlan[] {
   const documented = flatten(components)
   const absent = valueOf(houseValues, 'absent_features')
+  // Attributes a type reads from another part of the house, such as the
+  // foundation type that prices drainage (forecastDefaults.context).
+  const contextOf = (d: ForecastDefaults): Record<string, string> =>
+    Object.fromEntries(
+      Object.entries(d.context ?? {}).flatMap(([key, type]) => {
+        const value = documented
+          .filter((c) => c.type === type)
+          .map((c) => valueOf(c.values, key))
+          .find((v) => typeof v === 'string')
+        return value === undefined ? [] : [[key, value as string]]
+      })
+    )
+  // A part every house has, unless the house's context rules it out, such
+  // as drainage on a plinth foundation.
+  const ruledOut = (d: ForecastDefaults) =>
+    Object.entries(d.assumeUnless ?? {}).some(([key, values]) => {
+      const value = contextOf(d)[key]
+      return value !== undefined && values.includes(value)
+    })
   const assumed: ComponentView[] = [...library.defaults]
     .filter(
       ([type, d]) =>
         d.assumeUndocumented &&
+        !ruledOut(d) &&
         !documented.some((c) => c.type === type) &&
         !(Array.isArray(absent) && absent.includes(type))
     )
@@ -151,6 +176,30 @@ export function planComponents(
   const all = [...documented, ...assumed]
   const constructionYear = valueOf(houseValues, 'construction_year')
   const livingArea = valueOf(houseValues, 'living_area')
+  const floors = valueOf(houseValues, 'floor_count')
+  const footprint =
+    typeof livingArea === 'number' && typeof floors === 'number' && floors > 0
+      ? livingArea / floors
+      : undefined
+  // The whole house's quantity of a type: from the footprint when the
+  // number of floors is known, since roof and drainage follow the footprint
+  // and the facade the perimeter and the floors; else per m2 living area.
+  const estimate = (d: ForecastDefaults) => {
+    const geometry = d.quantityFromFootprint
+    if (geometry && footprint !== undefined) {
+      const perimeter = PERIMETER_PER_SQRT_M2 * Math.sqrt(footprint)
+      const total =
+        geometry.basis === 'area'
+          ? geometry.factor * footprint
+          : geometry.basis === 'perimeter'
+            ? geometry.factor * perimeter
+            : geometry.factor * perimeter * (floors as number)
+      return { total, fromFootprint: true }
+    }
+    if (d.quantityPerLivingM2 && typeof livingArea === 'number')
+      return { total: d.quantityPerLivingM2 * livingArea, fromFootprint: false }
+    return null
+  }
   // Components of a type and the quantity they state, for sharing a
   // per-area estimate among those that state none.
   const quantities = (type: string, key: string) => {
@@ -166,11 +215,15 @@ export function planComponents(
 
   return all.flatMap((c) => {
     const defaults = library.defaults.get(c.type) ?? {}
-    const attributes = Object.fromEntries(
-      c.values
-        .filter((v) => typeof v.current.value === 'string')
-        .map((v) => [v.key, v.current.value as string])
-    )
+    const context = contextOf(defaults)
+    const attributes: Record<string, string> = {
+      ...context,
+      ...Object.fromEntries(
+        c.values
+          .filter((v) => typeof v.current.value === 'string')
+          .map((v) => [v.key, v.current.value as string])
+      ),
+    }
     const typeProfiles = library.profiles.filter((p) => p.type === c.type)
     const profile = selectProfile(
       typeProfiles,
@@ -181,6 +234,13 @@ export function planComponents(
     if (!profile) return []
     const isAssumed = c.id.startsWith(ASSUMED_PREFIX)
     const flags: Flag[] = isAssumed ? [flag('assumed_part')] : []
+    for (const [key, value] of Object.entries(profile.match))
+      if (context[key] === value)
+        flags.push(flag('priced_by_context', { key, value }))
+    // A second bathroom in need is less urgent while another one works.
+    const ofType = documented.filter((x) => x.type === c.type).length
+    if (defaults.oneOfSeveral && ofType > 1)
+      flags.push(flag('one_of_several', { count: ofType }))
 
     // Condition moves the replacement year.
     const condition = numberValue(c.values, 'condition', flags)
@@ -229,23 +289,33 @@ export function planComponents(
       // components of the type do not state is shared among those that
       // state nothing, so listing parts without numbers does not make a
       // house cheaper.
-      if (defaults.quantityPerLivingM2 && typeof livingArea === 'number') {
+      const whole = estimate(defaults)
+      if (whole) {
         const { unstated, stated } = quantities(c.type, key)
-        const share =
-          (defaults.quantityPerLivingM2 * livingArea - stated) / unstated
+        const share = (whole.total - stated) / unstated
         if (unit === 'EACH' ? share >= 1 : share > 0) {
           flags.push(
-            unstated === 1
-              ? flag('quantity_estimated', { key })
-              : flag('quantity_estimated_shared', { key, count: unstated })
+            whole.fromFootprint
+              ? unstated === 1
+                ? flag('quantity_from_footprint', {
+                    key,
+                    floors: floors as number,
+                  })
+                : flag('quantity_from_footprint_shared', {
+                    key,
+                    floors: floors as number,
+                    count: unstated,
+                  })
+              : unstated === 1
+                ? flag('quantity_estimated', { key })
+                : flag('quantity_estimated_shared', { key, count: unstated })
           )
           return share
         }
       }
       if (unit === 'EACH') {
         // Types priced per window or door usually come in numbers.
-        if (defaults.quantityPerLivingM2)
-          flags.push(flag('quantity_one_assumed'))
+        if (whole) flags.push(flag('quantity_one_assumed'))
         return 1
       }
       flags.push(flag('quantity_missing', { key }))

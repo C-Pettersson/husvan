@@ -8,6 +8,30 @@ Husvan (husvan.se) är ett verktyg för att förstå vad ett hus kostar över ti
 Fullständig bakgrund, marknadsanalys och resonemang finns i dokumentet:
 https://claude.ai/artifact/U5dP4Qjzr9PywekiWPKxp9
 
+## AI först
+
+Husvan används i första hand genom användarens egen AI via MCP. Webbsidan är till för att se data och göra mindre rättningar, men inget får kräva en AI: allt ska också gå att göra för hand på webben.
+
+AI-modellerna blir bättre hela tiden, och Husvan ska bli bättre med dem utan att servern skrivs om. Därför ligger tänkandet hos AI:n och minnet hos servern. Husvan är husets minne: allt som är känt om huset, varifrån det kommer, hur säkert det är och hur bedömningen har ändrats över tid.
+
+| Servern | AI:n |
+| --- | --- |
+| Lagrar fakta med källa, dokument och säkerhet | Läser dokument och tolkar dem |
+| Validerar mot typbiblioteket | Avgör vad som är viktigt och vad som saknas |
+| Räknar prognoser efter fasta, spårbara regler | Värderar resultatet, föreslår åtgärder och ger råd |
+| Bevarar historiken, inget skrivs över | Jämför, resonerar och förklarar för användaren |
+
+Det får följder för hur servern byggs:
+
+- **Ge underlag, inte slutsatser.** Verktygen returnerar värden med källa, alternativ, osäkerhet och vad som saknas, så att AI:n kan resonera själv. Servern sammanfattar och rangordnar inte åt AI:n utöver det beräkningen kräver.
+- **Räkning är deterministisk.** Prognosen följer reglerna i "Kostnadsprognos" och ger samma svar för samma indata. Bedömningar som kräver omdöme hör inte hemma i servern.
+- **Verktygen är skrivna för en AI-läsare.** Beskrivningar, felmeddelanden och svar ska räcka för att en modell utan annan kontext ska förstå vad som går att göra och varför något avvisades.
+- **Inget låser in dagens modell.** Ingen promptlogik, inga modellspecifika format och inga AI-anrop på serversidan.
+
+### På sikt: AI som förvaltare
+
+När huset är köpt kan en AI-agent sköta det löpande, som en förvaltare: hålla underhållsplanen aktuell, påminna om service, läsa in kvitton och föreslå åtgärder. Datamodellen är redan gjord för det. Allt en agent skriver har källa, påståenden om huset hamnar som utkast tills användaren godkänner, och inget den gör kan radera det som redan är känt.
+
 ## Hur verktyget används
 
 Det är ett personligt verktyg för en användare i version 1. Allt arbete sker i användarens egen Claude:
@@ -205,7 +229,7 @@ Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, 
 
 Fönster registreras styck för styck när underlaget tillåter det, annars som en komponent `window` med `quantity`.
 
-Delar som varje hus har får `forecastDefaults.assumeUndocumented`: `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `electrical_panel`, `kitchen` och `bathroom`. Nämner underlaget ingen sådan del räknar prognosen med en från byggåret, se "Delar som inte nämns" i "Regler för beräkningen". Uppvärmning och ventilation antas inte, eftersom typen inte går att gissa.
+Delar som varje hus har får `forecastDefaults.assumeUndocumented`: `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `electrical_panel`, `kitchen` och `bathroom`. Nämner underlaget ingen sådan del räknar prognosen med en från byggåret, se "Delar som inte nämns" i "Regler för beräkningen". Uppvärmning och ventilation antas inte, eftersom typen inte går att gissa. Dränering antas inte på plintgrund eller torpargrund (`assumeUnless`).
 
 `facade`, `window` och `exterior_door` har uppgifter om färgen skilda från `installation_year`, eftersom målat trä målas om var 8–15 år men byts mycket mer sällan: `last_painted_year`, `paint_type` (`linseed_oil` linoljefärg, `alkyd_oil` alkydoljefärg, `acrylic` akrylat- eller latexfärg, `slurry_paint` slamfärg, `stain` lasyr), `paint_product`, `paint_colour` och `painted_by`. Ommålningen är en egen återkommande kostnad i profilerna för träpanel (`facade` med `material: wood_panel`), träfönster (`frame_material: wood`) och trädörrar (`exterior_door` med `material: wood`); en del vars material är okänt målas inte om i prognosen. Intervall och kostnader med källor finns i `prisma/data/repaint.mts`, och en källa om ommålning har `about: repaint`. Se "Regler för beräkningen".
 
@@ -219,7 +243,7 @@ Delar som varje hus har får `forecastDefaults.assumeUndocumented`: `roof_coveri
 | `crawl_space` | `crawl_space_ventilation` | `outdoor_air` (uteluftsventilerad), `dehumidified` (avfuktad) |
 | `basement` | `basement_wall_insulation` | `exterior` (utvändig), `interior` (invändig) |
 
-Grunden byts inte, så den har ingen `LifespanProfile` och ger inga byten i prognosen. Det som slits är dränering, fuktskydd och avfuktare, som är egna komponenter. **Riskkonstruktion** (platta med isolering ovanpå, uteluftsventilerad krypgrund, källare med invändig isolering) räknas fram vid läsning ur typ och variant och lagras inte.
+Grunden byts inte, så den har ingen `LifespanProfile` och ger inga byten i prognosen. Det som slits är dränering, fuktskydd och avfuktare, som är egna komponenter. Dräneringen prissätts efter grundtypen: vid källare grävs 2–2,5 m, vid platta på mark och krypgrund ungefär 1 m, så profilerna är 4 500–8 000 respektive 3 000–5 500 kr per meter (KlarOffert, NGS AB och Byggahus 2026). Livslängden är densamma, eftersom källorna inte skiljer på den. **Riskkonstruktion** (platta med isolering ovanpå, uteluftsventilerad krypgrund, källare med invändig isolering) räknas fram vid läsning ur typ och variant och lagras inte.
 
 ### Elsystem och rör
 
@@ -351,11 +375,13 @@ Resultat: kostnad per år och post, summa, snitt per månad och ett spann (låg�
 ### Regler för beräkningen
 
 - **Installationsår** är observationen `installation_year` på komponenten, annars husets `construction_year`. Saknas båda markeras posten som gissad och spannet breddas till hela livslängdsintervallet.
-- **Mängd** följer profilens `costUnit`: `M2` läser `area`, `LINEAR_M` läser `length`, `EACH` läser `quantity` (standard 1), `HOUSE` är alltid 1. Saknas mängden används typens `quantityPerLivingM2` gånger `living_area` om det finns, annars markeras posten som gissad.
+- **Mängd** följer profilens `costUnit`: `M2` läser `area`, `LINEAR_M` läser `length`, `EACH` läser `quantity` (standard 1), `HOUSE` är alltid 1. Saknas mängden räknas den ur husets geometri om typen har `quantityFromFootprint` och huset `floor_count`, annars ur typens `quantityPerLivingM2` gånger `living_area`, annars markeras posten som gissad. Se "Mängd ur boytan".
 - **Skick** flyttar bytesåret. Standardregel, justerbar per typ i `forecastDefaults`: skick 5 använder `lifespanMaxYears`, 4 och 3 `lifespanTypicalYears`, 2 `lifespanMinYears`, 1 byte inom två år. Utan skick används `lifespanTypicalYears`.
 - **Passerad livslängd** ger inte ett byte i det förflutna, och inte heller ett byte genast bara för att delen är gammal. Var bytet hamnar avgör besiktningen, se "Brådska ur besiktningen".
 - **Ommålning.** En profil med `repaintMinYears`, `repaintTypicalYears`, `repaintMaxYears`, `repaintCostLowSek` och `repaintCostHighSek` (samma `costUnit` och `priceYear` som bytet) ger en ommålning med jämna mellanrum fram till nästa byte. Intervallet räknas från `last_painted_year`, annars `installation_year`, annars husets `construction_year`. Är `paint_type` känd används typens intervall i `forecastDefaults.repaintByPaintType`, annars profilens. Ett byte nollställer intervallet, eftersom en ny del levereras målad. Ommålning som passerat läggs på startåret och flaggas, som ett byte.
 - **Delar som inte nämns.** Ett hus ska inte bli billigare för att underlaget säger mindre. Saknar huset en godkänd komponent av en typ med `assumeUndocumented` och nämner `absent_features` inte typen, räknar prognosen och underhållsskulden med en sådan del från byggåret, med mängd ur `quantityPerLivingM2`. Delen lagras inte, har id `assumed:<typ>`, märks `assumed: true` i prognosen och listas med sin underhållsskuld i `gaps.assumedParts`. Det är samma princip som "okänt är inte nej" för egenskaperna, men åt andra hållet: för kostnaden är okänt inte noll.
+- **Delar som beror på resten av huset.** En typ kan läsa attribut från en annan komponent i huset med `forecastDefaults.context`, attribut mot typ, så att profilen kan matcha på dem; komponentens eget värde går före. Dränering läser `foundation_type` från grunden och prissätts efter den. `assumeUnless` säger när kontexten utesluter en antagen del. Posten flaggas `priced_by_context` med nyckel och värde.
+- **Flera av samma.** En typ med `oneOfSeveral` (badrum) flaggar varje komponent med hur många huset har (`one_of_several`), eftersom en andra del i behov är mindre brådskande medan en annan fungerar. Summorna ändras inte; det är Claude som väger brådskan, och verktygsbeskrivningen säger det.
 - **Billigare förnyelse.** En typ kan ha `forecastDefaults.cheaperRenewal`: när komponentens attribut finns i `when` eller är okända förnyas den i låg och typisk med profilen som `match` väljer, till den profilens kostnad och därefter med dess livslängd. Hög byter, eftersom inspektionen kan visa att det billigare inte går. För `sewer_pipes` är det relining av `cast_iron`, `concrete` och `clay`. Underhållsskulden räknas med samma kostnad per scenario. En del som redan är förnyad så, eller en bytesåtgärd med egen kostnad, förnyas inte billigare.
 - **Inspektion före förnyelse.** En typ kan ha `forecastDefaults.inspection` med kostnad och källor, som filmning av avloppet. Inspektionen läggs en gång per hus och typ, året före den första förnyelsen i hög av en del utan `inspected_year`, men tidigast startåret, och kostar lika i alla scenarier. Den ingår inte i underhållsskulden. En besiktningsåtgärd om samma inspektion räknas inte bort.
 - **Spann.** Låg använder `lifespanMaxYears` och `costLowSek`, hög använder `lifespanMinYears` och `costHighSek`. Varje post bär en lista över indata som saknas eller har `confidence` under 0,7.
@@ -404,7 +430,7 @@ Koden ligger i `src/server/forecast/`: `plan.ts` räknar fram profil, installati
 
 - **Tre scenarier.** `low`, `typical` och `high` räknas var för sig hela vägen, eftersom ett byte kan hamna på olika år i dem. `typical` tar medelvärdet av `costLowSek` och `costHighSek`.
 - **Gissat installationsår.** Utan `installation_year` och `construction_year` är delen ny i `low`, halvvägs i `typical` och vid `lifespanMinYears` i `high`.
-- **Mängd ur boytan.** `quantityPerLivingM2` gånger `living_area` avser hela huset. Det som typens övriga komponenter inte anger delas lika mellan dem som saknar mängd, så att ett hus vars underlag listar delar utan antal inte blir billigare. Blir andelen under 1 för `EACH` blir mängden 1 och flaggas; under 0 för yta och längd blir posten utan kostnad.
+- **Mängd ur boytan.** Med `floor_count` räknas husets yta på marken som `living_area / floor_count` och dess omkrets som 4 × √ytan, ett kompakt rektangulärt hus som i KlarOfferts exempel (100 m² ger ungefär 40 m). `quantityFromFootprint` är en faktor gånger ytan (tak 1,3), omkretsen (dränering 1) eller omkretsen gånger våningarna (fasad 2,7, vägghöjd med gavlar och minus fönster, vald så att ett enplanshus får ungefär 1 m² fasad per m² boyta). Utan `floor_count` används `quantityPerLivingM2` gånger `living_area`. Uppskattningen avser hela huset. Det som typens övriga komponenter inte anger delas lika mellan dem som saknar mängd, så att ett hus vars underlag listar delar utan antal inte blir billigare. Blir andelen under 1 för `EACH` blir mängden 1 och flaggas; under 0 för yta och längd blir posten utan kostnad.
 - **Bytesåtgärd.** En åtgärd med `kind: REPLACEMENT` på en komponent bestämmer komponentens första byte: året mitt i `yearMin`–`yearMax` och åtgärdens kostnad om den finns, annars profilens. Den räknas inte en gång till som åtgärd.
 - **Åtgärder utan år eller kostnad.** Utan år läggs de ut efter sitt allvar (`severity`): `SEVERE` på startåret, `DEFECT` på 2 år, `RISK` på 4 och `MINOR` på 5 från startåret; utan allvar på startåret. Utan kostnad räknas de som noll. Alla flaggas.
 - **Driften.** Prospektets poster i första hand (`heating_cost_sek_per_year`, `household_electricity_cost_sek_per_year`, `water_sewage_cost_sek_per_year`, `waste_cost_sek_per_year`, `insurance_cost_sek_per_year`, `chimney_sweeping_cost_sek_per_year`), och det som återstår av `operating_cost_sek_per_year` som en egen post. `property_fee_sek_per_year` är alltid en egen post. Uppvärmningen räknas fram bara när prospektet varken har en kostnad för den eller en total: `heating_kwh_per_year` gånger elpriset eller fjärrvärmepriset efter huvudsaklig uppvärmning, annars primärenergitalet gånger `living_area` gånger Fgeo delat med viktningsfaktorn (BBR 29: el 1,8, fjärrvärme 0,7). Spannet är 0 för säkra värden, ±20 % under `confidence` 0,7, ±15 % (±30 % om osäkert) för energi gånger pris och ±30 % för skattningen ur primärenergitalet.
