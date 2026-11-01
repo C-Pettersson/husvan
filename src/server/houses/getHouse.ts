@@ -43,13 +43,18 @@ export type ComponentView = {
 
 export type HouseView = Awaited<ReturnType<typeof getHouse>>
 
+// With asOf, the house as it stood then (CLAUDE.md, "Huset ett visst
+// datum"): changesets approved before the date, observations recorded
+// before it, and what was retracted later still counts. A draft cannot be
+// previewed in the past.
 export async function getHouse(
   prisma: PrismaClient,
   {
     ownerId,
     houseId,
     draftId,
-  }: { ownerId: string; houseId: string; draftId?: string }
+    asOf,
+  }: { ownerId: string; houseId: string; draftId?: string; asOf?: Date }
 ) {
   const house = await prisma.house.findFirst({
     where: { id: houseId, ownerId },
@@ -66,10 +71,18 @@ export async function getHouse(
       },
     },
   })
-  const preview = drafts.find((d) => d.id === draftId)?.id ?? null
-  const visible: Prisma.ChangesetWhereInput = preview
-    ? { OR: [{ status: 'APPROVED' }, { id: preview }] }
+  const preview = asOf
+    ? null
+    : (drafts.find((d) => d.id === draftId)?.id ?? null)
+  const approved: Prisma.ChangesetWhereInput = asOf
+    ? { status: 'APPROVED', decidedAt: { lt: asOf } }
     : { status: 'APPROVED' }
+  const visible: Prisma.ChangesetWhereInput = preview
+    ? { OR: [approved, { id: preview }] }
+    : approved
+  const notRetracted = asOf
+    ? { OR: [{ retractedAt: null }, { retractedAt: { gte: asOf } }] }
+    : { retractedAt: null }
 
   const [components, observations, workItems, documents] = await Promise.all([
     prisma.component.findMany({
@@ -77,11 +90,16 @@ export async function getHouse(
       orderBy: { createdAt: 'asc' },
     }),
     prisma.observation.findMany({
-      where: { houseId, retractedAt: null, changeset: visible },
+      where: {
+        houseId,
+        changeset: visible,
+        ...notRetracted,
+        ...(asOf && { recordedAt: { lt: asOf } }),
+      },
       orderBy: { recordedAt: 'asc' },
     }),
     prisma.workItem.findMany({
-      where: { houseId, retractedAt: null, changeset: visible },
+      where: { houseId, changeset: visible, ...notRetracted },
       orderBy: { createdAt: 'asc' },
     }),
     prisma.document.findMany({
@@ -193,5 +211,6 @@ export async function getHouse(
       counts: d._count,
     })),
     preview,
+    asOf: asOf ?? null,
   }
 }
