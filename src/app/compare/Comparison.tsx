@@ -51,12 +51,17 @@ export default function Comparison({ ids }: { ids: string[] }) {
   const [base] = houses
   const signed = (sek: number) =>
     `${sek > 0 ? '+' : sek < 0 ? '−' : '±'}${formatSekShort(Math.abs(sek), locale)}`
-  const range = (r: Range | null) =>
+  // Small amounts, per month, in full kronor.
+  const range = (r: Range | null, exact = false) =>
     r ? (
       <>
-        <strong>{formatSekShort(r.typical, locale)}</strong>
+        <strong>
+          {(exact ? formatSek : formatSekShort)(r.typical, locale)}
+        </strong>
         <Typography variant="caption" color="text.secondary" component="div">
-          {formatSekRange(r, locale)}
+          {exact
+            ? `${formatSek(r.low, locale)}–${formatSek(r.high, locale)}`
+            : formatSekRange(r, locale)}
         </Typography>
       </>
     ) : (
@@ -158,16 +163,26 @@ export default function Comparison({ ids }: { ids: string[] }) {
             {row(t('cost.adjusted'), (h) => range(h.maintenanceAdjustedPrice))}
             {row(t('cost.perMonth'), (h) =>
               h.runningCostsKnown ? (
-                range(h.forecastPerMonth)
+                range(h.forecastPerMonth, true)
               ) : (
                 <>
-                  {range(h.forecastPerMonth)}
+                  {range(h.forecastPerMonth, true)}
                   <Typography variant="caption" color="warning.dark">
                     {t('cost.gap.runningUnknown')}
                   </Typography>
                 </>
               )
             )}
+            {row(t('compare.annualPerMonth'), (h) => (
+              <>
+                {range(h.annualCost.perMonth, true)}
+                {!h.runningCostsKnown && (
+                  <Typography variant="caption" color="warning.dark">
+                    {t('cost.gap.runningUnknown')}
+                  </Typography>
+                )}
+              </>
+            ))}
             {row(t('cost.ratio'), (h) =>
               h.priceToAssessedValue
                 ? numberFormat(locale).format(

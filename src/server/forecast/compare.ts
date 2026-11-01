@@ -54,6 +54,14 @@ export function costSummary(a: Analysis) {
     priceToAssessedValue: a.priceToAssessed,
     forecastTotal: a.forecast.total,
     forecastPerMonth: a.forecast.perMonth,
+    // Replacements and repaints spread over their lifespans, plus running
+    // costs and interest.
+    annualCost: {
+      wear: a.annual.wear,
+      running: a.annual.running,
+      capital: a.annual.capital,
+      perMonth: a.annual.perMonth,
+    },
     gaps: a.gaps,
   }
 }

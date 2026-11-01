@@ -287,7 +287,12 @@
     "indexYear": "Amounts in {year} prices, indexed by the construction cost index.",
     "flags": "About the inputs",
     "loadFailed": "The forecast could not be calculated.",
-    "part": "Part"
+    "part": "Part",
+    "view": {
+      "label": "Show the cost",
+      "paid": "When it is paid",
+      "spread": "Spread over the lifespan"
+    }
   },
   "forecastCategory": {
     "running": "Running",
@@ -446,7 +451,8 @@
       "repair": "Repairs",
       "replacement": "Replacement work items",
       "investigation": "Investigations"
-    }
+    },
+    "annualPerMonth": "Per month, spread"
   },
   "edit": {
     "edit": "Change",
@@ -528,5 +534,21 @@
       "not_found": "The document does not exist.",
       "generic": "The file could not be uploaded."
     }
+  },
+  "annual": {
+    "title": "Cost per year, spread over the lifespan",
+    "perMonth": "Per month, spread",
+    "part": {
+      "wear": "Wear {sek} a year",
+      "running": "running {sek} a year",
+      "capital": "interest {sek} a year"
+    },
+    "cost": "Cost",
+    "lasts": "Lasts",
+    "perYear": "Per year",
+    "years": "{years} years",
+    "yearsRange": "{min}–{max} years",
+    "renewedAs": "Renewed more cheaply in low and typical: {how}",
+    "note": "Each replacement and repaint is divided by the years it lasts, so a bathroom for 200,000 kr that lasts 25 years is 8,000 kr a year whenever it is paid. Work items from the inspection are left out: they are overdue maintenance and count in the maintenance debt."
   }
 }

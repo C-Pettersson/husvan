@@ -77,6 +77,7 @@ export function registerForecastTools(
         'Where a part can be renewed more cheaply than replaced, such as relining old cast-iron sewer pipes, low and typical renew it that way (renewedAs) and high replaces it, and an inspection (filming) is added before the first renewal of parts not inspected yet. ' +
         'gaps counts work items without a cost (they count as zero), parts with the construction year as their installation year and parts without a cost, says whether there is an inspection protocol, and lists assumedParts: parts every house has that the documents do not mention, counted from the construction year so that saying less does not make a house cheaper; their items have assumed: true. Say these next to the total, and call an assumed part assumed, never documented. ' +
         'Also the maintenance debt (the used-up share of every part, independent of the horizon) and the maintenance-adjusted price = price + debt. ' +
+        'annualCost spreads every replacement and repaint over the years it lasts (a bathroom for 200 000 kr lasting 25 years is 8 000 kr a year), adds running costs and interest, and gives the total per month; annualCostByPart breaks the wear down. It leaves out work items, which are overdue maintenance counted in the debt. Use it when the user asks what the house costs per year or month regardless of when things are paid. ' +
         'Each call is saved; previous gives the last saved forecast so you can say how the assessment changed. Tell the user what notModelled leaves out.',
       inputSchema: z.object({
         houseId: z.uuid(),
@@ -98,6 +99,16 @@ export function registerForecastTools(
         years: a.forecast.years,
         items: items(a),
         maintenanceDebtByType: debtRangesByType(a),
+        annualCostByPart: a.annual.parts.map((p) => ({
+          type: p.type,
+          name: p.name ?? undefined,
+          assumed: p.assumed || undefined,
+          kind: p.kind,
+          renewedAs: p.renewedAs,
+          cost: p.cost,
+          years: p.years,
+          perYear: p.perYear,
+        })),
         risks: a.risks,
         flags: a.flags.map(flagText),
         priceIndexYear: a.indexYear,
@@ -136,7 +147,7 @@ export function registerForecastTools(
     {
       title: 'Compare houses',
       description:
-        'Several houses side by side, cheapest maintenance-adjusted price first: price, maintenance debt and maintenance-adjusted price with ranges, price to assessed value, and the forecast total and per month. ' +
+        'Several houses side by side, cheapest maintenance-adjusted price first: price, maintenance debt and maintenance-adjusted price with ranges, price to assessed value, the forecast total and per month, and annualCost.perMonth: running costs plus every replacement and repaint spread over the years it lasts, which does not depend on when things fall due. ' +
         'A house without known running costs has a lower forecast for that reason only: runningCostsKnown says so, and its running items are null in largestForecastDifferences. ' +
         'Then, against the first house, the price difference explained per component type (debt differences under 20 000 kr pooled as "other"); the forecast items that differ most; features (unknown is not no); flagged risks, which are never turned into kronor; and area statistics with their level and year. ' +
         'Area figures are context: never call one area better or worse. ' +

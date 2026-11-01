@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   Alert,
@@ -14,6 +15,8 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from '@mui/material'
@@ -27,6 +30,7 @@ import {
 } from '@/lib/format'
 import { trpc } from '@/lib/trpc'
 import { useLabels } from '@/lib/labels'
+import AnnualView from './AnnualView'
 import YearChart from './YearChart'
 
 // What the house costs (CLAUDE.md, "Kostnadsprognos" and
@@ -37,6 +41,7 @@ export default function CostSection({ houseId }: { houseId: string }) {
   const t = useTranslations()
   const locale = useLocale()
   const analysis = trpc.house.analysis.useQuery({ id: houseId })
+  const [view, setView] = useState<'paid' | 'spread'>('paid')
   const labels = useLabels(analysis.data?.types ?? {})
 
   if (analysis.isPending) return <CircularProgress size={24} />
@@ -142,32 +147,63 @@ export default function CostSection({ houseId }: { houseId: string }) {
       )}
 
       <Paper variant="outlined" sx={{ p: 2 }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="baseline"
-          flexWrap="wrap"
-          useFlexGap
-          sx={{ mb: 1 }}
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={view}
+          onChange={(_, v) => v && setView(v)}
+          aria-label={t('cost.view.label')}
+          sx={{ mb: 2, flexWrap: 'wrap' }}
         >
-          <Typography component="h3" variant="subtitle1" fontWeight={600}>
-            {t('cost.chartTitle')} {forecast.startYear}–{endYear}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('cost.chartScenario')} · {t('cost.total')}{' '}
-            {formatSekShort(forecast.total.typical, locale)} (
-            {formatSekRange(forecast.total, locale)})
-          </Typography>
-        </Stack>
-        <YearChart years={forecast.years} />
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          component="p"
-          sx={{ mt: 1 }}
-        >
-          {t('cost.chartNote')}
-        </Typography>
+          <ToggleButton value="paid">{t('cost.view.paid')}</ToggleButton>
+          <ToggleButton value="spread">{t('cost.view.spread')}</ToggleButton>
+        </ToggleButtonGroup>
+        {view === 'paid' ? (
+          <>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="baseline"
+              flexWrap="wrap"
+              useFlexGap
+              sx={{ mb: 1 }}
+            >
+              <Typography component="h3" variant="subtitle1" fontWeight={600}>
+                {t('cost.chartTitle')} {forecast.startYear}–{endYear}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('cost.chartScenario')} · {t('cost.total')}{' '}
+                {formatSekShort(forecast.total.typical, locale)} (
+                {formatSekRange(forecast.total, locale)})
+              </Typography>
+            </Stack>
+            <YearChart years={forecast.years} />
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="p"
+              sx={{ mt: 1 }}
+            >
+              {t('cost.chartNote')}
+            </Typography>
+          </>
+        ) : (
+          <>
+            <Typography
+              component="h3"
+              variant="subtitle1"
+              fontWeight={600}
+              sx={{ mb: 1 }}
+            >
+              {t('annual.title')}
+            </Typography>
+            <AnnualView
+              annual={a.annual}
+              runningCostsKnown={a.runningCostsKnown}
+              labels={labels}
+            />
+          </>
+        )}
       </Paper>
 
       <Paper variant="outlined" sx={{ p: 2 }}>

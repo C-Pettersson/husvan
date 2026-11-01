@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ComponentView, KeyValueView } from '@/server/houses/getHouse'
+import { annualCost } from './annual'
 import { explainDifference, maintenanceDebt } from './debt'
 import { computeForecast, schedule, type WorkItemInput } from './forecast'
 import { findingsByType } from './findings'
@@ -573,5 +574,68 @@ describe('runningCosts', () => {
       'heating cost unknown: no cost, energy use or energy class',
       'running costs unknown',
     ])
+  })
+})
+
+describe('annualCost', () => {
+  it('spreads each replacement and repaint over the years it lasts', () => {
+    const a = annualCost(
+      [
+        plan(comp('roof_covering', { installation_year: 2000, area: 100 })),
+        plan(comp('facade', { installation_year: 2000, area: 100 })),
+      ],
+      [],
+      null
+    )
+    const roof = a.parts.find((p) => p.type === 'roof_covering')!
+    // 100 m2 at 1 000–2 000 kr, lasting 50, 40 or 30 years.
+    expect(roof.perYear.low).toBeCloseTo(100000 / 50)
+    expect(roof.perYear.typical).toBeCloseTo(150000 / 40)
+    expect(roof.perYear.high).toBeCloseTo(200000 / 30)
+    const repaint = a.parts.find((p) => p.kind === 'repaint')!
+    // 40 000 kr every 12, 10 or 8 years.
+    expect(repaint.perYear).toEqual({
+      low: 40000 / 12,
+      typical: 4000,
+      high: 5000,
+    })
+  })
+
+  it('uses the cheaper renewal where the scenario does', () => {
+    const a = annualCost(
+      [
+        plan(
+          comp('sewer_pipes', {
+            material: 'cast_iron',
+            installation_year: 1967,
+          })
+        ),
+      ],
+      [],
+      null
+    )
+    expect(a.parts[0].perYear.low).toBeCloseTo(50000 / 50)
+    expect(a.parts[0].perYear.typical).toBeCloseTo(150000 / 30)
+    expect(a.parts[0].perYear.high).toBeCloseTo(220000 / 30)
+    expect(a.parts[0].renewedAs).toEqual({ renovation_method: 'relined' })
+  })
+
+  it('adds running costs and interest to the total per month', () => {
+    const a = annualCost(
+      [plan(comp('roof_covering', { installation_year: 2000, area: 100 }))],
+      [
+        {
+          key: 'heating_cost_sek_per_year',
+          base: { low: 10000, typical: 12000, high: 14000 },
+          trend: null,
+          flags: [],
+        },
+      ],
+      { interestRate: 0.04, loanSek: 1000000 }
+    )
+    expect(a.running.typical).toBe(12000)
+    expect(a.capital).toBe(40000)
+    expect(a.total.typical).toBeCloseTo(3750 + 12000 + 40000)
+    expect(a.perMonth.typical).toBeCloseTo((3750 + 12000 + 40000) / 12)
   })
 })
