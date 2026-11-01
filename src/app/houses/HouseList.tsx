@@ -7,6 +7,7 @@ import {
   CircularProgress,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   Typography,
 } from '@mui/material'
@@ -30,12 +31,14 @@ export default function HouseList() {
       </Typography>
       <List>
         {houses.data.map((house) => (
-          <ListItem key={house.id} divider>
-            <ListItemText primary={house.address} />
-            <Chip
-              size="small"
-              label={t(`house.status.${house.status.toLowerCase()}`)}
-            />
+          <ListItem key={house.id} divider disablePadding>
+            <ListItemButton href={`/houses/${house.id}`}>
+              <ListItemText primary={house.address} />
+              <Chip
+                size="small"
+                label={t(`house.status.${house.status.toLowerCase()}`)}
+              />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>
