@@ -11,14 +11,53 @@
   },
   "home": {
     "title": "What does the house cost over time?",
-    "lead": "Husvan works out maintenance, running costs and replacements for the houses you are thinking of buying, so you can compare them on equal terms.",
+    "lead": "Husvan is the house’s memory. Your own AI reads the listing and the inspection, Husvan keeps what is known about the house and works out maintenance, running costs and replacements, so you can compare the houses on equal terms.",
     "open": "Go to your houses",
     "signIn": "Sign in",
+    "split": "The thinking in your AI, the memory in Husvan",
+    "splitLead": "AI models keep getting better. Husvan gets better with them, because what takes judgement is done by your AI and what has to last is kept by Husvan.",
+    "chat": {
+      "label": "An example conversation",
+      "you": "You",
+      "ai": "Claude",
+      "husvan": "Husvan",
+      "messages": {
+        "upload": {
+          "files": "listing.pdf · inspection.pdf",
+          "text": "Here are the listing and the inspection report for Videvägen 7 in Boden."
+        },
+        "draft": {
+          "text": "I have read both. The house is from 1978 and has a ground source heat pump from 2012. The inspection notes damp in the crawl space and wants it dealt with within 1–3 years. The listing does not mention the roof, but the inspection says concrete tiles from when the house was built. I have entered 16 parts as a draft. Do you want to go through it?",
+          "note": "draft with 16 parts, every value sourced to a document and passage"
+        },
+        "approve": {
+          "text": "The heat pump was replaced in 2019, not 2012. Otherwise it looks right."
+        },
+        "approved": {
+          "text": "I have changed the heat pump to 2019 with you as the source and approved the draft.",
+          "note": "draft approved, 2012 kept as an alternative from the listing"
+        },
+        "cost": {
+          "text": "What will the house cost per year over the next 15 years?"
+        },
+        "forecast": {
+          "text": "Around 74,000 kronor a year in today’s money, with a range from 58,000 to 96,000. Most of it is running costs. The largest single item is the roof, which is nearing the end of its lifespan. The range is wide because the age of the ventilation is missing. Is it in the energy certificate?",
+          "note": "forecast by fixed rules, with a list of what is missing"
+        },
+        "compare": {
+          "text": "How does it compare with the house on Lingonstigen?"
+        },
+        "comparison": {
+          "text": "Lingonstigen costs 400,000 kronor more, but has a new roof and newer pipes. Counting the maintenance debt, Videvägen comes out 120,000 kronor more expensive. The difference is almost entirely the roof and the crawl space, so those are what I would ask the agent about.",
+          "note": "maintenance-adjusted price for both houses, item by item"
+        }
+      }
+    },
     "how": "How it works",
     "steps": {
       "connect": {
         "title": "Connect Husvan to Claude",
-        "body": "Husvan is a connector in your own Claude. All reading and writing happens there."
+        "body": "Husvan is a connector in your own Claude. All reading and interpreting happens there."
       },
       "upload": {
         "title": "Upload the documents in the chat",
@@ -26,11 +65,11 @@
       },
       "approve": {
         "title": "Approve what Claude read",
-        "body": "Nothing counts until you approve the draft. You correct what came out wrong here on the web."
+        "body": "Nothing counts until you approve the draft. On the web you see the same data and correct what came out wrong."
       },
       "compare": {
-        "title": "Compare the houses",
-        "body": "Cost per year, maintenance debt and maintenance-adjusted price, with a range from low to high."
+        "title": "Ask and compare",
+        "body": "Ask Claude about cost per year, maintenance debt and maintenance-adjusted price. The answers build on Husvan’s figures, with a range from low to high."
       }
     },
     "measures": "What it calculates",
@@ -51,8 +90,10 @@
       "unknown": "Unknown is not no. A listing that does not mention a pool does not make it a no.",
       "disclosure": "Saying less does not make a house cheaper. Parts every house has are counted even when the documents leave them out.",
       "sources": "Every value has a source: which document, which passage and how sure the reading is.",
-      "server": "The server interprets no documents and calls no AI. It stores, checks and calculates."
+      "model": "The server interprets no documents and calls no AI. Nothing in Husvan is built for a particular model, so a better AI gives better answers without anything being rebuilt."
     },
+    "later": "Once the house is bought",
+    "laterBody": "The same house becomes the starting point for maintenance, with nothing moved. In time an AI can look after it like a property manager: keep the maintenance plan current, remind you of servicing and read in receipts. Everything it writes has a source and stays a draft until you approve it, and nothing it does can erase what is already known.",
     "personal": "Husvan is a personal tool and does not take new users."
   },
   "login": {

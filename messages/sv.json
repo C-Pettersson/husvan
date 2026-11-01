@@ -11,14 +11,53 @@
   },
   "home": {
     "title": "Vad kostar huset över tid?",
-    "lead": "Husvan räknar på underhåll, drift och byten för de hus du funderar på att köpa, så att du kan jämföra dem på samma villkor.",
+    "lead": "Husvan är husets minne. Din egen AI läser prospekt och besiktning, Husvan sparar det som är känt om huset och räknar på underhåll, drift och byten, så att du kan jämföra husen på samma villkor.",
     "open": "Till dina hus",
     "signIn": "Logga in",
+    "split": "Tänkandet hos din AI, minnet hos Husvan",
+    "splitLead": "AI-modellerna blir bättre hela tiden. Husvan blir bättre med dem, eftersom det som kräver omdöme görs av din AI och det som ska bestå ligger hos Husvan.",
+    "chat": {
+      "label": "Exempel på ett samtal",
+      "you": "Du",
+      "ai": "Claude",
+      "husvan": "Husvan",
+      "messages": {
+        "upload": {
+          "files": "prospekt.pdf · besiktning.pdf",
+          "text": "Här är prospektet och besiktningen för Videvägen 7 i Boden."
+        },
+        "draft": {
+          "text": "Jag har läst båda. Huset är från 1978 och har bergvärme från 2012. Besiktningen anmärker på fukt i krypgrunden och vill ha en åtgärd inom 1–3 år. Prospektet nämner inte taket, men enligt besiktningen är det betongpannor från byggåret. Jag har lagt in 16 delar som ett utkast. Vill du gå igenom det?",
+          "note": "utkast med 16 delar, varje värde med dokument och mening som källa"
+        },
+        "approve": {
+          "text": "Värmepumpen byttes 2019, inte 2012. Annars ser det bra ut."
+        },
+        "approved": {
+          "text": "Jag har ändrat värmepumpen till 2019 med dig som källa och godkänt utkastet.",
+          "note": "utkastet godkänt, 2012 finns kvar som alternativ från prospektet"
+        },
+        "cost": {
+          "text": "Vad kostar huset per år de närmaste 15 åren?"
+        },
+        "forecast": {
+          "text": "Runt 74 000 kr om året i dagens kronor, med ett spann från 58 000 till 96 000. Det mesta är drift. Den största enskilda posten är taket, som närmar sig slutet av sin livslängd. Spannet är brett för att ventilationens ålder saknas. Står den i energideklarationen?",
+          "note": "prognos efter fasta regler, med en lista över det som saknas"
+        },
+        "compare": {
+          "text": "Hur står det sig mot huset på Lingonstigen?"
+        },
+        "comparison": {
+          "text": "Lingonstigen kostar 400 000 kr mer, men har nytt tak och nyare rör. Räknar man in underhållsskulden blir Videvägen 120 000 kr dyrare. Skillnaden sitter nästan helt i taket och krypgrunden, så det är dem jag skulle fråga mäklaren om.",
+          "note": "underhållsjusterat pris för båda husen, post för post"
+        }
+      }
+    },
     "how": "Så fungerar det",
     "steps": {
       "connect": {
         "title": "Koppla Husvan till Claude",
-        "body": "Husvan är en koppling i din egen Claude. Där sker allt läsande och skrivande."
+        "body": "Husvan är en koppling i din egen Claude. Där sker allt läsande och tolkande."
       },
       "upload": {
         "title": "Ladda upp underlaget i chatten",
@@ -26,11 +65,11 @@
       },
       "approve": {
         "title": "Godkänn det Claude läst ut",
-        "body": "Ingenting räknas förrän du godkänt utkastet. Du rättar det som blev fel här på webben."
+        "body": "Ingenting räknas förrän du godkänt utkastet. På webben ser du samma data och rättar det som blev fel."
       },
       "compare": {
-        "title": "Jämför husen",
-        "body": "Kostnad per år, underhållsskuld och underhållsjusterat pris, med ett spann från låg till hög."
+        "title": "Fråga och jämför",
+        "body": "Fråga Claude om kostnad per år, underhållsskuld och underhållsjusterat pris. Svaren bygger på Husvans siffror, med ett spann från låg till hög."
       }
     },
     "measures": "Vad den räknar",
@@ -51,8 +90,10 @@
       "unknown": "Okänt är inte nej. Att prospektet inte nämner en pool gör den inte till nej.",
       "disclosure": "Att säga mindre gör inte ett hus billigare. Delar som alla hus har räknas med även när underlaget inte nämner dem.",
       "sources": "Varje värde har en källa: vilket dokument, vilken mening och hur säker läsningen är.",
-      "server": "Servern tolkar inga dokument och anropar ingen AI. Den lagrar, kontrollerar och räknar."
+      "model": "Servern tolkar inga dokument och anropar ingen AI. Inget i Husvan är byggt för en viss modell, så en bättre AI ger bättre svar utan att något byggs om."
     },
+    "later": "När huset är köpt",
+    "laterBody": "Samma hus blir utgångspunkt för underhållet, utan att något flyttas. På sikt kan en AI sköta det som en förvaltare: hålla underhållsplanen aktuell, påminna om service och läsa in kvitton. Allt den skriver har källa och är ett utkast tills du godkänt det, och inget den gör kan radera det som redan är känt.",
     "personal": "Husvan är ett personligt verktyg och tar inte emot nya användare."
   },
   "login": {
