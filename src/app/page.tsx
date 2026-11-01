@@ -3,9 +3,21 @@ import { getTranslations } from 'next-intl/server'
 import { Box, Button, Container, Paper, Stack, Typography } from '@mui/material'
 import { auth } from '@/lib/auth'
 
+// An example conversation. The AI does the reading and the judging; the note
+// under each answer says what Husvan stored or calculated for it.
+const CHAT = [
+  { key: 'upload', from: 'you', files: true },
+  { key: 'draft', from: 'ai', note: true },
+  { key: 'approve', from: 'you' },
+  { key: 'approved', from: 'ai', note: true },
+  { key: 'cost', from: 'you' },
+  { key: 'forecast', from: 'ai', note: true },
+  { key: 'compare', from: 'you' },
+  { key: 'comparison', from: 'ai', note: true },
+] as const
 const STEPS = ['connect', 'upload', 'approve', 'compare'] as const
 const MEASURES = ['debt', 'adjusted', 'forecast'] as const
-const PRINCIPLES = ['unknown', 'disclosure', 'sources', 'server'] as const
+const PRINCIPLES = ['unknown', 'disclosure', 'sources', 'model'] as const
 
 // The public start page. Everything else requires sign-in.
 export default async function HomePage() {
@@ -34,6 +46,38 @@ export default async function HomePage() {
           {session ? t('open') : t('signIn')}
         </Button>
       </Stack>
+
+      <Section title={t('split')}>
+        <Typography variant="body1" sx={{ mb: 2.5 }}>
+          {t('splitLead')}
+        </Typography>
+        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            component="p"
+            sx={{ mb: 1.5 }}
+          >
+            {t('chat.label')}
+          </Typography>
+          <Stack spacing={1.5}>
+            {CHAT.map((m) => (
+              <ChatMessage
+                key={m.key}
+                from={m.from}
+                speaker={t(`chat.${m.from}`)}
+                text={t(`chat.messages.${m.key}.text`)}
+                files={'files' in m ? t(`chat.messages.${m.key}.files`) : null}
+                note={
+                  'note' in m
+                    ? `${t('chat.husvan')}: ${t(`chat.messages.${m.key}.note`)}`
+                    : null
+                }
+              />
+            ))}
+          </Stack>
+        </Paper>
+      </Section>
 
       <Section title={t('how')}>
         <Box
@@ -115,10 +159,81 @@ export default async function HomePage() {
         </Stack>
       </Section>
 
+      <Section title={t('later')}>
+        <Typography variant="body1">{t('laterBody')}</Typography>
+      </Section>
+
       <Typography variant="body2" color="text.secondary">
         {t('personal')}
       </Typography>
     </Container>
+  )
+}
+
+function ChatMessage({
+  from,
+  speaker,
+  text,
+  files,
+  note,
+}: {
+  from: 'you' | 'ai'
+  speaker: string
+  text: string
+  files: string | null
+  note: string | null
+}) {
+  const you = from === 'you'
+  return (
+    <Box
+      sx={{
+        alignSelf: you ? 'flex-end' : 'flex-start',
+        maxWidth: { xs: '92%', sm: '80%' },
+      }}
+    >
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        component="p"
+        sx={{ mb: 0.5, textAlign: you ? 'right' : 'left' }}
+      >
+        {speaker}
+      </Typography>
+      <Box
+        sx={{
+          px: 2,
+          py: 1.25,
+          borderRadius: 2,
+          ...(you
+            ? {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                borderBottomRightRadius: 4,
+              }
+            : { bgcolor: 'grey.100', borderBottomLeftRadius: 4 }),
+        }}
+      >
+        {files && (
+          <Typography
+            variant="caption"
+            component="p"
+            sx={{ mb: 0.5, opacity: 0.85 }}
+          >
+            {files}
+          </Typography>
+        )}
+        <Typography variant="body2">{text}</Typography>
+      </Box>
+      {note && (
+        <Typography
+          variant="caption"
+          component="p"
+          sx={{ mt: 0.5, color: 'secondary.main' }}
+        >
+          {note}
+        </Typography>
+      )}
+    </Box>
   )
 }
 

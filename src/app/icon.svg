@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .house { fill: #2f5d50; }
+    .door { fill: #b5663c; }
+    @media (prefers-color-scheme: dark) {
+      .house { fill: #79ad9b; }
+      .door { fill: #e08c5d; }
+    }
+  </style>
+  <path class="house" fill-rule="evenodd" d="M5 28a1 1 0 0 1-1-1V14.6a1 1 0 0 1 .36-.77l11-9.3a1 1 0 0 1 1.28 0l11 9.3a1 1 0 0 1 .36.77V27a1 1 0 0 1-1 1zM8 18v6h4v-6zm12-2v8h4v-8z"/>
+  <rect class="door" x="14" y="12" width="4" height="12"/>
+</svg>
