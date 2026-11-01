@@ -8,6 +8,30 @@ Husvan (husvan.se) är ett verktyg för att förstå vad ett hus kostar över ti
 Fullständig bakgrund, marknadsanalys och resonemang finns i dokumentet:
 https://claude.ai/artifact/U5dP4Qjzr9PywekiWPKxp9
 
+## AI först
+
+Husvan används i första hand genom användarens egen AI via MCP. Webbsidan är till för att se data och göra mindre rättningar, men inget får kräva en AI: allt ska också gå att göra för hand på webben.
+
+AI-modellerna blir bättre hela tiden, och Husvan ska bli bättre med dem utan att servern skrivs om. Därför ligger tänkandet hos AI:n och minnet hos servern. Husvan är husets minne: allt som är känt om huset, varifrån det kommer, hur säkert det är och hur bedömningen har ändrats över tid.
+
+| Servern | AI:n |
+| --- | --- |
+| Lagrar fakta med källa, dokument och säkerhet | Läser dokument och tolkar dem |
+| Validerar mot typbiblioteket | Avgör vad som är viktigt och vad som saknas |
+| Räknar prognoser efter fasta, spårbara regler | Värderar resultatet, föreslår åtgärder och ger råd |
+| Bevarar historiken, inget skrivs över | Jämför, resonerar och förklarar för användaren |
+
+Det får följder för hur servern byggs:
+
+- **Ge underlag, inte slutsatser.** Verktygen returnerar värden med källa, alternativ, osäkerhet och vad som saknas, så att AI:n kan resonera själv. Servern sammanfattar och rangordnar inte åt AI:n utöver det beräkningen kräver.
+- **Räkning är deterministisk.** Prognosen följer reglerna i "Kostnadsprognos" och ger samma svar för samma indata. Bedömningar som kräver omdöme hör inte hemma i servern.
+- **Verktygen är skrivna för en AI-läsare.** Beskrivningar, felmeddelanden och svar ska räcka för att en modell utan annan kontext ska förstå vad som går att göra och varför något avvisades.
+- **Inget låser in dagens modell.** Ingen promptlogik, inga modellspecifika format och inga AI-anrop på serversidan.
+
+### På sikt: AI som förvaltare
+
+När huset är köpt kan en AI-agent sköta det löpande, som en förvaltare: hålla underhållsplanen aktuell, påminna om service, läsa in kvitton och föreslå åtgärder. Datamodellen är redan gjord för det. Allt en agent skriver har källa, påståenden om huset hamnar som utkast tills användaren godkänner, och inget den gör kan radera det som redan är känt.
+
 ## Hur verktyget används
 
 Det är ett personligt verktyg för en användare i version 1. Allt arbete sker i användarens egen Claude:
