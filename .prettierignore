@@ -1,0 +1,5 @@
+.claude/
+.next/
+next-env.d.ts
+prisma/migrations/
+*.md

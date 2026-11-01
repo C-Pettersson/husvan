@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Husvan",
+    "description": "Förstå vad ett hus kostar över tid."
+  },
+  "nav": {
+    "houses": "Hus",
+    "signIn": "Logga in",
+    "signOut": "Logga ut",
+    "language": "Språk"
+  },
+  "home": {
+    "title": "Vad kostar huset över tid?",
+    "lead": "Husvan räknar på underhåll, drift och byten för de hus du funderar på att köpa, så att du kan jämföra dem på samma villkor.",
+    "open": "Till dina hus"
+  },
+  "login": {
+    "title": "Logga in",
+    "email": "E-post",
+    "password": "Lösenord",
+    "submit": "Logga in",
+    "failed": "Fel e-post eller lösenord."
+  },
+  "consent": {
+    "title": "Ge åtkomst",
+    "intro": "{client} vill komma åt Husvan för din räkning.",
+    "unknownClient": "En app",
+    "scopes": "Begärd åtkomst",
+    "allow": "Tillåt",
+    "deny": "Neka",
+    "invalid": "Länken för godkännande är ogiltig eller har gått ut. Börja om från appen som bad om åtkomst.",
+    "failed": "Det gick inte att spara ditt svar. Försök igen."
+  },
+  "scope": {
+    "openid": "Veta vem du är",
+    "profile": "Ditt namn",
+    "email": "Din e-postadress",
+    "offline_access": "Fortsätta ha åtkomst när du inte är aktiv"
+  },
+  "houses": {
+    "title": "Dina hus",
+    "empty": "Inga hus än. Lägg till ett hus genom att ladda upp prospektet i Claude.",
+    "count": "{count, plural, one {# hus} other {# hus}}"
+  },
+  "house": {
+    "status": {
+      "candidate": "Kandidat",
+      "declined": "Avstått",
+      "purchased": "Köpt",
+      "sold": "Sålt"
+    }
+  },
+  "error": {
+    "generic": "Något gick fel."
+  }
+}

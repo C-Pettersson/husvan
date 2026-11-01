@@ -31,10 +31,10 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | Databas | Postgres 16 via Prisma 6. Schemat är `prisma/schema.prisma`, migrationer under `prisma/migrations/`. |
 | API för webben | tRPC 11 med React Query och Zod. Inga REST-endpoints för appdata. |
 | MCP | Officiella TypeScript-SDK:t v2 (`@modelcontextprotocol/server`), Streamable HTTP, route `src/app/api/mcp/route.ts`. Verktygen ligger i `src/server/mcp/`. |
-| Autentisering | **Better Auth** med pluginen `mcp` (OAuth 2.1-auktoriseringsserver i samma app), `cimd` och `jwt`. Ersätter NextAuth, som inte kan agera auktoriseringsserver. Inloggning med e-post och lösenord, registrering avstängd, en användare seedas. |
+| Autentisering | **Better Auth** med pluginen `mcp` (OAuth 2.1-auktoriseringsserver i samma app), `cimd` och `jwt`. Ersätter NextAuth, som inte kan agera auktoriseringsserver. Inloggning med e-post och lösenord, registrering avstängd, en användare seedas. `mcp` och `cimd` är egna paket (`@better-auth/mcp`, `@better-auth/cimd`) byggda på `@better-auth/oauth-provider`; `jwt` kommer från `better-auth/plugins`. Konfigurationen ligger i `src/lib/auth.ts`. |
 | Test | Vitest. |
 | Drift | k3s på användarens VPS, styrt från `C:\projects\infra-gitops` med Argo CD, Kustomize, KSOPS och Kargo. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. Se "Leverans och drift". |
-| Lokal körning | `docker compose up -d postgres` och `yarn dev`, som i brfjamforelse. Postgres 16 lyssnar på `localhost:5433` (5432 används av andra projekt); kopiera `.env.example` till `.env`. Compose får senare en valfri app-image för att testa containern; det är inte produktionsmiljön. |
+| Lokal körning | `docker compose up -d postgres`, `yarn db:migrate`, `yarn db:seed` och `yarn dev`, som i brfjamforelse. Postgres 16 lyssnar på `localhost:5433` (5432 används av andra projekt); kopiera `.env.example` till `.env` och fyll i hemligheten och den seedade användaren. Compose får senare en valfri app-image för att testa containern; det är inte produktionsmiljön. |
 
 Skillnader mot brfjamforelse: ingen organisationsmodell, inga kvoter, ingen egen AI-anropning, ingen publik yta utöver startsidan. Det som inte behövs byggs inte.
 
@@ -54,7 +54,7 @@ Manifesten följer standarden i infra-gitops (`apps/<app>/base` och `apps/<app>/
 
 Anthropics krav på en fjärr-MCP-server med OAuth (källa: claude.com/docs/connectors/building/authentication):
 
-- Oautentiserat anrop ska ge `401` med `WWW-Authenticate: Bearer resource_metadata="https://husvan.se/.well-known/oauth-protected-resource"`. En `WWW-Authenticate` på `200` ignoreras.
+- Oautentiserat anrop ska ge `401` med `WWW-Authenticate: Bearer resource_metadata="…"`. En `WWW-Authenticate` på `200` ignoreras. `requireMcpAuth` pekar på den sökvägsförlängda formen `https://husvan.se/.well-known/oauth-protected-resource/api/mcp` (RFC 9728); dokumentet serveras även utan `/api/mcp`.
 - Dokumentets `resource` måste vara exakt den URL användaren skriver in i Claude, inklusive sökväg.
 - Claude identifierar sig helst med **Client ID Metadata Document** ("Use Claude's published identity"). Det väljs bara om auktoriseringsserverns metadata har både `client_id_metadata_document_supported: true` och `"none"` i `token_endpoint_auth_methods_supported`. Annars faller Claude tillbaka på Dynamic Client Registration, som MCP-specifikationen 2026-07-28 avråder från. Vi kör CIMD och håller DCR avstängt.
 - PKCE S256 på varje auktorisering, och `code_challenge_methods_supported: ["S256"]` i metadata.
@@ -63,7 +63,28 @@ Anthropics krav på en fjärr-MCP-server med OAuth (källa: claude.com/docs/conn
 - Discovery-, registrerings- och token-endpoints måste svara inom 10 sekunder.
 - Anthropics utgående trafik kommer från `160.79.104.0/21`.
 
-Better Auths `mcp`-plugin levererar detta: `/oauth2/*`, RFC 8414- och RFC 9728-metadata, JWKS, och `requireMcpAuth` som skyddar MCP-routen. **Öppen punkt:** pluginen är byggd för protokollprofilen 2026-07-28 och rekommenderar `legacy: "reject"` i SDK:t. Vi låser inte versionen förrän milstolpe 0 visat vilken protokollversion Claude förhandlar fram.
+Better Auths `mcp`-plugin levererar detta: `/oauth2/*`, RFC 8414- och RFC 9728-metadata, JWKS, och `requireMcpAuth` som skyddar MCP-routen. Pluginen är byggd för protokollprofilen 2026-07-28 och rekommenderar `legacy: "reject"` i SDK:t. **Avgjort i milstolpe 0:** claude.ai ansluter till `https://dev.husvan.se/api/mcp` med protokollet 2026-07-28 (`era=modern` i loggen), och MCP-routen kör därför `legacy: "reject"`. Anrop med 2025-protokollet får felet för protokollversion som inte stöds.
+
+Verifierat lokalt med Claudes publicerade klient-id `https://claude.ai/oauth/mcp-oauth-client-metadata` (`token_endpoint_auth_method: none`, redirect `https://claude.ai/api/mcp/auth_callback`): metadata har `client_id_metadata_document_supported: true`, `"none"` bland autentiseringsmetoderna och `code_challenge_methods_supported: ["S256"]`; authorize, inloggning, samtycke, token med PKCE, anrop till `/api/mcp`, roterad refresh och `invalid_grant` för ogiltig refresh fungerar.
+
+**Prisma och Better Auth.** Prisma kan inte lagra `null` i en listkolumn, men Better Auth använder `null` med betydelsen "ingen begränsning" i bland annat `oauthResource.allowedScopes`. Därför har Better Auths `String[]`-fält `@default([])` i schemat, och MCP-resursen deklareras uttryckligen i `resources` med sina `allowedScopes`. Gör samma sak om ett nytt fält ger felet "must not be null".
+
+#### Sökvägar
+
+Utgivaren (issuer) är `https://husvan.se/api/auth`. Underlag för WAF-regeln och Cloudflare Access:
+
+| Sökväg | Anropas av | Skydd |
+| --- | --- | --- |
+| `/api/mcp` | Anthropics servrar | WAF: bara `160.79.104.0/21` |
+| `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/api/mcp` | Anthropics servrar | WAF |
+| `/.well-known/oauth-authorization-server/api/auth`, `/.well-known/openid-configuration/api/auth`, `/api/auth/.well-known/openid-configuration` | Anthropics servrar | WAF |
+| `/api/auth/oauth2/token`, `/api/auth/jwks` | Anthropics servrar | WAF |
+| `/api/auth/oauth2/authorize`, `/login`, `/consent`, `/api/auth/sign-in/email`, `/api/auth/oauth2/consent`, `/api/auth/oauth2/public-client` | Användarens webbläsare | Access, senare Better Auths inloggning |
+| Allt annat utom `/` | Användarens webbläsare | Access, senare Better Auths inloggning |
+
+Claude Code ansluter från användarens egen dator, inte från Anthropics intervall, och stängs därför ute av WAF-regeln.
+
+Servern hämtar själv JWKS för att verifiera token på MCP-routen. Den hämtningen går till appens interna adress (`getInternalUrl()` i `src/lib/siteUrl.ts`), inte till den publika, eftersom WAF-regeln annars blockerar servern från sin egen `/api/auth/jwks`.
 
 ## Datamodell
 
@@ -303,7 +324,6 @@ Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för f�
 
 ## Öppna frågor
 
-- Vilken MCP-protokollversion förhandlar Claude fram mot en server byggd på SDK v2? Avgörs i milstolpe 0.
 - Kostar Boverkets API för energideklarationer något? (Kräver avtal som företag.)
 - Går SMHI:s Snötyngd att hämta som data?
 - Fgeo, DVUT och snözon för Luleå och Boden med källa (BBR-tabell), samt standardvärden för energipriser.
