@@ -112,6 +112,7 @@ export async function getHouse(
         sourceUrl: true,
         filename: true,
         documentDate: true,
+        storagePath: true,
         changesetId: true,
       },
     }),
@@ -208,6 +209,8 @@ export async function getHouse(
       sourceUrl: d.sourceUrl,
       filename: d.filename,
       documentDate: d.documentDate,
+      // The original file is uploaded and can be opened.
+      hasFile: d.storagePath !== null,
     })),
     drafts: drafts.map((d) => ({
       id: d.id,

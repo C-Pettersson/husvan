@@ -3,6 +3,7 @@ import type { ComponentView, KeyValueView } from '@/server/houses/getHouse'
 import { explainDifference, maintenanceDebt } from './debt'
 import { computeForecast, schedule, type WorkItemInput } from './forecast'
 import { findingsByType } from './findings'
+import { flagText } from './flags'
 import { planComponents, type Library, type ProfileRow } from './plan'
 import { runningCosts } from './running'
 
@@ -154,7 +155,7 @@ describe('planComponents', () => {
     const p = plan(comp('window'))
     expect(p.installYear.typical).toBe(1990)
     expect(p.quantity).toBe(12)
-    expect(p.flags).toEqual([
+    expect(p.flags.map(flagText)).toEqual([
       'installation_year missing; construction_year used',
       'quantity estimated from living_area',
     ])
@@ -175,13 +176,15 @@ describe('planComponents', () => {
       START
     )
     expect(plans[1].quantity).toBe(1)
-    expect(plans[1].flags).toContain('quantity missing; 1 assumed')
+    expect(plans[1].flags.map(flagText)).toContain(
+      'quantity missing; 1 assumed'
+    )
   })
 
   it('costs nothing without an area to multiply', () => {
     const p = plan(comp('roof_covering'), [kv('construction_year', 1990)])
     expect(p.cost).toBeNull()
-    expect(p.flags).toContain('area missing; no cost')
+    expect(p.flags.map(flagText)).toContain('area missing; no cost')
   })
 
   it('takes the repaint interval of a known paint type', () => {
@@ -326,7 +329,7 @@ describe('cheaper renewal', () => {
     // High renews a at 2000 + 30 = 2030; filmed the year before.
     expect(filming).toHaveLength(1)
     expect(filming[0].typical).toEqual([{ year: 2029, sek: 5500 }])
-    expect(filming[0].flags[0]).toContain('2 part(s)')
+    expect(flagText(filming[0].flags[0])).toContain('2 part(s)')
   })
 
   it('counts the debt at the cost of the cheaper renewal', () => {
@@ -566,7 +569,7 @@ describe('runningCosts', () => {
   })
 
   it('says so when nothing is known', () => {
-    expect(runningCosts([], [], prices, 1.5).flags).toEqual([
+    expect(runningCosts([], [], prices, 1.5).flags.map(flagText)).toEqual([
       'heating cost unknown: no cost, energy use or energy class',
       'running costs unknown',
     ])

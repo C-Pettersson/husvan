@@ -6,6 +6,7 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { PrismaClient } from '@prisma/client'
 import { areaStatistics, houseAreas } from '@/server/houses/area'
+import { listSummary } from '@/server/forecast/compare'
 import { analyseHouse, type Analysis } from '@/server/forecast/run'
 import {
   FEATURES,
@@ -14,7 +15,6 @@ import {
   heating,
   pickPrice,
   risks,
-  valueOf,
 } from '@/server/houses/derive'
 import {
   getHouse,
@@ -59,35 +59,6 @@ function component(c: ComponentView): Record<string, unknown> {
     draft: c.draft || undefined,
     values: values(c.values),
     children: c.children.length ? c.children.map(component) : undefined,
-  }
-}
-
-const KEY_FIGURES = [
-  'living_area',
-  'secondary_area',
-  'plot_area',
-  'construction_year',
-  'room_count',
-  'energy_class',
-]
-
-function summary({ view, debt, adjustedPrice }: Analysis) {
-  return {
-    id: view.id,
-    address: view.address,
-    municipality: view.municipality?.name ?? null,
-    status: view.status,
-    saleStatus: valueOf(view.values, 'sale_status') ?? null,
-    price: pickPrice(view.values),
-    keyFigures: Object.fromEntries(
-      KEY_FIGURES.map((k) => [k, valueOf(view.values, k) ?? null])
-    ),
-    // Risk constructions, older electrical systems and radon together.
-    flaggedRisks: risks(view.components, view.values).length,
-    openDrafts: view.drafts.length,
-    maintenanceDebt: Math.round(debt.total.typical),
-    maintenanceAdjustedPrice:
-      adjustedPrice && Math.round(adjustedPrice.typical),
   }
 }
 
@@ -165,12 +136,12 @@ export function registerReadTools(
         if (answers.some((a) => a.answer === 'no')) excluded++
         else if (answers.some((a) => a.answer === 'unknown'))
           unknown.push({
-            ...summary(analysis),
+            ...listSummary(analysis),
             unknownFeatures: answers
               .filter((a) => a.answer === 'unknown')
               .map((a) => a.feature),
           })
-        else matching.push(summary(analysis))
+        else matching.push(listSummary(analysis))
       }
       return result({ houses: matching, unknown, excludedCount: excluded })
     }

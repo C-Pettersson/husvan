@@ -9,6 +9,7 @@ import type { ComponentView, KeyValueView } from '@/server/houses/getHouse'
 import { selectProfile } from '@/server/library/profiles'
 import type { forecastDefaultsSchema } from '@/server/library/schema'
 import type { z } from 'zod'
+import { flag, type Flag } from './flags'
 
 // low: longest lifespans and lowest costs; high: shortest and highest.
 export type Scenario = 'low' | 'typical' | 'high'
@@ -85,7 +86,7 @@ export type ComponentPlan = {
   } | null
   // The type's inspection, when the part has no inspected_year.
   inspection: ByScenario | null
-  flags: string[]
+  flags: Flag[]
 }
 
 type Rule = 'min' | 'typical' | 'max' | 'soon'
@@ -100,11 +101,11 @@ const DEFAULT_CONDITION_RULE: Record<string, Rule> = {
 // Inputs read with less confidence than this are listed as uncertain.
 export const CONFIDENT = 0.7
 
-function numberValue(values: KeyValueView[], key: string, flags: string[]) {
+function numberValue(values: KeyValueView[], key: string, flags: Flag[]) {
   const v = values.find((x) => x.key === key)?.current
   if (!v || typeof v.value !== 'number') return undefined
   if (v.confidence !== null && v.confidence < CONFIDENT)
-    flags.push(`${key} uncertain (confidence ${v.confidence})`)
+    flags.push(flag('uncertain', { key, confidence: v.confidence }))
   return v.value
 }
 
@@ -179,9 +180,7 @@ export function planComponents(
     // Types without a profile are shown and compared but cost nothing.
     if (!profile) return []
     const isAssumed = c.id.startsWith(ASSUMED_PREFIX)
-    const flags: string[] = isAssumed
-      ? ['not in the documents; assumed, as every house has one']
-      : []
+    const flags: Flag[] = isAssumed ? [flag('assumed_part')] : []
 
     // Condition moves the replacement year.
     const condition = numberValue(c.values, 'condition', flags)
@@ -209,18 +208,18 @@ export function planComponents(
       installYear = byScenario(() => installed)
     } else if (typeof constructionYear === 'number') {
       installYear = byScenario(() => constructionYear)
-      flags.push('installation_year missing; construction_year used')
+      flags.push(flag('construction_year_used'))
     } else {
       installYear = {
         low: startYear,
         typical: startYear - Math.round(years.typical / 2),
         high: startYear - years.min,
       }
-      flags.push('installation year unknown; range covers the whole lifespan')
+      flags.push(flag('installation_year_unknown'))
     }
 
     // Quantity in a profile's unit.
-    const quantityIn = (unit: CostUnit, flags: string[]): number | null => {
+    const quantityIn = (unit: CostUnit, flags: Flag[]): number | null => {
       if (unit === 'HOUSE') return 1
       const key =
         unit === 'M2' ? 'area' : unit === 'LINEAR_M' ? 'length' : 'quantity'
@@ -237,8 +236,8 @@ export function planComponents(
         if (unit === 'EACH' ? share >= 1 : share > 0) {
           flags.push(
             unstated === 1
-              ? `${key} estimated from living_area`
-              : `${key} estimated from living_area, shared among ${unstated} components`
+              ? flag('quantity_estimated', { key })
+              : flag('quantity_estimated_shared', { key, count: unstated })
           )
           return share
         }
@@ -246,10 +245,10 @@ export function planComponents(
       if (unit === 'EACH') {
         // Types priced per window or door usually come in numbers.
         if (defaults.quantityPerLivingM2)
-          flags.push('quantity missing; 1 assumed')
+          flags.push(flag('quantity_one_assumed'))
         return 1
       }
-      flags.push(`${key} missing; no cost`)
+      flags.push(flag('quantity_missing', { key }))
       return null
     }
     const quantity = quantityIn(profile.costUnit, flags)
@@ -261,7 +260,7 @@ export function planComponents(
     }
     const index = profile.priceYear ? library.indexFactor(profile.priceYear) : 1
     if (!costs(profile.costLowSek, profile.costHighSek))
-      flags.push('the lifespan profile has no cost')
+      flags.push(flag('profile_without_cost'))
     const cost = costOf(profile, quantity)
 
     // A cheaper way to renew, when the attributes allow it and the part is
@@ -337,8 +336,7 @@ export function planComponents(
             profile.repaintMaxYears
           )
       const painted = numberValue(c.values, 'last_painted_year', flags)
-      if (painted === undefined)
-        flags.push('last_painted_year missing; installation year used')
+      if (painted === undefined) flags.push(flag('last_painted_missing'))
       repaint = {
         lastPainted:
           painted === undefined ? installYear : byScenario(() => painted),

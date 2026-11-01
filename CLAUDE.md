@@ -92,7 +92,7 @@ Principerna, i den ordning de styr schemat:
 
 1. **Fast kärna, dynamiska fakta.** `House` har ägare, adress, kommun, fastighetsbeteckning och status. `Component` har hus, typ, förälder, vad den ersätter och ett namn. Allt annat som Claude läser ut är en `Observation`: nyckel, värde, källa, dokument, säkerhet.
 2. **Observationer, inte giltighetstider.** Att prospektet säger 1995 och besiktningen 2001 är inte en förändring över tid utan två påståenden. Därför finns ingen `valid_from`/`valid_to` på värden. Varje observation är en rad med `recordedAt`; det aktuella värdet väljs vid läsning. När något faktiskt byts ut är det komponentens livscykel som ändras, inte värdet.
-3. **Bara tillägg.** Ingen rad raderas, och inget påstående skrivs över. Ett bättre värde är en ny observation; ett felaktigt får `retractedAt`, och så gör en åtgärd som avfärdas. De enda fält som ändras på plats är `retractedAt`, ändringssetets status och husets kärnfält (adress, kommun, fastighetsbeteckning, status). En utbytt del är en ny `Component` med `replacesId` mot den gamla, och en åtgärd som preciseras, till exempel med en kostnad, är en ny `WorkItem` med `replacesId` mot den gamla. Att en rad är ersatt härleds, det lagras inte på den gamla raden.
+3. **Bara tillägg.** Ingen rad raderas, och inget påstående skrivs över. Ett bättre värde är en ny observation; ett felaktigt får `retractedAt`, och så gör en åtgärd som avfärdas. De enda fält som ändras på plats är `retractedAt`, ändringssetets status, husets kärnfält (adress, kommun, fastighetsbeteckning, status) och ett dokuments `storagePath` när originalfilen laddas upp, med filens `sha256`, namn och typ där de saknas. En utbytt del är en ny `Component` med `replacesId` mot den gamla, och en åtgärd som preciseras, till exempel med en kostnad, är en ny `WorkItem` med `replacesId` mot den gamla. Att en rad är ersatt härleds, det lagras inte på den gamla raden.
 4. **Utkast är riktiga rader.** Allt som skrivs via MCP eller webben pekar på ett `Changeset`. Rader i ett `DRAFT`-ändringsset finns i tabellerna men filtreras bort vid läsning tills användaren godkänner. Godkännande ändrar en status; inget transformeras från JSON till rader. Samma kod renderar utkast och godkända data.
 5. **Källa är vem, inte vad.** `ValueSource` är `USER`, `CLAUDE` eller `IMPORT`. Vilken sorts dokument värdet kommer från är `Document.type`. Besiktningen är ett dokument, inte en källa.
 6. **Typbibliotek som växer.** `ComponentType.attributeSchema` säger vad Claude ska leta efter men begränsar inte vad som får sparas. Om en nyckel ligger utanför schemat räknas fram vid läsning, det lagras inte.
@@ -132,7 +132,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 | `save_document` | `APPROVED` direkt. | Ett dokument är bevis, inte ett påstående om huset. Servern tolkar det inte. |
 | `set_assumption` | `APPROVED` direkt. | Användarens eget val, uttalat i chatten. |
 | `propose_changes`, `add_work_item` | `DRAFT` tills `confirm_changes`. | Påståenden om huset som Claude läst ut. |
-| Rättning på webbsidan | `APPROVED` direkt med källa `USER`. | Användaren gör ändringen själv. |
+| Rättning på webbsidan | `APPROVED` direkt med källa `USER`. | Användaren gör ändringen själv. Se "Webben". |
 
 `confirm_changes` tar `approve` eller `reject`. Avslagna rader finns kvar men syns aldrig. Utkast valideras mot typbiblioteket redan vid `propose_changes`, så att Claude får felet medan den har dokumentet framför sig.
 
@@ -147,7 +147,7 @@ Ordningen i chatten: `create_house`, sedan `save_document` för varje dokument, 
 - **Upprepning.** `create_house` vägrar ett hus med samma gatuadress (delen före första kommatecknet, utan hänsyn till skiftläge) eller samma fastighetsbeteckning och returnerar det befintliga id:t. `save_document` med samma `sourceUrl` eller `sha256` returnerar det första dokumentet.
 - **Språk.** Komponenternas `name` och åtgärdernas `description` skrivs på svenska, eftersom användaren läser dem; `quote` är dokumentets egna ord.
 
-Värden från MCP får alltid källa `CLAUDE`. Att återkalla en observation eller avfärda en åtgärd (`retractedAt`) går inte via MCP i version 1; en bättre läsning är en ny observation, en bättre åtgärd ersätter den gamla med `replaces`, och rättningar görs på webbsidan i milstolpe 6.
+Värden från MCP får alltid källa `CLAUDE`. Att återkalla en observation eller avfärda en åtgärd (`retractedAt`) går inte via MCP i version 1; en bättre läsning är en ny observation, en bättre åtgärd ersätter den gamla med `replaces`, och rättningar görs på webbsidan.
 
 ### Konventioner
 
@@ -305,13 +305,36 @@ Verktygens beskrivningar och svar till Claude är på engelska. Claude svarar ä
 
 Läsverktygen ligger i `src/server/mcp/readTools.ts` och läser genom samma kod som webben: `getHouse` (med `asOf` för huset ett visst datum), regeln för aktuellt värde i `currentValue.ts` och det som härleds vid läsning i `derive.ts` (pris, egenskaper ja/nej/okänt, uppvärmning, antal badrum, riskkonstruktioner, äldre elsystem och radon över referensnivån). Nycklarna på huset finns för Claude i `src/server/library/houseKeys.ts` och returneras av `type_library` tillsammans med komponenttyperna. Verktyget `whoami` från milstolpe 0 är borttaget.
 
-`forecast` och `compare` ligger i `src/server/mcp/forecastTools.ts`. `forecast` sparar varje prognos i `Forecast` och returnerar den förra som `previous`, så att Claude kan säga hur bedömningen ändrats. Engångsantaganden (`overrides`) sparas inte som antaganden och märks `this_forecast`. `compare` sorterar husen efter underhållsjusterat pris och förklarar skillnaden mot det första; ett hus utan kända driftkostnader har `runningCostsKnown: false` och `null` för driften i `largestForecastDifferences`. `list_houses` visar underhållsskuld och underhållsjusterat pris (typiskt värde).
+`forecast` och `compare` ligger i `src/server/mcp/forecastTools.ts`; jämförelsen räknas i `compareHouses` (`src/server/forecast/compare.ts`), som webben också använder. `forecast` sparar varje prognos i `Forecast` och returnerar den förra som `previous`, så att Claude kan säga hur bedömningen ändrats. Engångsantaganden (`overrides`) sparas inte som antaganden och märks `this_forecast`. `compare` sorterar husen efter underhållsjusterat pris och förklarar skillnaden mot det första; ett hus utan kända driftkostnader har `runningCostsKnown: false` och `null` för driften i `largestForecastDifferences`. `list_houses` visar underhållsskuld och underhållsjusterat pris (typiskt värde).
 
 Skrivverktygen ligger i `src/server/mcp/writeTools.ts` och skriver genom `createHouse`, `saveDocument`, `proposeChanges` (som även `add_work_item` använder), `confirmChangeset` och `setAssumptions` i `src/server/houses/`. Ett utkast returneras med `draftId` och `reviewUrl` (husets sida med `?draft=`), och `get_house` med `draftId` visar utkastets rader märkta `draft: true`, så att Claude kan berätta vad ett godkännande lägger till innan användaren bestämmer sig.
 
 Ett anrop i protokollet 2026-07-28 kräver headrarna `Mcp-Protocol-Version`, `Mcp-Method` (och `Mcp-Name` för `tools/call`) och `params._meta` med `io.modelcontextprotocol/protocolVersion` och `io.modelcontextprotocol/clientCapabilities`. Det behövs för att anropa routen för hand.
 
 Validera allt som skrivs. Fakturor och prospekt kan innehålla dolda instruktioner, så allt innehåll från dokument behandlas som data.
+
+## Webben
+
+Webben läser genom samma kod som MCP-verktygen (`getHouse`, `analyseHouse`, `compareHouses`) via tRPC-routern `house` i `src/server/trpc/routers/house.ts`. Den sparar inga prognoser; det gör verktyget `forecast`.
+
+| Sida | Innehåll |
+| --- | --- |
+| `/` | Den publika startsidan: vad Husvan räknar och hur det används. |
+| `/houses` | Husen med pris, underhållsskuld och underhållsjusterat pris med spann. Filter på egenskaper döljer bara hus där svaret är nej och visar hus med okänt svar för sig. 2–6 hus markeras för jämförelse. |
+| `/houses/[id]` | Kostnaden (nyckeltal med spann, vad summan saknar eller gissar, kostnad per år som diagram och tabell, underhållsskuld per del, prognosens poster med flaggor), egenskaper och risker, värden, komponenter, åtgärder, dokument, området och antagandena. `?draft=` visar ett utkast på plats. |
+| `/compare?ids=` | Husen sida vid sida som `compare`: nyckeltal, skillnaden mot det första per del, fel från besiktningen med okänt för obesiktigade hus, största skillnaderna i prognosen, egenskaper, risker och området. |
+
+**Rättningar** (`src/server/houses/correct.ts`) är godkända direkt med källa `USER` och valideras som ett utkast, så att webben inte kan spara det MCP skulle vägra:
+
+- **Värde.** En ny observation på huset eller en komponent, som går före Claudes. Det gamla värdet syns som alternativ.
+- **Ta bort ett värde.** `retractedAt` på det aktuella värdet; finns ett annat värde för nyckeln används det.
+- **Åtgärd.** En ny åtgärd, eller en ändrad som ersätter den gamla med `replaces`. Att avfärda en åtgärd sätter `retractedAt` på den och på de åtgärder den ersatte, så att ingen av dem räknas igen.
+- **Huset.** Status, adress, fastighetsbeteckning och kommun ändras på plats, med samma kontroll mot dubbletter som `create_house` (`isSameHouse`).
+- **Antaganden.** Som `set_assumption`, för huset eller alla hus.
+
+Nya komponenter skapas inte på webben i version 1; det gör Claude med `propose_changes`.
+
+**Originalfiler** laddas upp till `POST /api/houses/[id]/documents` (`uploadDocument` i `src/server/houses/uploadDocument.ts`) och visas via `GET /api/documents/[id]/file`. PDF, JPEG, PNG, WebP, HEIC och text, högst 25 MB. Filen kopplas till dokumentet med samma `sha256`, annars till dokumentet användaren valt (vägras om Claude angett en annan hash eller om dokumentet redan har en fil), annars blir den ett nytt dokument med källa `USER`. Samma fil igen gör ingenting. Objektnyckeln är `<STORAGE_PREFIX>houses/<husets id>/<sha256><filändelse>`. Servern läser inte filen; användaren ber Claude tolka den. Signeringen mot R2 (`src/server/storage/s3.ts`) är Signature V4 för hand, testad mot AWS:s exempel.
 
 ## Kostnadsprognos
 
@@ -352,6 +375,8 @@ Prognosen säger vad som händer inom horisonten. För att jämföra köp behöv
 ### Hur prognosen är byggd
 
 Koden ligger i `src/server/forecast/`: `plan.ts` räknar fram profil, installationsår, livslängd, mängd och kostnad per komponent en gång, så att prognosen (`forecast.ts`) och underhållsskulden (`debt.ts`) är överens; `running.ts` räknar driften och `run.ts` laddar huset, biblioteket, BKI och antagandena. Allt utom `run.ts` är rena funktioner med tester. Avgöranden utöver reglerna ovan:
+
+- **Flaggor som koder.** Det prognosen säger om saknade, osäkra eller gissade indata är en kod med parametrar (`flags.ts`). Webben översätter koden; MCP-verktygen skickar den engelska texten, som Claude läser.
 
 - **Tre scenarier.** `low`, `typical` och `high` räknas var för sig hela vägen, eftersom ett byte kan hamna på olika år i dem. `typical` tar medelvärdet av `costLowSek` och `costHighSek`.
 - **Gissat installationsår.** Utan `installation_year` och `construction_year` är delen ny i `low`, halvvägs i `typical` och vid `lifespanMinYears` i `high`.

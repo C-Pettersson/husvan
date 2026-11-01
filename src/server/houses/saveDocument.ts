@@ -2,7 +2,12 @@
 // (CLAUDE.md, "Spara originalet"). A document is evidence, not a claim about
 // the house, so its changeset is approved directly. The original file is
 // uploaded through the web and matched by sha256.
-import type { DocumentType, Prisma, PrismaClient } from '@prisma/client'
+import type {
+  DocumentType,
+  Prisma,
+  PrismaClient,
+  ValueSource,
+} from '@prisma/client'
 
 export type SaveDocumentInput = {
   houseId: string
@@ -16,6 +21,9 @@ export type SaveDocumentInput = {
   interpretation?: Prisma.InputJsonValue
   documentDate?: string
   amountSek?: number
+  // Who saved it: Claude through MCP, or the user uploading a file.
+  source?: ValueSource
+  storagePath?: string
 }
 
 export type SaveDocumentResult =
@@ -58,7 +66,7 @@ export async function saveDocument(
     const changeset = await tx.changeset.create({
       data: {
         houseId: doc.houseId,
-        source: 'CLAUDE',
+        source: doc.source ?? 'CLAUDE',
         status: 'APPROVED',
         decidedAt: new Date(),
         comment: doc.title ?? doc.type,
@@ -77,6 +85,7 @@ export async function saveDocument(
         interpretation: doc.interpretation,
         documentDate: doc.documentDate ? new Date(doc.documentDate) : null,
         amountSek: doc.amountSek ?? null,
+        storagePath: doc.storagePath ?? null,
         changesetId: changeset.id,
       },
       select: { id: true },

@@ -96,6 +96,9 @@ export type Risk = {
   kind: 'risk_construction' | 'older_electrical' | 'radon'
   componentId: string | null // null = about the house itself
   type: string
+  // The value that makes it a risk, for showing it in the user's language.
+  key: string
+  value: string | number | boolean
   reason: string
 }
 
@@ -122,6 +125,8 @@ export function risks(
       kind: 'radon',
       componentId: null,
       type: 'house',
+      key: 'radon_bq_m3',
+      value: radon,
       reason: `radon ${radon} Bq/m3, above the reference level ${RADON_REFERENCE_BQ_M3}`,
     })
   for (const c of flatten(components)) {
@@ -136,6 +141,8 @@ export function risks(
           kind: 'risk_construction',
           componentId: c.id,
           type: c.type,
+          key: rule[0],
+          value: rule[1],
           reason: `${foundationType} with ${rule[0]} = ${rule[1]}`,
         })
       }
@@ -147,6 +154,8 @@ export function risks(
           kind: 'older_electrical',
           componentId: c.id,
           type: c.type,
+          key: 'wiring',
+          value: wiring,
           reason: `wiring = ${wiring}`,
         })
       }
@@ -156,6 +165,8 @@ export function risks(
         kind: 'older_electrical',
         componentId: c.id,
         type: c.type,
+        key: 'rcd',
+        value: false,
         reason: 'no residual current device (rcd = false)',
       })
     }

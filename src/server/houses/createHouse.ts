@@ -19,6 +19,25 @@ const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
 // "Yxgränd 6, 973 42 Luleå" and "yxgränd 6" are the same house.
 const street = (address: string) => normalize(address.split(',')[0])
 
+type HouseCore = {
+  address: string
+  municipalityCode?: string | null
+  propertyDesignation?: string | null
+}
+
+// The same property designation, or the same street in the same (or an
+// unknown) municipality. Shared with corrections on the web.
+export const isSameHouse = (h: HouseCore, other: HouseCore) =>
+  Boolean(
+    (other.propertyDesignation &&
+      normalize(h.propertyDesignation ?? '') ===
+        normalize(other.propertyDesignation)) ||
+    (street(h.address) === street(other.address) &&
+      (!h.municipalityCode ||
+        !other.municipalityCode ||
+        h.municipalityCode === other.municipalityCode))
+  )
+
 export async function createHouse(
   prisma: PrismaClient,
   {
@@ -46,15 +65,8 @@ export async function createHouse(
       propertyDesignation: true,
     },
   })
-  const duplicate = houses.find(
-    (h) =>
-      (propertyDesignation &&
-        normalize(h.propertyDesignation ?? '') ===
-          normalize(propertyDesignation)) ||
-      (street(h.address) === street(address) &&
-        (!h.municipalityCode ||
-          !municipalityCode ||
-          h.municipalityCode === municipalityCode))
+  const duplicate = houses.find((h) =>
+    isSameHouse(h, { address, municipalityCode, propertyDesignation })
   )
   if (duplicate)
     return {

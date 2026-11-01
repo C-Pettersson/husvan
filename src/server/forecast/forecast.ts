@@ -10,6 +10,7 @@ import {
   type Scenario,
 } from './plan'
 import type { RunningLine } from './running'
+import { flag, type Flag } from './flags'
 
 export type WorkItemInput = {
   id: string
@@ -38,7 +39,7 @@ export type ForecastItem = {
   // Cost per year in the typical scenario; years without cost are left out.
   typical: { year: number; sek: number }[]
   total: ByScenario
-  flags: string[]
+  flags: Flag[]
 }
 
 export type Forecast = {
@@ -205,14 +206,17 @@ export function computeForecast(input: ForecastInput): Forecast {
     }
     const flags = [...plan.flags]
     if (runs.typical.overdueReplacement && !w)
-      flags.push('past its lifespan; replacement put in the start year')
-    if (w) flags.push(`timed by work item: ${w.description}`)
-    if (!plan.cost && !cost) flags.push('replacement not costed')
+      flags.push(flag('overdue_replacement'))
+    if (w)
+      flags.push(flag('timed_by_work_item', { description: w.description }))
+    if (!plan.cost && !cost) flags.push(flag('replacement_not_costed'))
     if (plan.renewal && !cost)
       flags.push(
-        `low and typical renew it as ${Object.entries(plan.renewal.match)
-          .map(([k, v]) => `${k}=${v}`)
-          .join(', ')}; high replaces it`
+        flag('cheaper_renewal', {
+          match: Object.entries(plan.renewal.match)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(', '),
+        })
       )
     add(
       {
@@ -244,9 +248,7 @@ export function computeForecast(input: ForecastInput): Forecast {
         {
           ...base,
           category: 'repaint',
-          flags: runs.typical.overdueRepaint
-            ? ['repaint overdue; put in the start year']
-            : [],
+          flags: runs.typical.overdueRepaint ? [flag('repaint_overdue')] : [],
         },
         byScenario((s) => runs[s].repaints)
       )
@@ -257,9 +259,7 @@ export function computeForecast(input: ForecastInput): Forecast {
       {
         category: 'inspection',
         key: type,
-        flags: [
-          `added by Husvan for ${i.components.length} part(s) without inspected_year; it decides whether and how they are renewed`,
-        ],
+        flags: [flag('inspection_added', { count: i.components.length })],
       },
       byScenario((s) => [{ year: i.year, sek: i.cost[s] }])
     )
@@ -275,10 +275,10 @@ export function computeForecast(input: ForecastInput): Forecast {
       continue
     const { first, last, given } = workItemYears(w, startYear)
     const cost = workItemCost(w)
-    const flags: string[] = []
-    if (!given) flags.push('no year given; put in the start year')
-    if (first < startYear) flags.push('due before the start year')
-    if (!cost) flags.push('no cost given')
+    const flags: Flag[] = []
+    if (!given) flags.push(flag('work_item_no_year'))
+    if (first < startYear) flags.push(flag('work_item_before_start'))
+    if (!cost) flags.push(flag('work_item_no_cost'))
     const span = last - first + 1
     add(
       {
@@ -305,7 +305,10 @@ export function computeForecast(input: ForecastInput): Forecast {
         category: 'running',
         key: line.key,
         flags: change
-          ? [...line.flags, `trended ${(change * 100).toFixed(1)} % a year`]
+          ? [
+              ...line.flags,
+              flag('trended', { percent: (change * 100).toFixed(1) }),
+            ]
           : line.flags,
       },
       byScenario((s) =>

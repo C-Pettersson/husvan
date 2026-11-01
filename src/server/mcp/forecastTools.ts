@@ -4,12 +4,14 @@
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { Prisma, PrismaClient } from '@prisma/client'
-import { explainDifference } from '@/server/forecast/debt'
-import { findingsByType } from '@/server/forecast/findings'
+import {
+  compareHouses,
+  costSummary,
+  debtRangesByType,
+} from '@/server/forecast/compare'
+import { flagText } from '@/server/forecast/flags'
 import { analyseHouse, type Analysis } from '@/server/forecast/run'
-import { areaStatistics, houseAreas } from '@/server/houses/area'
 import { assumptionValues } from '@/server/houses/assumptions'
-import { FEATURES, featureAnswer, flatten } from '@/server/houses/derive'
 import { result, toolError } from './result'
 
 // Not part of the forecast yet; said with every answer so Claude does not
@@ -34,24 +36,13 @@ function rounded(value: unknown): unknown {
   return value
 }
 
-function summary(a: Analysis) {
-  return {
-    price: a.price,
-    maintenanceDebt: a.debt.total,
-    maintenanceAdjustedPrice: a.adjustedPrice,
-    priceToAssessedValue: a.priceToAssessed,
-    forecastTotal: a.forecast.total,
-    forecastPerMonth: a.forecast.perMonth,
-    gaps: a.gaps,
-  }
-}
-
 // Items with their typical cost per year as {year: sek}; a running cost
 // that is the same every year gives it once.
 function items(a: Analysis) {
   return [...a.forecast.items]
     .sort((x, y) => y.total.typical - x.total.typical)
-    .map(({ typical, ...item }) => {
+    .map(({ typical, flags, ...rest }) => {
+      const item = { ...rest, flags: flags.map(flagText) }
       const flat =
         item.category === 'running' &&
         typical.every((e) => e.sek === typical[0]?.sek)
@@ -64,21 +55,6 @@ function items(a: Analysis) {
             ),
           }
     })
-}
-
-function debtByType(a: Analysis) {
-  const map = new Map<string, { low: number; typical: number; high: number }>()
-  for (const p of a.debt.parts) {
-    const t = map.get(p.type) ?? { low: 0, typical: 0, high: 0 }
-    map.set(p.type, {
-      low: t.low + p.sek.low,
-      typical: t.typical + p.sek.typical,
-      high: t.high + p.sek.high,
-    })
-  }
-  return [...map]
-    .map(([type, sek]) => ({ type, ...sek }))
-    .sort((x, y) => y.typical - x.typical)
 }
 
 const overridesInput = assumptionValues.describe(
@@ -118,12 +94,12 @@ export function registerForecastTools(
       const answer = rounded({
         house: { id: a.view.id, address: a.view.address },
         assumptions: a.assumptions,
-        ...summary(a),
+        ...costSummary(a),
         years: a.forecast.years,
         items: items(a),
-        maintenanceDebtByType: debtByType(a),
+        maintenanceDebtByType: debtRangesByType(a),
         risks: a.risks,
-        flags: a.flags,
+        flags: a.flags.map(flagText),
         priceIndexYear: a.indexYear,
         notModelled: NOT_MODELLED,
       }) as Record<string, unknown>
@@ -172,95 +148,17 @@ export function registerForecastTools(
       annotations: { readOnlyHint: true },
     },
     async ({ houseIds }) => {
-      const analyses = await Promise.all(
-        houseIds.map((houseId) =>
-          analyseHouse(prisma, { ownerId: userId, houseId })
-        )
-      )
-      const missing = houseIds.filter((_, i) => !analyses[i])
-      if (missing.length)
-        return toolError(`No house with id ${missing.join(', ')}.`)
-      const houses = (analyses as Analysis[]).sort(
-        (x, y) =>
-          (x.adjustedPrice?.typical ?? Infinity) -
-          (y.adjustedPrice?.typical ?? Infinity)
-      )
-      const [base] = houses
-
-      // Forecast items whose typical totals differ most across the houses.
-      const totals = new Map<string, number[]>()
-      houses.forEach((h, i) => {
-        for (const item of h.forecast.items) {
-          const key = `${item.category}:${item.key}`
-          const row = totals.get(key) ?? houses.map(() => 0)
-          row[i] += item.total.typical
-          totals.set(key, row)
-        }
-      })
-      // An unknown running cost is not zero: null, and left out of the spread.
-      const largestDifferences = [...totals]
-        .map(([key, row]) => {
-          const sek = row.map((v, i) =>
-            key.startsWith('running:') && !houses[i].runningCostsKnown
-              ? null
-              : v
-          )
-          const known = sek.filter((v): v is number => v !== null)
-          return {
-            item: key,
-            sek,
-            spread: Math.max(...known) - Math.min(...known),
-          }
-        })
-        .filter((d) => Number.isFinite(d.spread))
-        .sort((x, y) => y.spread - x.spread)
-        .slice(0, 8)
-
+      const c = await compareHouses(prisma, { ownerId: userId, houseIds })
+      if (!c.ok) return toolError(`No house with id ${c.missing.join(', ')}.`)
       return result(
         rounded({
-          houses: await Promise.all(
-            houses.map(async (h) => ({
-              id: h.view.id,
-              address: h.view.address,
-              status: h.view.status,
-              ...summary(h),
-              runningCostsKnown: h.runningCostsKnown,
-              horizon: {
-                startYear: h.forecast.startYear,
-                years: h.forecast.horizonYears,
-              },
-              features: Object.fromEntries(
-                FEATURES.map((f) => [
-                  f,
-                  featureAnswer(f, h.view.components, h.view.values),
-                ])
-              ),
-              risks: h.risks,
-              flags: h.flags,
-              area: await areaStatistics(prisma, houseAreas(h.view)),
-            }))
-          ),
-          againstFirst: houses.slice(1).map((h) => ({
-            id: h.view.id,
-            address: h.view.address,
-            ...explainDifference(
-              { price: base.price?.sek ?? null, debt: base.debt },
-              { price: h.price?.sek ?? null, debt: h.debt }
-            ),
+          houses: c.houses.map((h) => ({
+            ...h,
+            flags: h.flags.map(flagText),
           })),
-          largestForecastDifferences: largestDifferences,
-          inspectionFindings: findingsByType(
-            houses.map((h) => ({
-              inspected: h.gaps.inspected,
-              workItems: h.view.workItems,
-              typeOf: new Map(
-                flatten(h.view.components).map((c) => [c.id, c.type])
-              ),
-            }))
-          ).map((row) => ({
-            componentType: row.type,
-            byHouse: row.perHouse,
-          })),
+          againstFirst: c.againstFirst,
+          largestForecastDifferences: c.largestForecastDifferences,
+          inspectionFindings: c.inspectionFindings,
           notModelled: NOT_MODELLED,
         }) as Record<string, unknown>
       )

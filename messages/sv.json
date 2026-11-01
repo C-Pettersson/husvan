@@ -12,7 +12,48 @@
   "home": {
     "title": "Vad kostar huset över tid?",
     "lead": "Husvan räknar på underhåll, drift och byten för de hus du funderar på att köpa, så att du kan jämföra dem på samma villkor.",
-    "open": "Till dina hus"
+    "open": "Till dina hus",
+    "signIn": "Logga in",
+    "how": "Så fungerar det",
+    "steps": {
+      "connect": {
+        "title": "Koppla Husvan till Claude",
+        "body": "Husvan är en koppling i din egen Claude. Där sker allt läsande och skrivande."
+      },
+      "upload": {
+        "title": "Ladda upp underlaget i chatten",
+        "body": "Prospekt, besiktningsprotokoll och energideklaration. Claude läser dem och föreslår delar, värden och åtgärder med källa."
+      },
+      "approve": {
+        "title": "Godkänn det Claude läst ut",
+        "body": "Ingenting räknas förrän du godkänt utkastet. Du rättar det som blev fel här på webben."
+      },
+      "compare": {
+        "title": "Jämför husen",
+        "body": "Kostnad per år, underhållsskuld och underhållsjusterat pris, med ett spann från låg till hög."
+      }
+    },
+    "measures": "Vad den räknar",
+    "debt": {
+      "title": "Underhållsskuld",
+      "body": "Hur mycket av varje del som redan är förbrukad, i kronor. Ett tak halvvägs genom sin livslängd är en halv takkostnad, oavsett när det byts."
+    },
+    "adjusted": {
+      "title": "Underhållsjusterat pris",
+      "body": "Priset plus underhållsskulden. Två hus med samma pris blir olika dyra om det ena har nytt tak och det andra gamla rör."
+    },
+    "forecast": {
+      "title": "Kostnad per år",
+      "body": "Byten enligt livslängd, ommålning, åtgärder från besiktningen och driften, i dagens kronor över den horisont du väljer."
+    },
+    "principles": "Det den håller fast vid",
+    "principle": {
+      "unknown": "Okänt är inte nej. Att prospektet inte nämner en pool gör den inte till nej.",
+      "disclosure": "Att säga mindre gör inte ett hus billigare. Delar som alla hus har räknas med även när underlaget inte nämner dem.",
+      "sources": "Varje värde har en källa: vilket dokument, vilken mening och hur säker läsningen är.",
+      "server": "Servern tolkar inga dokument och anropar ingen AI. Den lagrar, kontrollerar och räknar."
+    },
+    "personal": "Husvan är ett personligt verktyg och tar inte emot nya användare."
   },
   "login": {
     "title": "Logga in",
@@ -40,7 +81,19 @@
   "houses": {
     "title": "Dina hus",
     "empty": "Inga hus än. Lägg till ett hus genom att ladda upp prospektet i Claude.",
-    "count": "{count, plural, one {# hus} other {# hus}}"
+    "count": "{count, plural, one {# hus} other {# hus}}",
+    "filter": "Måste ha",
+    "filterHint": "Hus som saknar det du valt döljs. Hus där det är okänt visas för sig, eftersom okänt inte är nej.",
+    "unknownGroup": "Okänt om de har det du valt",
+    "unknownFeatures": "Okänt: {features}",
+    "hiddenCount": "{count, plural, one {# hus saknar} other {# hus saknar}} det du valt och visas inte.",
+    "compare": "Jämför {count}",
+    "compareHint": "Markera 2–6 hus för att jämföra dem.",
+    "select": "Välj {address} för jämförelse",
+    "noPrice": "Pris saknas",
+    "drafts": "{count, plural, one {# utkast} other {# utkast}} väntar",
+    "risks": "{count, plural, one {# risk} other {# risker}}",
+    "notInspected": "Inte besiktigat"
   },
   "house": {
     "status": {
@@ -174,5 +227,306 @@
   },
   "error": {
     "generic": "Något gick fel."
+  },
+  "feature": {
+    "pool": "Pool",
+    "sauna": "Bastu",
+    "deck": "Altan",
+    "sunroom": "Uterum",
+    "garage": "Garage",
+    "wood_stove": "Kamin",
+    "heat_pump_air_air": "Luftvärmepump",
+    "basement": "Källare"
+  },
+  "featureAnswer": {
+    "yes": "Ja",
+    "no": "Nej",
+    "unknown": "Okänt"
+  },
+  "cost": {
+    "title": "Kostnad",
+    "price": "Pris",
+    "noPrice": "Inget pris",
+    "debt": "Underhållsskuld",
+    "debtHelp": "Den förbrukade delen av varje del, plus åtgärderna. Beror inte på horisonten, så ett tak som byts om 20 år räknas ändå.",
+    "adjusted": "Underhållsjusterat pris",
+    "adjustedHelp": "Pris plus underhållsskuld.",
+    "perMonth": "Prognos per månad",
+    "perMonthHelp": "Snitt över {years} år från {start}, drift inräknad.",
+    "perMonthHelpNoRunning": "Snitt över {years} år från {start}. Driften är okänd och ingår inte.",
+    "ratio": "K/T-tal",
+    "ratioHelp": "Pris delat med taxeringsvärdet, taxeringsår {year}.",
+    "range": "{low}–{high}",
+    "rangeLabel": "låg–hög",
+    "chartTitle": "Kostnad per år",
+    "chartScenario": "Typiskt scenario",
+    "chartNote": "Varje scenario har egna bytesår, så ett enskilt år kan låg eller hög hamna på båda sidor om typisk. Summorna är i ordning.",
+    "total": "Totalt",
+    "showTable": "Visa som tabell",
+    "hideTable": "Dölj tabellen",
+    "year": "År",
+    "debtByType": "Underhållsskuld per del",
+    "items": "Poster i prognosen",
+    "item": "Post",
+    "low": "Låg",
+    "typical": "Typisk",
+    "high": "Hög",
+    "assumed": "Antagen",
+    "assumedHelp": "Underlaget nämner inte delen, men alla hus har en. Den räknas från byggåret.",
+    "renewedAs": "Förnyas billigare i låg och typisk",
+    "gapsTitle": "Det här saknar eller gissar summan",
+    "gap": {
+      "notInspected": "Inget besiktningsprotokoll: felen är okända, inte inga.",
+      "workItemsWithoutCost": "{count, plural, one {# åtgärd} other {# åtgärder}} utan kostnad räknas som noll.",
+      "assumedParts": "Antagna delar som underlaget inte nämner: {parts}.",
+      "partsWithoutInstallationYear": "{count, plural, one {# del har} other {# delar har}} husets byggår som installationsår.",
+      "partsWithoutCost": "{count, plural, one {# del saknar} other {# delar saknar}} kostnad.",
+      "runningUnknown": "Driftkostnaderna är okända och ingår inte."
+    },
+    "notModelled": "Inte med ännu: snöröjning och takskottning, och ställning vid fasadmålning.",
+    "indexYear": "Belopp i {year} års priser, uppräknade med byggkostnadsindex.",
+    "flags": "Om underlaget",
+    "loadFailed": "Prognosen gick inte att räkna fram.",
+    "part": "Del"
+  },
+  "forecastCategory": {
+    "running": "Drift",
+    "replacement": "Byten",
+    "repaint": "Ommålning",
+    "work_item": "Åtgärder",
+    "inspection": "Inspektion",
+    "capital": "Ränta"
+  },
+  "runningKey": {
+    "heating_from_energy_use": "Uppvärmning (energi × pris)",
+    "heating_estimated": "Uppvärmning (uppskattad)",
+    "other_operating_cost": "Övrig driftkostnad"
+  },
+  "flag": {
+    "uncertain": "{key} är osäker ({confidence} %)",
+    "assumed_part": "Nämns inte i underlaget; antagen eftersom alla hus har en",
+    "construction_year_used": "Installationsår saknas; husets byggår används",
+    "installation_year_unknown": "Installationsår okänt; spannet täcker hela livslängden",
+    "quantity_estimated": "{key} uppskattad ur boytan",
+    "quantity_estimated_shared": "{key} uppskattad ur boytan och delad på {count} delar",
+    "quantity_one_assumed": "Antal saknas; 1 antas",
+    "quantity_missing": "{key} saknas; ingen kostnad",
+    "profile_without_cost": "Livslängdsprofilen saknar kostnad",
+    "last_painted_missing": "Senast målad saknas; installationsåret används",
+    "overdue_replacement": "Livslängden har passerats; bytet läggs på startåret",
+    "timed_by_work_item": "Tidpunkten styrs av åtgärden: {description}",
+    "replacement_not_costed": "Bytet saknar kostnad",
+    "cheaper_renewal": "Låg och typisk förnyar billigare ({match}); hög byter",
+    "repaint_overdue": "Ommålningen har passerats; läggs på startåret",
+    "inspection_added": "Lagd av Husvan för {count, plural, one {# del} other {# delar}} utan inspektionsår; inspektionen avgör om och hur de förnyas",
+    "work_item_no_year": "Inget år; läggs på startåret",
+    "work_item_before_start": "Skulle ha gjorts före startåret",
+    "work_item_no_cost": "Ingen kostnad; räknas som noll",
+    "trended": "Trendad {percent} % per år",
+    "no_tariff_changes": "Kommunen saknar taxeförändringar; ingen trend",
+    "interest_without_loan": "Ränta utan lån; ingen kapitalkostnad",
+    "not_inspected": "Inget besiktningsprotokoll: felen är okända, inte inga",
+    "operating_cost_less_parts": "Prospektets driftkostnad minus de poster den nämner",
+    "heating_no_pellet_price": "Uppvärmningen okänd: inget pris för pellets",
+    "heating_no_energy_price": "Uppvärmningen okänd: inget energipris för kommunen",
+    "heating_from_energy_use": "Energianvändning × {price} kr/kWh",
+    "heating_estimated": "Uppskattad ur primärenergital × boyta × Fgeo {fgeo} / {weight}: cirka {kwh} kWh",
+    "heating_unknown": "Uppvärmningen okänd: ingen kostnad, energianvändning eller energiklass",
+    "running_costs_unknown": "Driftkostnaderna är okända"
+  },
+  "risk": {
+    "title": "Risker",
+    "none": "Inga kända risker.",
+    "note": "Risker flaggas men räknas inte om till kronor.",
+    "risk_construction": "Riskkonstruktion",
+    "older_electrical": "Äldre elsystem",
+    "radon": "Radon över referensnivån 200 Bq/m³"
+  },
+  "facts": {
+    "title": "Egenskaper",
+    "note": "Okänt är inte nej: det betyder att underlaget inte säger något.",
+    "heating": "Uppvärmning",
+    "complementary": "Komplement: {types}",
+    "unknownHeating": "Okänd",
+    "bathrooms": "Badrum"
+  },
+  "area": {
+    "title": "Området",
+    "note": "Varje värde visas med nivå och år. Ett kommunvärde gäller hela kommunen, inte husets närområde.",
+    "none": "Ingen statistik för huset.",
+    "source": "Källa: {sources}",
+    "level": {
+      "DESO": "DeSO-område",
+      "POLICE_AREA": "Lokalpolisområde",
+      "MUNICIPALITY": "Kommunen",
+      "NATION": "Riket"
+    },
+    "key": {
+      "population_total": "Folkmängd",
+      "population_share_age_0_19": "Andel 0–19 år",
+      "population_share_age_65_plus": "Andel 65 år och äldre",
+      "median_economic_standard_sek": "Median ekonomisk standard per år",
+      "share_low_economic_standard": "Andel med låg ekonomisk standard",
+      "share_high_economic_standard": "Andel med hög ekonomisk standard",
+      "share_post_secondary_education": "Andel med eftergymnasial utbildning",
+      "share_post_secondary_3y_plus": "Andel med eftergymnasial utbildning 3 år eller mer",
+      "reported_crimes_per_100k": "Anmälda brott per 100 000 invånare",
+      "reported_crimes_count": "Anmälda brott",
+      "ntu_unsafe_outdoors_evening_share": "Känner sig otrygga ute sent på kvällen",
+      "ntu_worry_burglary_share": "Oroar sig för bostadsinbrott",
+      "ntu_victim_personal_crime_share": "Utsatta för brott mot person",
+      "ntu_household_burglary_share": "Hushåll utsatta för bostadsinbrott",
+      "ntu_problem_gangs_share": "Ser gäng som ett problem i området",
+      "ntu_problem_open_drug_dealing_share": "Ser öppen narkotikahandel som ett problem"
+    }
+  },
+  "assumptions": {
+    "title": "Antaganden",
+    "key": {
+      "horizon_years": "Horisont",
+      "start_year": "Startår",
+      "interest_rate": "Ränta",
+      "loan_sek": "Lån",
+      "electricity_price_sek_kwh": "Elpris",
+      "district_heating_price_sek_kwh": "Fjärrvärmepris",
+      "operating_cost_trend": "Drifttrend"
+    },
+    "source": {
+      "house": "för huset",
+      "all_houses": "för alla hus",
+      "default": "standard",
+      "this_forecast": "bara den här prognosen"
+    },
+    "trend": {
+      "none": "Ingen",
+      "municipality": "Kommunens taxor"
+    },
+    "years": "{count} år",
+    "perKwh": "{price} kr/kWh",
+    "fromMunicipality": "kommunens",
+    "notSet": "Inte satt",
+    "edit": "Ändra antaganden",
+    "scope": "Gäller",
+    "scopeHouse": "Bara det här huset",
+    "scopeAll": "Alla hus",
+    "interestPercent": "Ränta (%)",
+    "loanSek": "Lån (kr)",
+    "pricePerKwh": "{name} (kr/kWh)",
+    "unchangedNote": "Tomma fält ändras inte. Ett nytt antagande ersätter det gamla; inget skrivs över.",
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "failed": "Det gick inte att spara: {error}"
+  },
+  "compare": {
+    "title": "Jämför hus",
+    "pick": "Välj 2–6 hus i listan för att jämföra dem.",
+    "sorted": "Sorterade efter underhållsjusterat pris, lägst först.",
+    "againstFirst": "Skillnad mot {address}",
+    "priceDiff": "Pris",
+    "debtDiff": "Underhållsskuld",
+    "adjustedDiff": "Underhållsjusterat pris",
+    "other": "Övrigt",
+    "base": "Utgångspunkt",
+    "largest": "Största skillnaderna i prognosen",
+    "largestNote": "Typiskt scenario, summa över horisonten.",
+    "findings": "Fel från besiktningen",
+    "findingsNote": "Ett hus utan besiktningsprotokoll har okända fel, inte inga. Ett fel i ett hus kan mycket väl finnas också i ett obesiktigat, och dess lägre siffra kan komma av att man vet mindre.",
+    "notInspected": "Inte besiktigat",
+    "noFindings": "Inga",
+    "findingsCell": "{items, plural, one {# fel} other {# fel}}",
+    "unpriced": "{count} utan kostnad",
+    "runningUnknown": "Okänd",
+    "runningUnknownNote": "Driften är okänd för {addresses}, så prognosen är lägre bara av det skälet.",
+    "features": "Egenskaper",
+    "risks": "Risker",
+    "area": "Området",
+    "noArea": "Ingen statistik",
+    "wholeHouse": "Hela huset",
+    "workItems": {
+      "repair": "Åtgärder",
+      "replacement": "Bytesåtgärder",
+      "investigation": "Undersökningar"
+    }
+  },
+  "edit": {
+    "edit": "Ändra",
+    "editLabel": "Ändra {key}",
+    "title": "Ändra {key}",
+    "addTitle": "Lägg till en uppgift",
+    "add": "Lägg till uppgift",
+    "key": "Uppgift",
+    "value": "Värde",
+    "unit": "i {unit}",
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "failed": "Det gick inte att spara.",
+    "userWins": "Ditt värde sparas som en ny uppgift och går före Claudes. Det gamla finns kvar som alternativ.",
+    "retract": "Ta bort värdet",
+    "retractLabel": "Ta bort {key}",
+    "retractTitle": "Ta bort värdet?",
+    "retractBody": "Värdet sparas men räknas inte längre. Finns ett annat värde för samma uppgift används det i stället.",
+    "listHint": "En per rad",
+    "yes": "Ja",
+    "no": "Nej"
+  },
+  "workItemEdit": {
+    "add": "Lägg till åtgärd",
+    "addTitle": "Ny åtgärd",
+    "edit": "Ändra",
+    "editLabel": "Ändra åtgärden {description}",
+    "editTitle": "Ändra åtgärden",
+    "restateNote": "Ändringen sparas som en ny åtgärd som ersätter den gamla, så att den inte räknas två gånger.",
+    "dismiss": "Avfärda",
+    "dismissLabel": "Avfärda åtgärden {description}",
+    "dismissTitle": "Avfärda åtgärden?",
+    "dismissBody": "Åtgärden sparas men räknas inte längre i prognosen eller underhållsskulden.",
+    "kind": "Typ",
+    "description": "Beskrivning",
+    "component": "Del",
+    "wholeHouse": "Hela huset",
+    "yearMin": "Tidigast år",
+    "yearMax": "Senast år",
+    "costLow": "Kostnad från (kr)",
+    "costHigh": "Kostnad till (kr)",
+    "save": "Spara",
+    "cancel": "Avbryt"
+  },
+  "core": {
+    "edit": "Ändra huset",
+    "title": "Ändra huset",
+    "address": "Adress",
+    "propertyDesignation": "Fastighetsbeteckning",
+    "municipality": "Kommun",
+    "none": "Ingen",
+    "status": "Status",
+    "statusHelp": "Ditt beslut om huset. Försäljningens läge är en egen uppgift.",
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "duplicate": "Ett annat hus har samma adress eller fastighetsbeteckning: {address}",
+    "failed": "Det gick inte att spara."
+  },
+  "upload": {
+    "open": "Öppna originalet",
+    "attach": "Ladda upp originalet",
+    "attachLabel": "Ladda upp originalet till {title}",
+    "type": "Typ av dokument",
+    "new": "Ladda upp ett dokument",
+    "hint": "PDF, bild eller text, högst 25 MB. Har Claude redan sparat dokumentet kopplas filen till det. Servern läser inte filen; be Claude tolka den i chatten.",
+    "uploading": "Laddar upp …",
+    "done": {
+      "sha256": "Filen kopplades till dokumentet Claude sparat.",
+      "document": "Filen kopplades till dokumentet.",
+      "new": "Dokumentet sparades."
+    },
+    "error": {
+      "type": "Filtypen tas inte emot. Ladda upp en PDF, en bild eller en textfil.",
+      "too_large": "Filen är större än 25 MB.",
+      "other_house": "Samma fil hör redan till ett annat hus.",
+      "hash_mismatch": "Filen är inte den som Claude sparade för dokumentet.",
+      "already_uploaded": "Dokumentet har redan en fil.",
+      "storage": "Fillagringen är inte inställd.",
+      "not_found": "Dokumentet finns inte.",
+      "generic": "Det gick inte att ladda upp filen."
+    }
   }
 }
