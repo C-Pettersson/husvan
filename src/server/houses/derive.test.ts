@@ -107,6 +107,14 @@ describe('risks', () => {
     ])
   })
 
+  it('flags radon above the reference level, not at it or unmeasured', () => {
+    expect(risks([], [kv('radon_bq_m3', 250)])).toEqual([
+      expect.objectContaining({ kind: 'radon', componentId: null }),
+    ])
+    expect(risks([], [kv('radon_bq_m3', 200)])).toEqual([])
+    expect(risks([], [kv('radon_measured', false)])).toEqual([])
+  })
+
   it('leaves safe variants alone', () => {
     const house = [
       comp('foundation', {

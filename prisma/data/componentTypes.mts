@@ -86,6 +86,20 @@ const orientation: Attributes = {
   }),
 }
 
+// Painted wood needs repainting every 8 to 15 years, far more often than it
+// is replaced, so the year it was last painted is kept apart from
+// installation_year.
+const lastPainted: Attributes = {
+  last_painted_year: {
+    label: { sv: 'Senast målad', en: 'Last painted' },
+    description: {
+      sv: 'Året ytan senast målades om, för målat trä',
+      en: 'Year the surface was last repainted, for painted wood',
+    },
+    datatype: 'year',
+  },
+}
+
 const capacityKw: Attributes = {
   capacity_kw: {
     label: { sv: 'Effekt', en: 'Output' },
@@ -246,6 +260,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
       ...area,
       ...modelName,
+      ...lastPainted,
     },
     // Wall area less openings for a 1-storey 9 x 15 m house is about 125 m2
     // for 120 m2 living area.
@@ -279,6 +294,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
       ...modelName,
       ...orientation,
+      ...lastPainted,
     },
     // Windows per m2 living area: glass at least 10 % of floor area (BBR
     // 6:322) with windows of about 1.2 m2 and 75 % glass, about 14 windows
@@ -289,7 +305,12 @@ export const componentTypes: ComponentTypeDefinition[] = [
     type: 'exterior_door',
     label: { sv: 'Ytterdörr', en: 'Exterior door' },
     category: 'envelope',
-    attributeSchema: { ...quantity, ...replaceable, ...modelName },
+    attributeSchema: {
+      ...quantity,
+      ...replaceable,
+      ...modelName,
+      ...lastPainted,
+    },
   },
 
   // Heating -------------------------------------------------------------------

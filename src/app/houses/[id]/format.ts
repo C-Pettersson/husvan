@@ -16,7 +16,11 @@ export function labelOf(label: Label | undefined, locale: string) {
   return locale === 'en' ? (label.en ?? label.sv) : label.sv
 }
 
-const UNITS: Record<string, string> = { m2: 'm²', 'kWh/m2': 'kWh/m²' }
+const UNITS: Record<string, string> = {
+  m2: 'm²',
+  'kWh/m2': 'kWh/m²',
+  'Bq/m3': 'Bq/m³',
+}
 
 export function numberFormat(locale: string) {
   return new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'sv-SE')

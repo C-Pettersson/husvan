@@ -23,19 +23,9 @@ import {
   type ValueRow,
 } from '@/server/houses/getHouse'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
+import { result, toolError } from './result'
 
 type View = NonNullable<HouseView>
-
-function result(value: Record<string, unknown>) {
-  return {
-    content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
-    structuredContent: value,
-  }
-}
-
-function toolError(message: string) {
-  return { content: [{ type: 'text' as const, text: message }], isError: true }
-}
 
 const row = (r: ValueRow, withQuote: boolean) => ({
   value: r.value,
@@ -44,6 +34,7 @@ const row = (r: ValueRow, withQuote: boolean) => ({
   confidence: r.confidence,
   documentId: r.documentId ?? undefined,
   quote: withQuote ? (r.quote ?? undefined) : undefined,
+  draft: r.draft || undefined,
 })
 
 // Current value per key with its source, and the other reported values as
@@ -67,6 +58,7 @@ function component(c: ComponentView): Record<string, unknown> {
     id: c.id,
     type: c.type,
     name: c.name ?? undefined,
+    draft: c.draft || undefined,
     values: values(c.values),
     children: c.children.length ? c.children.map(component) : undefined,
   }
@@ -92,8 +84,8 @@ function summary(view: View) {
     keyFigures: Object.fromEntries(
       KEY_FIGURES.map((k) => [k, valueOf(view.values, k) ?? null])
     ),
-    // Risk constructions and older electrical systems together.
-    flaggedRisks: risks(view.components).length,
+    // Risk constructions, older electrical systems and radon together.
+    flaggedRisks: risks(view.components, view.values).length,
     openDrafts: view.drafts.length,
   }
 }
@@ -128,7 +120,7 @@ export function registerReadTools(
     {
       title: 'List houses',
       description:
-        'All of the user’s houses with status, sale status, price, key figures, open drafts and flaggedRisks: the number of risk constructions and older electrical systems together (get_house lists them). ' +
+        'All of the user’s houses with status, sale status, price, key figures, open drafts and flaggedRisks: the number of risk constructions, older electrical systems and radon above 200 Bq/m3 together (get_house lists them). ' +
         'Price is final_price_sek, else highest_bid_sek, else asking_price_sek, and price.kind says which. ' +
         'Optionally filter on features (pool, sauna, deck, sunroom, garage, wood_stove, heat_pump_air_air, basement, or any component type): ' +
         'a house is left out only when a feature is known to be absent; houses where a feature is unknown come back separately under "unknown". ' +
@@ -201,11 +193,16 @@ export function registerReadTools(
       title: 'Get house',
       description:
         'Everything approved about one house: current values with source, confidence, document and quote, and alternative values reported for the same key; ' +
-        'the component tree; features (yes, no or unknown; unknown is not no); heating; bathroom count; flagged risk constructions and older electrical systems; ' +
+        'the component tree; features (yes, no or unknown; unknown is not no); heating; bathroom count; flagged risk constructions, older electrical systems and radon above 200 Bq/m3; ' +
         'area statistics with level and year (a municipal figure is not the neighbourhood’s); actions from inspections; documents; and open drafts awaiting approval, whose rows are not included. ' +
+        'With draftId, the open draft is shown together with the approved data and its rows carry draft: true, so you can tell the user what approving it would add. ' +
         'With asOf, the house as it stood at the end of that day, e.g. before an inspection.',
       inputSchema: z.object({
         houseId: z.uuid().describe('The house id from list_houses.'),
+        draftId: z
+          .uuid()
+          .optional()
+          .describe('An open draft of the house to include, marked draft.'),
         asOf: z.iso
           .date()
           .optional()
@@ -213,10 +210,11 @@ export function registerReadTools(
       }),
       annotations: { readOnlyHint: true },
     },
-    async ({ houseId, asOf }) => {
+    async ({ houseId, draftId, asOf }) => {
       const view = await getHouse(prisma, {
         ownerId: userId,
         houseId,
+        draftId,
         asOf: asOf ? endOfDay(asOf) : undefined,
       })
       if (!view) return toolError(`No house with id ${houseId}.`)
@@ -230,6 +228,7 @@ export function registerReadTools(
           status: view.status,
         },
         asOf: asOf ?? null,
+        draftId: view.preview,
         price: pickPrice(view.values),
         values: values(view.values),
         components: view.components.map(component),
@@ -241,7 +240,7 @@ export function registerReadTools(
         ),
         bathrooms: bathroomCount(view.components),
         heating: heating(view.components),
-        risks: risks(view.components),
+        risks: risks(view.components, view.values),
         area: await areaStatistics(prisma, areasOf(view)),
         workItems: view.workItems.map((w) => ({
           id: w.id,
@@ -254,6 +253,7 @@ export function registerReadTools(
           costHighSek: w.costHighSek ?? undefined,
           documentId: w.documentId ?? undefined,
           quote: w.quote ?? undefined,
+          draft: w.draft || undefined,
         })),
         documents: view.documents.map((d) => ({
           id: d.id,

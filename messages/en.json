@@ -81,6 +81,9 @@
       "water_sewage_cost_sek_per_year": "Water and sewage per year",
       "waste_cost_sek_per_year": "Waste collection per year",
       "absent_features": "Lacks",
+      "radon_bq_m3": "Radon level",
+      "radon_measurement_year": "Radon measurement year",
+      "radon_measured": "Radon measured",
       "deso_code": "DeSO area",
       "police_area_code": "Local police area"
     },
