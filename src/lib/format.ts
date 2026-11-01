@@ -90,3 +90,34 @@ export function keyLabel(
   if (attribute) return labelOf(attribute.label, locale)!
   return t.has(`house.key.${key}`) ? t(`house.key.${key}`) : key
 }
+
+export type Range = { low: number; typical: number; high: number }
+
+// Large amounts in lists and tiles: "1,79 mn kr".
+export function formatSekShort(value: number, locale: string) {
+  if (Math.abs(value) < 100_000) return formatSek(value, locale)
+  return new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'sv-SE', {
+    style: 'currency',
+    currency: 'SEK',
+    notation: 'compact',
+    maximumSignificantDigits: 3,
+  }).format(value)
+}
+
+export function formatSekRange(r: Range, locale: string) {
+  return `${formatSekShort(r.low, locale)}–${formatSekShort(r.high, locale)}`
+}
+
+export function formatShare(value: number, locale: string) {
+  return new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'sv-SE', {
+    style: 'percent',
+    maximumFractionDigits: 1,
+  }).format(value)
+}
+
+// An area statistic in its unit.
+export function formatStatistic(value: number, unit: string, locale: string) {
+  if (unit === 'share') return formatShare(value, locale)
+  if (unit === 'SEK') return formatSek(value, locale)
+  return numberFormat(locale).format(Math.round(value * 10) / 10)
+}

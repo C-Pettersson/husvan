@@ -11,6 +11,7 @@ import { pickPrice, risks, valueOf } from '@/server/houses/derive'
 import { getHouse } from '@/server/houses/getHouse'
 import { forecastDefaultsSchema } from '@/server/library/schema'
 import { maintenanceDebt } from './debt'
+import { flag, type Flag } from './flags'
 import { computeForecast, workItemCost } from './forecast'
 import { planComponents, type Library, type ProfileRow } from './plan'
 import { runningCosts } from './running'
@@ -176,10 +177,10 @@ export async function analyseHouse(
   }
 
   let trend: Partial<Record<TariffCategory, number>> | null = null
-  const flags: string[] = []
+  const flags: Flag[] = []
   if (a.operating_cost_trend === 'municipality') {
     if (!municipality?.tariffChanges.length) {
-      flags.push('no tariff changes for the municipality; no trend applied')
+      flags.push(flag('no_tariff_changes'))
     } else {
       trend = {}
       for (const category of [
@@ -199,15 +200,13 @@ export async function analyseHouse(
 
   let capital = null
   if (a.interest_rate !== undefined) {
-    if (a.loan_sek === undefined)
-      flags.push('interest_rate set without loan_sek; no capital cost')
+    if (a.loan_sek === undefined) flags.push(flag('interest_without_loan'))
     else capital = { interestRate: a.interest_rate, loanSek: a.loan_sek }
   }
 
   const plans = planComponents(view.components, view.values, library, startYear)
   const inspected = view.documents.some((d) => d.type === 'INSPECTION')
-  if (!inspected)
-    flags.push('no inspection protocol: defects are unknown, not none')
+  if (!inspected) flags.push(flag('not_inspected'))
   const workItems = view.workItems
   const running = runningCosts(
     view.values,

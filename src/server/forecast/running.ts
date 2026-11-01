@@ -5,13 +5,14 @@
 import type { TariffCategory } from '@prisma/client'
 import { heating } from '@/server/houses/derive'
 import type { ComponentView, KeyValueView } from '@/server/houses/getHouse'
+import { flag, type Flag } from './flags'
 import { CONFIDENT, type ByScenario } from './plan'
 
 export type RunningLine = {
   key: string
   base: ByScenario // per year in the start year
   trend: TariffCategory | null
-  flags: string[]
+  flags: Flag[]
 }
 
 export type EnergyPrices = {
@@ -45,9 +46,9 @@ export function runningCosts(
   components: ComponentView[],
   prices: EnergyPrices,
   fgeo: number | null
-): { lines: RunningLine[]; flags: string[] } {
+): { lines: RunningLine[]; flags: Flag[] } {
   const lines: RunningLine[] = []
-  const flags: string[] = []
+  const flags: Flag[] = []
   const read = (key: string) => {
     const v = values.find((x) => x.key === key)?.current
     if (!v || typeof v.value !== 'number') return undefined
@@ -62,7 +63,7 @@ export function runningCosts(
       base: spread(r.sek, r.uncertain ? 0.2 : 0),
       trend,
       flags: r.uncertain
-        ? [`${key} uncertain (confidence ${r.confidence})`]
+        ? [flag('uncertain', { key, confidence: r.confidence! })]
         : [],
     })
     return r.sek
@@ -83,9 +84,7 @@ export function runningCosts(
       key: partsSum ? 'other_operating_cost' : 'operating_cost_sek_per_year',
       base: spread(total.sek - partsSum, total.uncertain ? 0.2 : 0),
       trend: null,
-      flags: partsSum
-        ? ['the listing’s operating cost less the parts it names']
-        : [],
+      flags: partsSum ? [flag('operating_cost_less_parts')] : [],
     })
   }
   stated('property_fee_sek_per_year', null)
@@ -100,15 +99,15 @@ export function runningCosts(
     const performance = read('energy_performance_kwh_per_m2')
     const area = read('living_area')
     if (main.includes('pellet_boiler') && !districtHeated) {
-      flags.push('heating cost unknown: no price for pellets')
+      flags.push(flag('heating_no_pellet_price'))
     } else if (price === null) {
-      flags.push('heating cost unknown: no energy price for the municipality')
+      flags.push(flag('heating_no_energy_price'))
     } else if (kwh) {
       lines.push({
         key: 'heating_from_energy_use',
         base: spread(kwh.sek * price, kwh.uncertain ? 0.3 : 0.15),
         trend: heatingTrend,
-        flags: [`heating_kwh_per_year × ${price} kr/kWh`],
+        flags: [flag('heating_from_energy_use', { price })],
       })
     } else if (performance && area && fgeo) {
       // Primary energy = purchased energy × weight / Fgeo per m2, so the
@@ -123,13 +122,17 @@ export function runningCosts(
         base: spread(kwhEstimate * price, 0.3),
         trend: heatingTrend,
         flags: [
-          `estimated from energy_performance_kwh_per_m2 × living_area × Fgeo ${fgeo} / ${weight}: about ${Math.round(kwhEstimate)} kWh`,
+          flag('heating_estimated', {
+            fgeo,
+            weight,
+            kwh: Math.round(kwhEstimate),
+          }),
         ],
       })
     } else {
-      flags.push('heating cost unknown: no cost, energy use or energy class')
+      flags.push(flag('heating_unknown'))
     }
   }
-  if (!lines.length) flags.push('running costs unknown')
+  if (!lines.length) flags.push(flag('running_costs_unknown'))
   return { lines, flags }
 }
