@@ -97,6 +97,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 | `MunicipalTariffChange` och `PriceIndex` som egna tabeller | `tariff_changes` som JSON på kommunen | Typade värden med unika nycklar. En nullbar kommunkolumn i ett unikt index släpper igenom dubbletter i Postgres. |
 | `yearMin`/`yearMax` på åtgärder | Ett `year` | Besiktningen säger "inom 1–3 år", aldrig ett årtal. |
 | Inga tabeller för händelser och relationer mellan komponenter | Tabellerna med i schemat men oanvända | Oanvända tabeller är otestade gissningar. De läggs till med en migration när underhållsläget byggs. |
+| `AreaStatistic` per område och nivå | Områdets värden som observationer på varje hus | Samma siffra gäller många hus och uppdateras årligen. Per hus blir den en kopia som kan bli inaktuell, och nivån (kommun eller DeSO) skulle gå förlorad. |
 | `ownerId` på `House` redan nu | Lägga till vid flera användare | Better Auth ger ändå en användartabell, och en backfill senare kostar mer än en kolumn nu. |
 | Prisma-namn (`PascalCase`-modeller, `camelCase`-fält, `UPPER_CASE`-enum) | snake_case-SQL | Samma som brfjamforelse. Attributnycklar och typnamn i datan är fortfarande snake_case. |
 
@@ -120,6 +121,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 - Nycklar som prognosen läser och som därför måste heta lika i alla typer: `installation_year`, `condition` (1–5, 5 är nytt), `area` (m2), `length` (m), `quantity` (antal). På huset: `construction_year`, `living_area`, `heating_kwh_per_year`, `electricity_kwh_per_year`, `operating_cost_sek_per_year`.
 - Köpdata är observationer på huset, med källa som alla andra värden: `asking_price_sek` (utgångspris), `highest_bid_sek` och `highest_bid_date`, `final_price_sek` (slutpris), `sale_status` (`upcoming`, `bidding`, `closed`), `assessed_value_sek` (taxeringsvärde) och `assessment_year`. `sale_status` gäller försäljningen och är skilt från husets `status`.
 - **Pris** i prognos och jämförelse är `final_price_sek` om det finns, annars `highest_bid_sek`, annars `asking_price_sek`. Svaret säger alltid vilket av dem som användes.
+- Egenskaper som är observationer på huset: `room_count` (antal rum), `floor_count` (våningar), `energy_class` (`A`–`G`), `energy_performance_kwh_per_m2` (primärenergital) och `energy_declaration_year`, `absent_features` (lista med typnamn som huset uttryckligen saknar) och `deso_code` (SCB:s demografiska statistikområde).
 - Enumvärden är `UPPER_CASE` i databasen och får en översättningsnyckel per värde i webben (`house.status.purchased`).
 
 ### Språk
@@ -157,9 +159,9 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 
 ### Komponenttyper från start
 
-Biblioteket börjar med de delar som dominerar kostnaden för ett småhus. Varje typ får en `LifespanProfile` med källa innan den används.
+Biblioteket börjar med de delar som dominerar kostnaden för ett småhus. En typ med `LifespanProfile` (med källa) ingår i prognosen och underhållsskulden. En typ utan profil ger ingen kostnad men visas, filtreras och jämförs; när den får en profil räknas den in utan att några data ändras.
 
-Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`. Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`.
+Klimatskal: `foundation`, `roof_covering`, `facade`, `window`, `exterior_door`, `drainage`, `foundation_waterproofing`. Installationer: `heat_pump_air_water`, `heat_pump_ground`, `heat_pump_air_air`, `district_heating_substation`, `electric_boiler`, `electric_radiators` (direktverkande el), `pellet_boiler`, `wood_stove`, `chimney`, `ventilation_ftx`, `ventilation_exhaust`, `water_heater`, `water_pipes`, `sewer_pipes`, `electrical_installation`, `underfloor_heating`. Inomhus: `kitchen`, `bathroom`, `garage_door`. Egenskaper, utan profil i version 1: `pool`, `sauna`, `deck`, `sunroom`, `garage`.
 
 Fönster registreras styck för styck när underlaget tillåter det, annars som en komponent `window` med `quantity`.
 
@@ -175,12 +177,44 @@ Fönster registreras styck för styck när underlaget tillåter det, annars som 
 
 Grunden byts inte, så den har ingen `LifespanProfile` och ger inga byten i prognosen. Det som slits är dränering, fuktskydd och avfuktare, som är egna komponenter. **Riskkonstruktion** (platta med isolering ovanpå, uteluftsventilerad krypgrund, källare med invändig isolering) räknas fram vid läsning ur typ och variant och lagras inte.
 
+### Egenskaper
+
+Det man vill ha i ett hus utöver kostnaden. I version 1 har egenskaperna inget kronvärde: de visas på husets sida, filtrerar huslistan och står med i jämförelsen, men påverkar varken prognos eller underhållsjusterat pris.
+
+| Egenskap | Lagras som |
+| --- | --- |
+| Pool | `pool` med `pool_type` (`in_ground`, `above_ground`) och `heated` |
+| Bastu | `sauna` med `heating` (`electric`, `wood`) |
+| Terrass, altan, inglasad altan | `deck` med `area` och `glazing` (`open`, `glazed`) |
+| Uterum | `sunroom` med `area` och `insulated` |
+| Garage, dubbelgarage | `garage` med `capacity` (bilplatser) och `attached`; `garage_door` som delkomponent |
+| Kamin | `wood_stove` |
+| Luftvärmepump, AC | `heat_pump_air_air` |
+| Uppvärmning | Härleds ur värmekomponenterna, lagras inte. Huvudsaklig uppvärmning är den som finns av `heat_pump_ground`, `heat_pump_air_water`, `district_heating_substation`, `electric_boiler`, `electric_radiators` och `pellet_boiler`; `wood_stove` och `heat_pump_air_air` räknas som komplement. |
+| Källare | Härleds ur `foundation_type` = `basement`, lagras inte |
+| Antal badrum | Antalet `bathroom`-komponenter, lagras inte. Säger annonsen bara "2 badrum" skapar Claude två badrum utan fler uppgifter. |
+| Antal rum, våningar, energiklass | Observationer på huset, se Konventioner |
+
+**Okänt är inte nej.** En egenskap är *ja* när en godkänd komponent av typen finns, *nej* när husets aktuella `absent_features` nämner typen, annars *okänd*. Att ett prospekt inte nämner en pool gör den inte till nej. Filter döljer bara hus där svaret är nej och visar hus med okänt svar för sig.
+
+### Området
+
+Statistik som gäller många hus lagras per område, inte per hus. `AreaStatistic` har `areaLevel` (`MUNICIPALITY`, `DESO`, `POLICE_AREA`), `areaCode`, `key`, `year`, `value` och `source`, unikt på (nivå, kod, nyckel, år). Tabellen fylls av ett importskript som körs när ny statistik publiceras, som kommuner och byggkostnadsindex; servern hämtar inget vid körning. Huset kopplas till sitt DeSO med observationen `deso_code`, och kommunen finns redan.
+
+| Fråga | Källa | Nivå |
+| --- | --- | --- |
+| Brott | Brå, anmälda brott per 100 000 invånare | Kommun |
+| Otrygghet och utsatthet | Brå, Nationella trygghetsundersökningen | Polisområde eller lokalpolisområde |
+| Vilka som bor där | SCB, befolkning efter ålder, inkomst och utbildning | DeSO |
+
+Varje värde visas bredvid kommunens och rikets, med år och nivå. Ett kommunvärde presenteras aldrig som om det gällde husets närområde. Området har inget kronvärde och markeras inte som bättre eller sämre i jämförelsen.
+
 ## MCP-verktyg i version 1
 
 | Verktyg | Vad det gör | Läser/skriver |
 | --- | --- | --- |
-| `list_houses` | Alla hus med status, försäljningsstatus, pris, underhållsjusterat pris och nyckeltal | Läser |
-| `get_house` | Allt om ett hus: komponentträd, aktuella värden med källa och alternativ, dokument, åtgärder, öppna utkast. Valfritt per datum | Läser |
+| `list_houses` | Alla hus med status, försäljningsstatus, pris, underhållsjusterat pris och nyckeltal. Valfritt filter på egenskaper, där okänt redovisas skilt från nej | Läser |
+| `get_house` | Allt om ett hus: komponentträd, aktuella värden med källa och alternativ, egenskaper, området, dokument, åtgärder, öppna utkast. Valfritt per datum | Läser |
 | `type_library` | Kända komponenttyper och deras attribut, så att Claude vet vad den ska leta efter | Läser |
 | `create_house` | Nytt kandidathus. Kärnan sparas direkt, övriga uppgifter returneras som utkast | Skriver |
 | `save_document` | Fulltext, metadata och Claudes tolkning. Originalfilen laddas upp via webben | Skriver |
@@ -189,7 +223,7 @@ Grunden byts inte, så den har ingen `LifespanProfile` och ger inga byten i prog
 | `add_work_item` | Åtgärd från besiktningen eller eget val | Skriver utkast |
 | `set_assumption` | Horisont, startår, ränta, energipriser, drifttrend | Skriver |
 | `forecast` | Kostnad per år och post för ett hus | Läser |
-| `compare` | Flera hus sida vid sida: pris, underhållsskuld och underhållsjusterat pris, prisskillnaden förklarad per komponent, därefter de största skillnaderna | Läser |
+| `compare` | Flera hus sida vid sida: pris, underhållsskuld och underhållsjusterat pris, prisskillnaden förklarad per komponent, därefter de största skillnaderna, egenskaper och området | Läser |
 
 Verktygens beskrivningar och svar till Claude är på engelska. Claude svarar ändå användaren på svenska.
 
@@ -233,7 +267,7 @@ Varje milstolpe ska gå att visa i Claude eller i webbläsaren innan nästa påb
 
 0. **Verifiera kopplingen.** Next.js-app med Better Auth (`mcp`, `cimd`, `jwt`), en seedad användare och en MCP-route med ett verktyg, körd över HTTPS. Läggs till som egen koppling i claude.ai med "Use Claude's published identity". Avgör protokollversion och om `legacy: "reject"` går att använda.
 1. **Grund.** Prisma-schema och första migration, Compose med Postgres för lokal körning, Dockerfile och bygg-workflow, Vitest.
-2. **Data.** Kommuner (Luleå 2580, Boden 2582), typbibliotek, livslängdsprofiler med källor, BKI-serie. Det mest arbetskrävande steget, och det ligger inte i kod.
+2. **Data.** Kommuner (Luleå 2580, Boden 2582), typbibliotek, livslängdsprofiler med källor, BKI-serie, områdesstatistik från Brå och SCB för Luleå och Boden. Det mest arbetskrävande steget, och det ligger inte i kod.
 3. **Läsverktyg** mot seedad data: `list_houses`, `get_house`, `type_library`.
 4. **Skrivverktyg** med utkast och godkännande.
 5. **Prognos och jämförelse.**
@@ -251,3 +285,5 @@ Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för f�
 - Går SMHI:s Snötyngd att hämta som data?
 - Fgeo, DVUT och snözon för Luleå och Boden med källa (BBR-tabell), samt standardvärden för energipriser.
 - Vilka pristyper i Handelsbankens, Planimas och Villaägarnas underlag går att översätta till `costUnit`?
+- Vilka av Brås och SCB:s tabeller finns för Luleå och Boden, på vilken nivå och hur ofta uppdateras de?
+- Hur får huset sin `deso_code`: uppslagen av Claude eller användaren, eller framräknad ur husets koordinater mot SCB:s DeSO-gränser?
