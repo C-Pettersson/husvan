@@ -23,3 +23,8 @@ Thumbs.db
 
 # Claude Code, lokala inställningar
 .claude/settings.local.json
+.claude/worktrees/
+
+# Next.js
+.next/
+*.tsbuildinfo

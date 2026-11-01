@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "title": "Husvan",
+    "description": "Understand what a house costs over time."
+  },
+  "nav": {
+    "houses": "Houses",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "language": "Language"
+  },
+  "home": {
+    "title": "What does the house cost over time?",
+    "lead": "Husvan works out maintenance, running costs and replacements for the houses you are thinking of buying, so you can compare them on equal terms.",
+    "open": "To your houses"
+  },
+  "login": {
+    "title": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "failed": "Wrong email or password."
+  },
+  "consent": {
+    "title": "Grant access",
+    "intro": "{client} wants to access Husvan on your behalf.",
+    "unknownClient": "An app",
+    "scopes": "Requested access",
+    "allow": "Allow",
+    "deny": "Deny",
+    "invalid": "The approval link is invalid or has expired. Start over from the app that asked for access.",
+    "failed": "Your answer could not be saved. Try again."
+  },
+  "scope": {
+    "openid": "Know who you are",
+    "profile": "Your name",
+    "email": "Your email address",
+    "offline_access": "Keep access while you are not active"
+  },
+  "houses": {
+    "title": "Your houses",
+    "empty": "No houses yet. Add a house by uploading the listing in Claude.",
+    "count": "{count, plural, one {# house} other {# houses}}"
+  },
+  "house": {
+    "status": {
+      "candidate": "Candidate",
+      "declined": "Declined",
+      "purchased": "Purchased",
+      "sold": "Sold"
+    }
+  },
+  "error": {
+    "generic": "Something went wrong."
+  }
+}
