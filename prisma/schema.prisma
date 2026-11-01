@@ -183,7 +183,7 @@ model House {
   address             String
   municipalityCode    String?
   propertyDesignation String? // fastighetsbeteckning
-  status              HouseStatus @default(INTERESTED)
+  status              HouseStatus @default(CANDIDATE)
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
@@ -200,10 +200,11 @@ model House {
   @@index([ownerId])
 }
 
+// Where the house stands for the owner. The sale itself (upcoming, bidding,
+// closed) is the observation sale_status, since it comes from the listing and
+// the broker and can be wrong.
 enum HouseStatus {
-  INTERESTED
-  VIEWING
-  BIDDING
+  CANDIDATE
   DECLINED
   PURCHASED
   SOLD
@@ -244,6 +245,8 @@ model Document {
 enum DocumentType {
   LISTING
   INSPECTION
+  PIPE_INSPECTION // rörinspektion, usually a filmed sewer line
+  ELECTRICAL_INSPECTION // elbesiktning
   ENERGY_CERTIFICATE
   INVOICE
   RECEIPT
@@ -323,21 +326,25 @@ model Observation {
 
 // Work items: what the inspection or the user says needs doing ----------------
 
+// Append only like observations: a work item that is wrong or that the user
+// dismisses gets retractedAt. Done work belongs to maintenance mode and is
+// added with its own table then.
 model WorkItem {
-  id          String         @id @default(uuid(7)) @db.Uuid
-  houseId     String         @db.Uuid
-  componentId String?        @db.Uuid
+  id          String       @id @default(uuid(7)) @db.Uuid
+  houseId     String       @db.Uuid
+  componentId String?      @db.Uuid
+  kind        WorkItemKind
   description String
   yearMin     Int? // "within 1 to 3 years" becomes a range
   yearMax     Int?
-  costLowSek  Decimal?       @db.Decimal(12, 0)
-  costHighSek Decimal?       @db.Decimal(12, 0)
+  costLowSek  Decimal?     @db.Decimal(12, 0)
+  costHighSek Decimal?     @db.Decimal(12, 0)
   source      ValueSource
-  documentId  String?        @db.Uuid
+  documentId  String?      @db.Uuid
   quote       String?
-  status      WorkItemStatus @default(PLANNED)
-  changesetId String         @db.Uuid
-  createdAt   DateTime       @default(now())
+  retractedAt DateTime?
+  changesetId String       @db.Uuid
+  createdAt   DateTime     @default(now())
 
   house     House      @relation(fields: [houseId], references: [id])
   component Component? @relation(fields: [componentId], references: [id])
@@ -347,10 +354,40 @@ model WorkItem {
   @@index([houseId])
 }
 
-enum WorkItemStatus {
-  PLANNED
-  DISMISSED
-  DONE
+// REPLACEMENT of a component takes the place of that component's term in the
+// maintenance debt, so it is never counted twice. INVESTIGATION is a
+// recommended survey, e.g. "film the sewer line" or "measure moisture".
+enum WorkItemKind {
+  REPLACEMENT
+  REPAIR
+  INVESTIGATION
+}
+
+// Area statistics -------------------------------------------------------------
+
+// Statistics that apply to many houses, imported per area and level (Brå, SCB).
+// A house reaches its areas through its municipality and the observations
+// deso_code and police_area_code. NATION has areaCode 'SE' and is the
+// comparison value shown next to every figure.
+model AreaStatistic {
+  areaLevel  AreaLevel
+  areaCode   String // municipality code, DeSO code, police area id or 'SE'
+  key        String // snake_case, e.g. reported_crimes_per_100k
+  year       Int
+  value      Decimal   @db.Decimal(14, 4)
+  unit       String?
+  source     String // e.g. bra, bra_ntu, scb
+  sourceUrl  String?
+  importedAt DateTime  @default(now())
+
+  @@id([areaLevel, areaCode, key, year])
+}
+
+enum AreaLevel {
+  NATION
+  MUNICIPALITY
+  POLICE_AREA
+  DESO
 }
 
 // Forecast assumptions --------------------------------------------------------
