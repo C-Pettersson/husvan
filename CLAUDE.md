@@ -63,7 +63,7 @@ Anthropics krav på en fjärr-MCP-server med OAuth (källa: claude.com/docs/conn
 - Discovery-, registrerings- och token-endpoints måste svara inom 10 sekunder.
 - Anthropics utgående trafik kommer från `160.79.104.0/21`.
 
-Better Auths `mcp`-plugin levererar detta: `/oauth2/*`, RFC 8414- och RFC 9728-metadata, JWKS, och `requireMcpAuth` som skyddar MCP-routen. **Öppen punkt:** pluginen är byggd för protokollprofilen 2026-07-28 och rekommenderar `legacy: "reject"` i SDK:t. Vi låser inte versionen förrän milstolpe 0 visat vilken protokollversion Claude förhandlar fram. Till dess serverar MCP-routen båda (SDK:ts standard `legacy: "stateless"`) och loggar `[mcp] era=… protocol=…` per anrop, och verktyget `whoami` svarar med samma uppgifter.
+Better Auths `mcp`-plugin levererar detta: `/oauth2/*`, RFC 8414- och RFC 9728-metadata, JWKS, och `requireMcpAuth` som skyddar MCP-routen. Pluginen är byggd för protokollprofilen 2026-07-28 och rekommenderar `legacy: "reject"` i SDK:t. **Avgjort i milstolpe 0:** claude.ai ansluter till `https://dev.husvan.se/api/mcp` med protokollet 2026-07-28 (`era=modern` i loggen), och MCP-routen kör därför `legacy: "reject"`. Anrop med 2025-protokollet får felet för protokollversion som inte stöds.
 
 Verifierat lokalt med Claudes publicerade klient-id `https://claude.ai/oauth/mcp-oauth-client-metadata` (`token_endpoint_auth_method: none`, redirect `https://claude.ai/api/mcp/auth_callback`): metadata har `client_id_metadata_document_supported: true`, `"none"` bland autentiseringsmetoderna och `code_challenge_methods_supported: ["S256"]`; authorize, inloggning, samtycke, token med PKCE, anrop till `/api/mcp`, roterad refresh och `invalid_grant` för ogiltig refresh fungerar.
 
@@ -83,6 +83,8 @@ Utgivaren (issuer) är `https://husvan.se/api/auth`. Underlag för WAF-regeln oc
 | Allt annat utom `/` | Användarens webbläsare | Access, senare Better Auths inloggning |
 
 Claude Code ansluter från användarens egen dator, inte från Anthropics intervall, och stängs därför ute av WAF-regeln.
+
+Servern hämtar själv JWKS för att verifiera token på MCP-routen. Den hämtningen går till appens interna adress (`getInternalUrl()` i `src/lib/siteUrl.ts`), inte till den publika, eftersom WAF-regeln annars blockerar servern från sin egen `/api/auth/jwks`.
 
 ## Datamodell
 
@@ -322,7 +324,6 @@ Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för f�
 
 ## Öppna frågor
 
-- Vilken MCP-protokollversion förhandlar Claude fram mot en server byggd på SDK v2? Avgörs i milstolpe 0.
 - Kostar Boverkets API för energideklarationer något? (Kräver avtal som företag.)
 - Går SMHI:s Snötyngd att hämta som data?
 - Fgeo, DVUT och snözon för Luleå och Boden med källa (BBR-tabell), samt standardvärden för energipriser.

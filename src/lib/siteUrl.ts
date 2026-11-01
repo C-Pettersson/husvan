@@ -6,6 +6,13 @@ export function getSiteUrl(): string {
   return url.replace(/\/+$/, '')
 }
 
+// The app's own address from inside the process. The MCP route fetches the
+// JWKS from here: through the public origin it would pass Cloudflare, whose
+// WAF rule lets only Anthropic's IP range reach /api/auth/jwks.
+export function getInternalUrl(): string {
+  return `http://localhost:${process.env.PORT ?? 3000}`
+}
+
 export const MCP_PATH = '/api/mcp'
 
 export function getMcpResource(): string {
