@@ -48,6 +48,9 @@ export function useLabels(types: TypeLabels) {
 
   const flagText = (f: Flag, type?: string) => {
     const p: Record<string, string | number> = { ...f.params }
+    // A value read from the house's context, such as its foundation type.
+    if (typeof p.key === 'string' && typeof p.value === 'string')
+      p.value = valueText(p.key, p.value)
     if (typeof p.key === 'string') p.key = attributeLabel(p.key, type)
     if (typeof p.confidence === 'number')
       p.confidence = Math.round(p.confidence * 100)

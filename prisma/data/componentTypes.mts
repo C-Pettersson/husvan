@@ -234,10 +234,18 @@ export const componentTypes: ComponentTypeDefinition[] = [
     category: 'envelope',
     attributeSchema: { ...replaceable, ...inspectedYear, ...length },
     // Metres of foundation perimeter: an 8 x 10 m foundation is 36 m, and a
-    // 1.5-storey house has less perimeter per m2 living area than a 1-storey.
+    // 1.5-storey house has less perimeter per m2 living area than a 1-storey,
+    // so the footprint's perimeter is used when floor_count is known.
+    // Priced by the foundation type: a basement is dug deeper. A plinth or
+    // stone foundation is not assumed to have drainage (Villaägarna: for a
+    // torpargrund, drainage is seldom the answer).
     forecastDefaults: {
       assumeUndocumented: true,
       quantityPerLivingM2: 0.35,
+      quantityFromFootprint: { basis: 'perimeter', factor: 1 },
+      context: { foundation_type: 'foundation' },
+      assumeUnless: { foundation_type: ['plinth', 'stone_foundation'] },
+      profileKeyOrder: ['foundation_type'],
     },
   },
   {
@@ -281,6 +289,8 @@ export const componentTypes: ComponentTypeDefinition[] = [
     forecastDefaults: {
       assumeUndocumented: true,
       quantityPerLivingM2: 1.3,
+      // A pitched roof with eaves covers about 1.3 times the footprint.
+      quantityFromFootprint: { basis: 'area', factor: 1.3 },
       profileKeyOrder: ['material', 'sheet_profile'],
     },
   },
@@ -306,6 +316,9 @@ export const componentTypes: ComponentTypeDefinition[] = [
     forecastDefaults: {
       assumeUndocumented: true,
       quantityPerLivingM2: 1.0,
+      // Perimeter times floors times 2.7 m, wall and gables less windows;
+      // chosen so a one-storey house keeps about 1 m2 per m2 living area.
+      quantityFromFootprint: { basis: 'wall', factor: 2.7 },
       repaintByPaintType: facadeRepaintByPaintType,
     },
   },
@@ -641,7 +654,8 @@ export const componentTypes: ComponentTypeDefinition[] = [
       wet_room_certified: yesNo('Våtrumsintyg', 'Wet room certificate'),
     },
     allowedSubcomponents: ['underfloor_heating'],
-    forecastDefaults: { assumeUndocumented: true },
+    // With two, the second in need is less urgent while the first works.
+    forecastDefaults: { assumeUndocumented: true, oneOfSeveral: true },
   },
   {
     type: 'garage_door',

@@ -196,6 +196,39 @@ describe('validateLibrary', () => {
     ])
   })
 
+  it('checks context attributes and what rules an assumption out', () => {
+    const foundation = {
+      ...componentTypes.find((t) => t.type === 'foundation')!,
+      allowedSubcomponents: [],
+    }
+    const drainage = componentTypes.find((t) => t.type === 'drainage')!
+    expect(
+      validateLibrary(
+        [
+          foundation,
+          {
+            ...drainage,
+            forecastDefaults: {
+              context: { foundation_type: 'foundation', roof: 'foundation' },
+              assumeUnless: { foundation_type: ['igloo'], slab: ['x'] },
+            },
+          },
+        ],
+        [
+          {
+            ...profile,
+            type: 'drainage',
+            match: { foundation_type: 'basement' },
+          },
+        ]
+      )
+    ).toEqual([
+      'drainage: context roof not an attribute of foundation',
+      'drainage: assumeUnless names foundation_type=igloo, not a choice option',
+      'drainage: assumeUnless slab is not context',
+    ])
+  })
+
   it('requires a key order when profiles match on different keys', () => {
     expect(
       validateLibrary(
