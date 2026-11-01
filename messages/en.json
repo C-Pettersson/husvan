@@ -337,7 +337,11 @@
     "heating_from_energy_use": "Energy use × {price} kr/kWh",
     "heating_estimated": "Estimated from primary energy × living area × Fgeo {fgeo} / {weight}: about {kwh} kWh",
     "heating_unknown": "Heating unknown: no cost, energy use or energy class",
-    "running_costs_unknown": "Running costs are unknown"
+    "running_costs_unknown": "Running costs are unknown",
+    "quantity_from_footprint": "{key} estimated from the living area over {floors} floors",
+    "quantity_from_footprint_shared": "{key} estimated from the living area over {floors} floors and shared among {count} parts",
+    "priced_by_context": "Priced by the house's {key}: {value}",
+    "one_of_several": "The house has {count} of these; while another one works, this one is less urgent"
   },
   "risk": {
     "title": "Risks",

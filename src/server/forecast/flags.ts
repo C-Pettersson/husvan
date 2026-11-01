@@ -13,7 +13,15 @@ const ENGLISH = {
   quantity_estimated: (p: Params) => `${p.key} estimated from living_area`,
   quantity_estimated_shared: (p: Params) =>
     `${p.key} estimated from living_area, shared among ${p.count} components`,
+  quantity_from_footprint: (p: Params) =>
+    `${p.key} estimated from living_area over ${p.floors} floor(s)`,
+  quantity_from_footprint_shared: (p: Params) =>
+    `${p.key} estimated from living_area over ${p.floors} floor(s), shared among ${p.count} components`,
   quantity_one_assumed: () => 'quantity missing; 1 assumed',
+  priced_by_context: (p: Params) =>
+    `priced for the house's ${p.key} = ${p.value}`,
+  one_of_several: (p: Params) =>
+    `the house has ${p.count} of these; while another one works, renewing this one is less urgent`,
   quantity_missing: (p: Params) => `${p.key} missing; no cost`,
   profile_without_cost: () => 'the lifespan profile has no cost',
   last_painted_missing: () =>

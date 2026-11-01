@@ -337,7 +337,11 @@
     "heating_from_energy_use": "Energianvändning × {price} kr/kWh",
     "heating_estimated": "Uppskattad ur primärenergital × boyta × Fgeo {fgeo} / {weight}: cirka {kwh} kWh",
     "heating_unknown": "Uppvärmningen okänd: ingen kostnad, energianvändning eller energiklass",
-    "running_costs_unknown": "Driftkostnaderna är okända"
+    "running_costs_unknown": "Driftkostnaderna är okända",
+    "quantity_from_footprint": "{key} uppskattad ur boytan fördelad på {floors} våningar",
+    "quantity_from_footprint_shared": "{key} uppskattad ur boytan fördelad på {floors} våningar och delad på {count} delar",
+    "priced_by_context": "Prissatt efter husets {key}: {value}",
+    "one_of_several": "Huset har {count} sådana; medan en annan fungerar är den här mindre brådskande"
   },
   "risk": {
     "title": "Risker",
