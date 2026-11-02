@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth'
 import { APIError } from 'better-auth/api'
 import { prismaAdapter } from '@better-auth/prisma-adapter'
 import { nextCookies } from 'better-auth/next-js'
-import { captcha, jwt, magicLink } from 'better-auth/plugins'
+import { captcha, emailOTP, jwt, magicLink } from 'better-auth/plugins'
 import { cimd } from '@better-auth/cimd'
 import { fetchClientMetadataResource } from '@better-auth/cimd/node'
 import { mcp } from '@better-auth/mcp'
@@ -51,9 +51,26 @@ const turnstileHostnames = (
   .map((h) => h.trim())
   .filter(Boolean)
 
+// The emailOTP plugin is here only for the sign-in code that goes out in the
+// same mail as the login link (deliverMagicLink). The code is issued through
+// the server-only createVerificationOTP, so the plugin's own endpoint for
+// sending codes, and its password, email-change and verification flows, are
+// switched off. What stays open is /sign-in/email-otp, where the code is used.
+const DISABLED_EMAIL_OTP_PATHS = [
+  '/email-otp/send-verification-otp',
+  '/email-otp/check-verification-otp',
+  '/email-otp/verify-email',
+  '/email-otp/request-password-reset',
+  '/forget-password/email-otp',
+  '/email-otp/reset-password',
+  '/email-otp/request-email-change',
+  '/email-otp/change-email',
+]
+
 export const auth = betterAuth({
   baseURL: getSiteUrl(),
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
+  disabledPaths: DISABLED_EMAIL_OTP_PATHS,
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
@@ -106,7 +123,7 @@ export const auth = betterAuth({
       expiresIn: MAGIC_LINK_MINUTES * 60,
       sendMagicLink: async ({ email, url }, ctx) => {
         await deliverMagicLink(
-          { prisma, mailer },
+          { prisma, mailer, createCode: createSignInCode },
           {
             email,
             url,
@@ -114,6 +131,19 @@ export const auth = betterAuth({
             expiresInMinutes: MAGIC_LINK_MINUTES,
           }
         )
+      },
+    }),
+    emailOTP({
+      // Same lifetime as the link it travels with. Three wrong guesses spend
+      // the code; a new one comes with the next login mail. Stored hashed, so
+      // the verification table holds nothing that signs anyone in.
+      expiresIn: MAGIC_LINK_MINUTES * 60,
+      otpLength: 6,
+      allowedAttempts: 3,
+      storeOTP: 'hashed',
+      sendVerificationOTP: async () => {
+        // Unreachable: every endpoint that calls this is in disabledPaths.
+        throw new APIError('NOT_FOUND')
       },
     }),
     ...(turnstileSecret
@@ -132,3 +162,9 @@ export const auth = betterAuth({
     nextCookies(),
   ],
 })
+
+// A function declaration, not an arrow in the config, so that the type of
+// `auth` does not depend on itself.
+async function createSignInCode(email: string): Promise<string> {
+  return auth.api.createVerificationOTP({ body: { email, type: 'sign-in' } })
+}

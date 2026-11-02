@@ -13,12 +13,14 @@ function prismaWith(allowed: string[]) {
 
 const link = 'https://husvan.se/api/auth/magic-link/verify?token=abc'
 const log = { info: vi.fn() }
+const code = '482913'
+const createCode = vi.fn(async () => code)
 
 describe('deliverMagicLink', () => {
   it('sends no mail to an address that is not on the allowlist', async () => {
     const mailer = vi.fn()
     const result = await deliverMagicLink(
-      { prisma: prismaWith(['owner@example.com']), mailer, log },
+      { prisma: prismaWith(['owner@example.com']), mailer, createCode, log },
       {
         email: 'someone@else.com',
         url: link,
@@ -28,12 +30,13 @@ describe('deliverMagicLink', () => {
     )
     expect(result).toBe('not_allowed')
     expect(mailer).not.toHaveBeenCalled()
+    expect(createCode).not.toHaveBeenCalled()
   })
 
   it('matches the allowlist regardless of case', async () => {
     const mailer = vi.fn()
     const result = await deliverMagicLink(
-      { prisma: prismaWith(['owner@example.com']), mailer, log },
+      { prisma: prismaWith(['owner@example.com']), mailer, createCode, log },
       {
         email: 'Owner@Example.com',
         url: link,
@@ -51,6 +54,9 @@ describe('deliverMagicLink', () => {
     const message = mailer.mock.calls[0][0]
     expect(message.text).toContain(link)
     expect(message.html).toContain(`href="${link}"`)
+    expect(createCode).toHaveBeenCalledWith('Owner@Example.com')
+    expect(message.text).toContain(code)
+    expect(message.html).toContain(`<strong>${code}</strong>`)
   })
 })
 
@@ -58,6 +64,7 @@ describe('magicLinkMail', () => {
   it('writes the mail in English when asked', () => {
     const mail = magicLinkMail({
       url: link,
+      code,
       locale: 'en',
       expiresInMinutes: 10,
     })
@@ -71,6 +78,7 @@ describe('magicLinkMail', () => {
   it('wraps the html part in a document and keeps the text part plain', () => {
     const mail = magicLinkMail({
       url: link,
+      code,
       locale: 'sv',
       expiresInMinutes: 10,
     })
@@ -87,8 +95,12 @@ describe('magicLinkMail', () => {
         '',
         link,
         '',
-        'Länken gäller i 10 minuter och kan bara användas en gång.',
-        'Har du inte bett om länken kan du bortse från det här mejlet.',
+        'Läser du mejlet på en annan enhet kan du i stället skriva den här koden på inloggningssidan:',
+        '',
+        code,
+        '',
+        'Länken och koden gäller i 10 minuter och kan bara användas en gång.',
+        'Har du inte bett om att logga in kan du bortse från det här mejlet.',
       ].join('\n')
     )
   })
@@ -96,6 +108,7 @@ describe('magicLinkMail', () => {
   it('escapes html in the link', () => {
     const mail = magicLinkMail({
       url: 'https://x.se/?a=1&b="2"',
+      code,
       locale: 'sv',
       expiresInMinutes: 5,
     })
