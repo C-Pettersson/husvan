@@ -13,6 +13,7 @@ import { deliverMagicLink, resolveLocale } from '@/server/auth/magicLink'
 import { createMailer } from '@/server/mail/sendMail'
 import { isEmailAllowed } from '@/server/users/allowlist'
 import { TURNSTILE_ACTION } from '@/lib/turnstile'
+import { IP_ADDRESS_HEADERS } from '@/lib/clientIp'
 
 // Who may sign in is the allowlist (table allowed_email, managed on /admin by
 // an ADMIN). Sign-up is off; a user row is created the first time an allowed
@@ -56,6 +57,11 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
+  },
+  advanced: {
+    // Rate limiting keys on the client IP; see src/lib/clientIp.ts for why
+    // these headers and no trustedProxies.
+    ipAddress: { ipAddressHeaders: IP_ADDRESS_HEADERS },
   },
   user: {
     additionalFields: {

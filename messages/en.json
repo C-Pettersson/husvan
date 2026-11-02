@@ -139,6 +139,7 @@
   "mail": {
     "magicLink": {
       "subject": "Sign in to Husvan",
+      "context": "You asked for a login link to husvan.se.",
       "intro": "Click the link to sign in to Husvan.",
       "button": "Sign in",
       "expires": "The link is valid for {minutes} minutes and can be used once.",

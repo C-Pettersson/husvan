@@ -4,6 +4,7 @@ import {
   createSmtpMailer,
   mailConfigFromEnv,
   mailOptions,
+  parseMailAddress,
   smtpTransportOptions,
 } from './sendMail'
 
@@ -12,7 +13,7 @@ const config = {
   port: 465,
   user: 'api_token',
   token: 'secret-token',
-  from: 'noreply@husvan.se',
+  from: { name: 'Husvan', address: 'noreply@husvan.se' },
 }
 
 describe('mailConfigFromEnv', () => {
@@ -22,7 +23,7 @@ describe('mailConfigFromEnv', () => {
       port: 465,
       user: 'api_token',
       token: 'tok',
-      from: 'noreply@husvan.se',
+      from: { name: 'Husvan', address: 'noreply@husvan.se' },
     })
   })
 
@@ -40,8 +41,17 @@ describe('mailConfigFromEnv', () => {
       port: 587,
       user: 'u',
       token: 'tok',
-      from: 'login@example.com',
+      from: { address: 'login@example.com' },
     })
+  })
+
+  it('takes MAIL_FROM with a display name', () => {
+    expect(
+      mailConfigFromEnv({
+        SMTP_TOKEN: 'tok',
+        MAIL_FROM: 'Login <login@example.com>',
+      })
+    ).toMatchObject({ from: { name: 'Login', address: 'login@example.com' } })
   })
 
   it('is unconfigured without a token and refuses a bad port', () => {
@@ -49,6 +59,36 @@ describe('mailConfigFromEnv', () => {
     expect(() =>
       mailConfigFromEnv({ SMTP_TOKEN: 't', SMTP_PORT: 'abc' })
     ).toThrow(/SMTP_PORT/)
+  })
+})
+
+describe('parseMailAddress', () => {
+  it('takes a bare address', () => {
+    expect(parseMailAddress(' noreply@husvan.se ')).toEqual({
+      address: 'noreply@husvan.se',
+    })
+  })
+
+  it('splits a display name from the address', () => {
+    expect(parseMailAddress('Husvan <noreply@husvan.se>')).toEqual({
+      name: 'Husvan',
+      address: 'noreply@husvan.se',
+    })
+    expect(
+      parseMailAddress('"Husvan, inloggning" <noreply@husvan.se>')
+    ).toEqual({
+      name: 'Husvan, inloggning',
+      address: 'noreply@husvan.se',
+    })
+    expect(parseMailAddress('<noreply@husvan.se>')).toEqual({
+      address: 'noreply@husvan.se',
+    })
+  })
+
+  it('rejects anything that is not an address', () => {
+    expect(() => parseMailAddress('Husvan')).toThrow(/MAIL_FROM/)
+    expect(() => parseMailAddress('Husvan <noreply>')).toThrow(/MAIL_FROM/)
+    expect(() => parseMailAddress('a@b.se, c@d.se')).toThrow(/MAIL_FROM/)
   })
 })
 
@@ -81,7 +121,7 @@ describe('mailOptions', () => {
         html: '<a href="x">x</a>',
       })
     ).toEqual({
-      from: 'noreply@husvan.se',
+      from: { name: 'Husvan', address: 'noreply@husvan.se' },
       to: 'owner@example.com',
       subject: 'Logga in',
       text: 'https://husvan.se/api/auth/magic-link/verify?token=abc',
@@ -102,7 +142,7 @@ describe('createSmtpMailer', () => {
     const send = createSmtpMailer(config, transport)
     await send({ to: 'a@b.se', subject: 's', text: 't' })
     expect(transport.sendMail).toHaveBeenCalledWith({
-      from: 'noreply@husvan.se',
+      from: { name: 'Husvan', address: 'noreply@husvan.se' },
       to: 'a@b.se',
       subject: 's',
       text: 't',
