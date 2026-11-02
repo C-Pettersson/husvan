@@ -99,14 +99,18 @@
   },
   "login": {
     "title": "Logga in",
-    "intro": "Skriv din e-postadress så skickar vi en länk som loggar in dig.",
+    "intro": "Skriv din e-postadress så skickar vi ett mejl med en länk och en kod som loggar in dig.",
     "email": "E-post",
     "password": "Lösenord",
     "sendLink": "Skicka inloggningslänk",
     "submit": "Logga in",
     "usePassword": "Logga in med lösenord i stället",
     "useLink": "Logga in med länk i stället",
-    "linkSent": "Om adressen får logga in har vi skickat en länk. Öppna den i den här webbläsaren inom tio minuter.",
+    "linkSent": "Om adressen får logga in har vi skickat ett mejl med en länk och en kod. Öppna länken i den här webbläsaren, eller skriv koden här. Båda gäller i tio minuter.",
+    "code": "Kod från mejlet",
+    "submitCode": "Logga in med koden",
+    "codeFailed": "Koden stämmer inte eller har gått ut. Efter tre felaktiga försök behöver du ett nytt mejl.",
+    "sendAgain": "Skicka ett nytt mejl",
     "linkFailed": "Det gick inte att skicka länken. Försök igen.",
     "linkInvalid": "Länken är ogiltig eller har gått ut. Be om en ny.",
     "failed": "Fel e-post eller lösenord."
@@ -142,8 +146,9 @@
       "context": "Du bad om en inloggningslänk till husvan.se.",
       "intro": "Klicka på länken för att logga in på Husvan.",
       "button": "Logga in",
-      "expires": "Länken gäller i {minutes} minuter och kan bara användas en gång.",
-      "ignore": "Har du inte bett om länken kan du bortse från det här mejlet."
+      "codeIntro": "Läser du mejlet på en annan enhet kan du i stället skriva den här koden på inloggningssidan:",
+      "expires": "Länken och koden gäller i {minutes} minuter och kan bara användas en gång.",
+      "ignore": "Har du inte bett om att logga in kan du bortse från det här mejlet."
     }
   },
   "scope": {

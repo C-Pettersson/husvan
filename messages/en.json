@@ -99,14 +99,18 @@
   },
   "login": {
     "title": "Sign in",
-    "intro": "Enter your email address and we will send you a link that signs you in.",
+    "intro": "Enter your email address and we will send you an email with a link and a code that sign you in.",
     "email": "Email",
     "password": "Password",
     "sendLink": "Send sign-in link",
     "submit": "Sign in",
     "usePassword": "Sign in with a password instead",
     "useLink": "Sign in with a link instead",
-    "linkSent": "If the address may sign in, a link is on its way. Open it in this browser within ten minutes.",
+    "linkSent": "If the address may sign in, an email with a link and a code is on its way. Open the link in this browser, or type the code here. Both are valid for ten minutes.",
+    "code": "Code from the email",
+    "submitCode": "Sign in with the code",
+    "codeFailed": "The code is wrong or has expired. After three wrong attempts you need a new email.",
+    "sendAgain": "Send a new email",
     "linkFailed": "The link could not be sent. Try again.",
     "linkInvalid": "The link is invalid or has expired. Ask for a new one.",
     "failed": "Wrong email or password."
@@ -142,8 +146,9 @@
       "context": "You asked for a login link to husvan.se.",
       "intro": "Click the link to sign in to Husvan.",
       "button": "Sign in",
-      "expires": "The link is valid for {minutes} minutes and can be used once.",
-      "ignore": "If you did not ask for this link, you can ignore this email."
+      "codeIntro": "Reading this on another device? Type this code on the sign-in page instead:",
+      "expires": "The link and the code are valid for {minutes} minutes and can be used once.",
+      "ignore": "If you did not ask to sign in, you can ignore this email."
     }
   },
   "scope": {

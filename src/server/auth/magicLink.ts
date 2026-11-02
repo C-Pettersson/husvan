@@ -1,7 +1,11 @@
-// Delivers a login link, or deliberately does nothing. Better Auth calls
+// Delivers a login mail, or deliberately does nothing. Better Auth calls
 // sendMagicLink for any address, so the allowlist check lives here: an unknown
-// address gets no mail and no error, and the form shows the same neutral
-// message either way.
+// address gets no mail, no code and no error, and the form shows the same
+// neutral message either way.
+//
+// The mail carries both a link and a six-digit code. The link signs in the
+// browser it is opened in; the code lets the mail be read on a phone and the
+// sign-in finished on another device, by typing it into the login page there.
 import { createTranslator } from 'next-intl'
 import type { PrismaClient } from '@prisma/client'
 import { defaultLocale, isLocale, type Locale } from '@/i18n/locales'
@@ -17,10 +21,12 @@ export function resolveLocale(value: string | undefined): Locale {
 
 export function magicLinkMail({
   url,
+  code,
   locale,
   expiresInMinutes,
 }: {
   url: string
+  code: string
   locale: Locale
   expiresInMinutes: number
 }) {
@@ -33,12 +39,15 @@ export function magicLinkMail({
     '',
     url,
     '',
+    t('codeIntro'),
+    '',
+    code,
+    '',
     t('expires', { minutes: expiresInMinutes }),
     t('ignore'),
   ].join('\n')
   // A complete document: mail clients and spam filters treat a bare fragment
-  // as a sign of a careless sender. The context line exists only here; the
-  // text part is the plain link as before.
+  // as a sign of a careless sender. The context line exists only here.
   const html = htmlDocument({
     lang: locale,
     title: subject,
@@ -46,6 +55,8 @@ export function magicLinkMail({
       `<p>${escapeHtml(t('context'))}</p>`,
       `<p>${escapeHtml(t('intro'))}</p>`,
       `<p><a href="${escapeAttribute(url)}">${escapeHtml(t('button'))}</a></p>`,
+      `<p>${escapeHtml(t('codeIntro'))}</p>`,
+      `<p style="font-family:monospace;font-size:28px;letter-spacing:4px"><strong>${escapeHtml(code)}</strong></p>`,
       `<p>${escapeHtml(t('expires', { minutes: expiresInMinutes }))}<br>${escapeHtml(t('ignore'))}</p>`,
     ],
   })
@@ -80,10 +91,14 @@ export async function deliverMagicLink(
   {
     prisma,
     mailer,
+    createCode,
     log = console,
   }: {
     prisma: Pick<PrismaClient, 'allowedEmail'>
     mailer: Mailer
+    // Issues the sign-in code for the address. Called only after the
+    // allowlist check, so no code exists for an address that may not sign in.
+    createCode: (email: string) => Promise<string>
     log?: Pick<Console, 'info'>
   },
   {
@@ -97,7 +112,8 @@ export async function deliverMagicLink(
     log.info(`[auth] login link requested for an address not on the allowlist`)
     return 'not_allowed'
   }
-  const mail = magicLinkMail({ url, locale, expiresInMinutes })
+  const code = await createCode(email)
+  const mail = magicLinkMail({ url, code, locale, expiresInMinutes })
   await mailer({ to: email, ...mail })
   return 'sent'
 }
