@@ -3,7 +3,7 @@
 Husvan (husvan.se) är ett verktyg för att förstå vad ett hus kostar över tid.
 
 - **Version 1: köpunderlag.** Ägaren lägger in hus han är intresserad av, ser kostnaden framåt och jämför husen.
-- **Senare: underhåll.** När ett hus är köpt blir samma hus utgångspunkt för underhållsplan, påminnelser och kvitton. Inga data flyttas, huset får bara status `PURCHASED`.
+- **Senare: underhåll.** När ett hus är köpt blir samma hus utgångspunkt för underhållsplan, påminnelser och kvitton. Inga data flyttas, huset får bara status `PURCHASED`. Planen finns i "Underhållsläge: kontroller och årshjul".
 - **Fullversion: hela Sverige.** Version 1 seedar bara Luleå och Boden, men ingen kod får anta det. Allt som skiljer mellan orter är referensdata nycklad på kommunkod, och en kommun utan data ger en flaggad post, inte ett fel.
 
 Fullständig bakgrund, marknadsanalys och resonemang finns i dokumentet:
@@ -498,6 +498,188 @@ Koden ligger i `src/server/forecast/`: `plan.ts` räknar fram profil, installati
 - **Ojämn redovisning.** Ett hus med besiktningsprotokoll har en lista med fel; ett hus utan har okända fel, inte inga. `compare` visar därför `inspectionFindings` per komponenttyp och hus, med `null` för ett hus utan protokoll, och beskrivningen säger åt Claude att ett fel i ett hus kan finnas också i ett obesiktigat. Felen läggs inte på det obesiktigade huset i kronor, eftersom det inte finns underlag för hur mycket en besiktning brukar hitta.
 - **Inte med ännu.** Snöröjning och takskottning efter snözon, ställning vid fasadmålning, och skatter och avgifter utöver prospektets fastighetsavgift (fastighetsavgift ur taxeringsvärdet, lagfart, pantbrev, tomträttsavgäld, friköp, ränteavdrag och kommunalskatt). Verktygen säger det i `notModelled`.
 
+## Underhållsläge: kontroller och årshjul
+
+Nästa steg efter köpunderlaget. Planerat 2026-11-02 ur funktionsspecen "Husvan – funktionsspec: kontroller och årshjul" och anpassat till principerna ovan; avvikelserna från specen står under "Anpassningar". Ett köpt hus får återkommande kontroller per del och ett årshjul som visar när de ska göras, efter husets delar, skick och ort. Det gör Husvan användbart varje år efter köpet.
+
+Förebilden för strukturen är Villaägarnas Min Villa (testad med Yxgränd 6 den 2 november 2026): bra på rutinen, men den vet inget om det enskilda huset och föreslår guider för mansardtak och källare åt ett hus med sadeltak utan källare. Husvan har redan delarna med årtal, källa och skick, besiktningens anmärkningar med citat, prognosen och kommunen. Texterna är Husvans egna; Min Villa är förebild för strukturen, inte för innehållet.
+
+**Mål.** Varje hus får kontrollschema och årshjul utan att användaren skriver in något. Ett kontrollresultat kan skapa en åtgärd eller ändra en dels skick, och därmed prognosen. Kontrollerna når användaren utanför Husvan via kalender och användarens egen AI. **Inte i första versionen:** instruktionsfilmer och bildbibliotek, hantverkarförmedling, trädgård, väderdata dag för dag (säsongerna räknas på normalår).
+
+**Tre lägen, samma data.** Husets `status` styr vad som visas: en kandidat får en förhandsvisning av första årets kontroller och åtgärder, också i jämförelsen; ett köpt hus får årshjulet med besiktningens anmärkningar inlagda och loggen; en långvarig ägare får påminnelser och en logg som blir husets historik vid försäljning. Exempel: Yxgränd 6 köps. I april påminner hjulet om att smältvattnet från stuprören ska ledas bort från grunden, som besiktningen anmärkte på. I maj kommer fuktkontrollen av syllen, tätare än normalt eftersom plattan har isoleringen ovanpå.
+
+### Anpassningar
+
+Specen föreslog sex tabeller där fält uppdateras på plats (`next_due`, `status`, `planned_month`) och nya kolumner på huset. Det bryter mot "Bara tillägg" och "Inga cacher". Anpassningen räknar fram det som går att räkna fram och sparar bara nya fakta och användarens egna val:
+
+| Specen | Husvan | Skäl |
+| --- | --- | --- |
+| `house_check` med `next_due`, `status` och `planned_month` | Kontrollerna räknas fram vid läsning ur komponentträdet och mallarna (`planChecks`, ren funktion som `planComponents`). Lagras inte. | Inga cacher. En kontroll har identiteten `check:<komponent-id eller house>:<mallnyckel>`, som frågorna i `open_questions`. Att den är pensionerad härleds ur `replacesId`, riskintervallet ur `risks()`. |
+| `check_log` | `CheckLog`, bara tillägg, med `changesetId` | Som observationer och åtgärder. |
+| `planned_month` på kontrollen; `climate_zone_override`, `diy_level` och kalendertoken på huset | Användarens val per post i hjulet är `WheelSetting`-rader (nyckel och värde per post, nyaste godkända vinner, som `Assumption`). `diy_level` och `climate_zone` är `Assumption`-nycklar. Kalendertoken är en egen tabell med `revokedAt`. | Husets kärna växer inte med inställningar, och inget uppdateras på plats. |
+| `climate_zone` och `municipality_zone` | `Municipality.climateZone` och `SeasonWindow` per zon och säsongsankare | Kommunen bär redan ortens referensdata (Fgeo, snölast). En kommun utan zon får ett flaggat standardfönster, inte ett fel. |
+| Skick i fyra steg med en fast andel per typ | `condition` 1–5 och `conditionRule`, som redan finns | En skickskala i prognosen. En anmärkning sänker ett steg; ett mätvärde över mallens gräns sätter mallens `remarkCondition`. |
+| `propose_check_templates` som utkast | Mallarna är biblioteksdata i `prisma/data/checkTemplates.mts`, skrivna av Claude med källa per mall och granskade i en PR innan `yarn db:seed` lägger in dem | Som livslängdsprofilerna: redaktionellt arbete med versionshistorik i git. Beslutet "Claude skriver, användaren godkänner" står kvar; godkännandet är PR:en. Ett utkastflöde för mallar kan läggas till senare, `CheckTemplate` har `changesetId` för det. |
+| `move_wheel_item` som utkast | `adjust_wheel_item`, godkänt direkt med källa `USER` | Användarens eget val uttalat i chatten, som `set_assumption`. Tar också paus och eget intervall. |
+| `log_check` som utkast | Utkast från MCP, direkt från webben | Som `answer_questions`: Claude kan ha missförstått ett foto eller ett svar. |
+| Åtgärd får `season_anchor` och `planned_year` | `WorkItem.seasonAnchor`; året är `yearMin`–`yearMax` som förut, och användarens val av år och månad är en `WheelSetting` | Inget dubbelt årsfält. |
+| Inloggning med magisk länk nu, BankID senare | Ingen ändring | Hör till flera användare, som ligger utanför version 1. En användare med lösenord räcker. |
+| Framgångsmått som andelar | Inga mått | En användare. Signalerna i specen (kontroller som aldrig loggas, poster som flyttas åt samma håll) går att läsa ur `CheckLog` och `WheelSetting` när de behövs. |
+
+Tabellerna läggs till med en migration när milstolpe 8 börjar, inte förr (se "Varför schemat ser ut som det gör").
+
+### Kontrollmall
+
+`CheckTemplate` hör till typbiblioteket och versioneras. En mall hör till en komponenttyp och kan avgränsas till varianter, eller är husgemensam.
+
+| Fält | Innehåll |
+| --- | --- |
+| `key` | snake_case, unik, t.ex. `roof_sheet_metal_after_snowmelt` |
+| `componentType` | Typen, eller null för husgemensamma mallar (brandvarnare, radonmätning, energideklaration) |
+| `match` | Attributvärden som avgränsar, som `LifespanProfile.match`: `{"material": "sheet_metal"}`. Val och ja/nej. |
+| `intervalMonths` | Månader mellan kontrollerna |
+| `riskIntervalMonths`, `whyRisk` | Kortare intervall när `risks()` flaggar delen, och raden som säger varför (`{sv, en}`). Takets snökontroll räknas som risk när kommunens `groundSnowLoadKnM2` är minst 2,5. |
+| `seasonAnchor`, `fixedMonth` | `AFTER_SNOWMELT`, `DRY_SEASON`, `AFTER_LEAF_FALL`, `BEFORE_FROST`, `BEFORE_HEATING_SEASON`, `WINTER_SNOW`, `FIXED_MONTH` (med månad 1–12), `ANY` |
+| `difficulty` | `EASY`, `MEDIUM`, `HARD` |
+| `performer` | `SELF`, `CONTRACTOR`, `LICENSED_ELECTRICIAN` (auktoriserad elinstallatör), `LICENSED_WET_ROOM` (GVK eller BKR) |
+| `rule`, `authority` | `LAW`, `INSURANCE` eller `RECOMMENDATION`, och vem som bestämmer (MSB, Boverket, Strålsäkerhetsmyndigheten, Elsäkerhetsverket, GVK …) |
+| `title`, `lookFor`, `howTo`, `tools` | `{sv, en}`; `lookFor`, `howTo` och `tools` som listor |
+| `measurements` | Nyckel → etikett, datatyp, enhet, `remarkAbove`/`remarkBelow` och valfri `observationKey`: fuktkvot i procent med gräns 17, radonhalt som skrivs till `radon_bq_m3` |
+| `anchorKey` | Observationsnyckel som räknas som senast gjord när logg saknas: `inspected_year`, `radon_measurement_year`, `energy_declaration_year`, `last_painted_year` |
+| `remarkCondition` | Skicket en anmärkning ger; utan värde ett steg ner |
+| `version`, `sources` | Heltal som höjs när texten ändras, och källor som profilernas. Äldre texter finns i git. |
+| `houseId`, `changesetId` | Null för biblioteket. Satta för användarens egna poster, se "Egna poster". |
+
+### Generering
+
+`planChecks` i `src/server/checks/` är ren och testad, som prognosen:
+
+1. Varje synlig komponent (godkänd, inte ersatt) och varje antagen del (`assumed:<typ>`) får kontrollerna vars mall matchar typ och `match`. Husgemensamma mallar ges huset. En antagen del flaggas, som i prognosen.
+2. En typ med mallar som huset varken har, har som nej (`absent_features`) eller antar blir en fråga i `open_questions` med `decides: "check"`: finns eldstad, finns pool. Ja skapar delen som ett svar om en odokumenterad del gör i dag; nej lägger typen till `absent_features` (sammanslaget med listans nuvarande värde). Frågorna sorteras efter kronfrågorna och riskerna.
+3. Delar som `risks()` flaggar får `riskIntervalMonths` och raden `whyRisk`.
+4. En ersatt komponent för inte sina kontroller vidare; den nya får sina egna. Loggen på den gamla finns kvar i historiken.
+5. Senast gjord är den senaste `CheckLog`-raden med `OK` eller `REMARK`, annars observationen i `anchorKey`, annars okänt. Nästa datum är senast gjord plus intervallet, lagt i första säsongsfönstret efter det. Utan senast gjord: nästa fönster räknat från i dag.
+6. `WheelSetting` per kontroll går före: `paused`, `interval_months` (till exempel kommunens sotningsfrist som användaren bekräftar vid första loggen) och `month`.
+
+### Logg och återkoppling
+
+`CheckLog` har hus, komponent (null för husgemensam), `templateKey`, `templateVersion`, `performedOn`, `result` (`OK`, `REMARK`, `NOT_DONE`), `note`, `measurements` (JSON), `source` och `changesetId`. Foton och filer kopplas via `CheckLogDocument` (logg, dokument) och laddas upp som andra dokument.
+
+- **OK** flyttar fram nästa datum. Inget annat ändras.
+- **Anmärkning** ger i samma ändringsset en åtgärd (`WorkItem` med `kind` `REPAIR` eller `INVESTIGATION` och `checkLogId`, så att den går att spåra till kontrollen) och en ny observation `condition` ett steg under den nuvarande, eller mallens `remarkCondition`, med säkerhet 0,8 (bedömt med ögat). Webben föreslår båda och användaren bockar av; från MCP är hela loggen ett utkast som visas som andra utkast.
+- **Mätvärden** med `observationKey` blir observationer på delen eller huset: en radonmätning skriver `radon_bq_m3` och `radon_measurement_year`, en fuktkvot över gränsen ger en anmärkning.
+- **Ej utförd** flyttar inget; kontrollen ligger kvar som försenad.
+- Loggning kräver `status: PURCHASED`. En kandidat får förhandsvisningen, inget sparas.
+- Varje kontrollsida säger att egenkontroll inte ersätter en överlåtelsebesiktning, eftersom loggen annars kan tas för en besiktning i en tvist. Mallar för el och våtrum hänvisar till behörig utförare.
+- Svårighetsgraden styr inte prognosens pris i första versionen: profilerna har en kostnad utan uppdelning i arbete och material. Se "Öppna frågor".
+
+Loggen har ett värde i sig: vid försäljning är den underlag för säljarens frågelista och köparens undersökningsplikt enligt jordabalken, och vid ett försäkringsärende visar den att underhållet är skött, vilket påverkar åldersavdrag och ersättning.
+
+### Årshjul
+
+Årshjulet är en vy, inte en egen lista. `planWheel(hus, år)` är ren och lägger ut allt som ska göras med huset under ett år, månad för månad, ur samma data som kontrollerna och prognosen:
+
+| Källa | I hjulet som | Exempel |
+| --- | --- | --- |
+| Kontroller | Rutin, i sitt säsongsfönster | Byt FTX-filter i januari och september |
+| Åtgärder från besiktningen | Åtgärd, i `WorkItem.seasonAnchor`-fönstret inom `yearMin`–`yearMax` | Stuprör bort från grunden vid snösmältningen |
+| Förnyelser ur prognosen | Projekt, typiska förnyelseåret och typens `forecastDefaults.seasonAnchor` | Badrumsrenovering en sommar |
+| Lagstyrda kontroller | Rutin med `rule: LAW`, när mallen gäller huset | Radonmätning vart tionde år, sotning när eldstad finns |
+| Egna poster | Det användaren lägger till | Smörj den motordrivna garageporten |
+
+Krav:
+
+1. Tolv månader för valt år, med filter på källa, svårighetsgrad och del.
+2. **Fördela lasten.** Högst sex poster per månad som standard. Har en månad fler flyttas de minst brådskande till den minst belastade månaden inom samma säsongsfönster. Regeln är deterministisk och testad.
+3. **Användaren flyttar.** En flyttad post är en `WheelSetting` med `month` och, för engångsposter, `year`. Valet gäller per hus och kommande år och går före fördelningen.
+4. Gjort, ska göras och försenat, ur loggen och nästa datum.
+5. **Kalenderprenumeration (iCal).** `GET /api/calendar/<token>` är en route handler, ett undantag från "inga REST-endpoints för appdata" på samma grund som dokumentfilerna: läsaren är en kalenderklient. `CalendarToken` har hus, hash av token, `createdAt` och `revokedAt`; en återkallad länk ger 404 och en ny skapas på hjulets sida. Posterna innehåller titel, månad och en länk till kontrollsidan, ingen adress. Routen måste vara öppen för kalenderservrar: inte bakom Access och inte i WAF-regeln för Anthropics intervall.
+6. En utskriftsversion på en A4-sida med utskrifts-CSS på hjulets flik.
+7. **Påminnelser** går via kalenderprenumerationen och via en schemalagd uppgift i användarens egen Claude som hämtar månadens poster med `get_year_wheel` och skriver dem i chatten. Husvan skickar inget självt, ingen egen mejl- eller pushinfrastruktur. Hjälpsidan beskriver hur man sätter upp båda.
+
+**Egna poster.** En egen återkommande post är en `CheckTemplate` med `houseId` och `changesetId` (skapad på webben, källa `USER`, godkänd direkt) och behandlas som biblioteksmallar vid genereringen. En engångspost är en `WorkItem` med källa `USER`, som i dag.
+
+**Ekonomiskt lager (tillval, etapp 11).** Hjulet kan visa pengar: driftens fasta poster per månad och förnyelserna med sin kostnad, ur samma prognos. Lagret slås på per hus (`Assumption` `wheel_show_costs`). ROT-avdrag på hantverkarens arbete (`TaxParameter` `rot_deduction_rate` och `rot_cap_sek_per_person`) kräver en arbetsandel per profil, som saknas i dag. Villaförsäkringens åldersavdrag, som gör att ett byte i tid lönar sig, är en senare påbyggnad.
+
+### Säsong per ort
+
+Mallarna anger en säsong, inte en månad. Husvan översätter säsongen till månader via husets kommun: samma mall hamnar i april–maj i Luleå och i mars i Malmö.
+
+| Säsongsankare | Betydelse | Luleå, uppskattning | Malmö, uppskattning |
+| --- | --- | --- | --- |
+| `AFTER_SNOWMELT` | Marken är bar och smältvattnet syns | april–maj | mars |
+| `DRY_SEASON` | Målning och utvändigt träarbete | juni–augusti | maj–september |
+| `AFTER_LEAF_FALL` | Hängrännor och takavvattning | september | oktober–november |
+| `BEFORE_FROST` | Utekranar, kondensvatten, tätning | september–oktober | november |
+| `BEFORE_HEATING_SEASON` | Värmesystemet ses över | augusti–september | september–oktober |
+| `WINTER_SNOW` | Snölast, is och istappar | december–mars | vid behov |
+| `FIXED_MONTH` | Samma månad överallt | brandvarnare i december | samma |
+| `ANY` | Ingen säsong, fördelas jämnt | | |
+
+Månaderna är grova uppskattningar och kalibreras mot SMHI:s öppna data för normalperioden 1991–2020 innan de seedas.
+
+- **Zoner.** `Municipality.climateZone` är `NORRLAND_INLAND`, `NORRLAND_COAST`, `SVEALAND` eller `GOTALAND`, Husvans egna zoner och inte Boverkets energizoner. Fler zoner när data visar behov. Luleå är kust; Boden preliminärt inland, eftersom DVUT är 2,4 grader kallare, att verifiera mot SMHI. En kommun utan zon får Svealands fönster och posten flaggas.
+- **Fönster.** `SeasonWindow` har zon, säsongsankare, `monthFrom` och `monthTo`, seedade från `prisma/data/seasonWindows.mts` med källa.
+- **Per hus.** `Assumption` `climate_zone` byter zon för ett hus i en kall dalgång. Finare justering görs per post med `WheelSetting` `month`.
+- **Snö.** Kommunens `groundSnowLoadKnM2` finns redan; den ger riskintervallet för takets snökontroll.
+
+### Svenska regler och rekommendationer
+
+Mallarna bygger på svenska myndigheters krav och råd och skiljer på lagkrav, försäkringsvillkor och rekommendation (`rule`). Raderna verifieras mot källan innan de blir mallar.
+
+| Kontroll | Vem bestämmer | Intervall | Gäller när |
+| --- | --- | --- | --- |
+| Sotning (rengöring) | Kommunen sätter frister | Per kommun, ofta 1–4 år. Mallen har ett standardintervall per eldstadstyp; användaren bekräftar kommunens frist vid första loggen (`WheelSetting` `interval_months`) | `chimney`, `wood_stove` eller `pellet_boiler` finns. Okänd eldstad ger en öppen fråga |
+| Brandskyddskontroll | MSB:s föreskrifter, utförs av kommunen | 3 eller 6 år | Som ovan |
+| OVK | Boverket | Småhus med FT eller FTX: bara en första besiktning, ingen återkommande | `ventilation_ftx` |
+| Radonmätning | Strålsäkerhetsmyndigheten, råd | Vart tionde år och efter ombyggnad, riktvärde 200 Bq/m³ | Alla hus; `anchorKey` `radon_measurement_year` |
+| Energideklaration | Boverket, lagkrav vid försäljning | Giltig 10 år | Alla hus; `anchorKey` `energy_declaration_year` |
+| Elinstallation | Elsäkerhetsverket | Inget lagkrav på återkommande kontroll, råd om egen kontroll; test av jordfelsbrytaren | `electrical_panel`, `electrical_installation` |
+| Våtrum | Försäkringsvillkor, branschregler (GVK, BKR, Säker Vatten) | Egen kontroll varje år, arbete av behörig | `bathroom` |
+| Snö och is från tak | Ordningslagen, fastighetsägarens ansvar | Vinter | `roof_covering` |
+| Enskilt avlopp och egen brunn | Kommunens miljökontor, Livsmedelsverkets råd | Slamtömning per kommun, vattenprov vart tredje år | Nya komponenttyper `private_sewage` och `water_well`, utan profil |
+| Brandvarnare | MSB:s och Boverkets allmänna råd | Test regelbundet, byt batteri årligen | Alla hus, fast månad december |
+
+Sotningsfristerna saknar nationell källa, och sotaren kallar ändå; Husvan loggar snarare än påminner. Kommunala regler ändras, så en årlig post ber användaren kontrollera fristen.
+
+### Gör-själv-nivå i stället för användarnivåer
+
+Ingen indelning i nybörjare, normal och expert: folk bedömer sin egen nivå fel, och tre nivåer ger tre texter att underhålla. I stället säger `Assumption` `diy_level` (per hus eller standard för alla) vad hushållet gör självt:
+
+| `diy_level` | Egen uppgift | Köpt tjänst |
+| --- | --- | --- |
+| `none` | Inga, bara titta och logga | Alla kontroller och åtgärder |
+| `simple` (standard) | `EASY` | `MEDIUM` och `HARD` |
+| `most` | `EASY` och `MEDIUM` | `HARD`, och allt som kräver behörighet |
+
+Nivån styr vilka poster som visas som egna i hjulet och hur mycket av kontrollsidan som är utfälld från början. Raden om varför kontrollen finns visas alltid; steg för steg och verktyg är infällda för `most`. El och våtrum visas aldrig som egna uppgifter. När profilerna får en arbetsandel styr nivån också prognosens timpris.
+
+I jämförelsen av kandidathus läggs en rad till: antal kontroller och åtgärder första året, varav hur många som kräver fackman.
+
+### MCP-verktyg för underhållsläget
+
+| Verktyg | Vad det gör | Läser/skriver |
+| --- | --- | --- |
+| `list_checks` | Husets kontroller med nästa datum, säsongsfönster, varför den finns (riskraden), senaste logg och vad som är försenat | Läser |
+| `get_year_wheel` | Årshjulet för ett hus och ett år, månad för månad, med källa, svårighetsgrad och utförare per post. Underlaget för påminnelser i användarens Claude | Läser |
+| `log_check` | Loggar ett resultat med mätvärden och dokument, till exempel från ett foto användaren skickar. Vid anmärkning följer åtgärden och skicket med i samma utkast | Skriver utkast |
+| `adjust_wheel_item` | Flyttar en post till en annan månad eller ett annat år, pausar den eller sätter eget intervall | Skriver |
+| `type_library` | Visar även kontrollmallarna per typ | Läser |
+| `open_questions`, `answer_questions` | Frågor om okända delar som styr kontroller (`decides: "check"`) | Som i dag |
+| `add_work_item`, `propose_changes` | Åtgärder får `seasonAnchor` | Som i dag |
+| `compare` | Första årets kontroller och åtgärder för kandidater, varav fackman | Läser |
+
+`propose_check_templates` byggs inte i första versionen; mallarna kommer in via seeden.
+
+### Webben i underhållsläget
+
+| Vy | Innehåll | Viktigaste interaktion |
+| --- | --- | --- |
+| Fliken **Årshjul** (`wheel`) på husets sida | Tolv månader i ett rutnät, färgat efter källa (rutin, besiktning, projekt, eget), med lista per månad som alternativ och filter på svårighetsgrad och del. Kalenderlänk och utskrift. För en kandidat första årets förhandsvisning | Dra en post till en annan månad, markera som gjord med ett tryck |
+| Kontrollsidan `/houses/[id]/checks/[ref]` | Först raden om varför just detta hus ("Plattan har isoleringen ovanpå, därför var sjätte månad"), sedan vad man letar efter, så här gör man, verktyg och historik | Logga resultat, mätvärden och foto |
+
+Loggningen görs på plats vid huset, så kontrollsidan byggs för mobilen först. Raden om varför kontrollen finns skiljer Husvan från en generisk checklista.
+
 ## Byggordning
 
 Varje milstolpe ska gå att visa i Claude eller i webbläsaren innan nästa påbörjas.
@@ -512,9 +694,16 @@ Varje milstolpe ska gå att visa i Claude eller i webbläsaren innan nästa påb
 6. **Webbsida**, först visning, sedan rättning och filuppladdning. Sist den publika startsidan.
 7. **Drift i k3s.** Manifest och Kargo-pipeline i infra-gitops, databas och roll på den delade Postgres, första migration via port-forward, första manuella promotion. Därefter WAF-regeln för Anthropics IP-intervall och Access framför webben. Verifiera att Claude fortfarande kan ansluta och logga in när reglerna är på. När appen är klar tas Access bort och startsidan blir publik. WAF-regeln för MCP ligger kvar.
 
+Underhållsläget (se "Underhållsläge: kontroller och årshjul") kommer därefter. Årshjulet, loggen och ekonomin bygger alla på kontrollschemat, så det kommer först. Varje etapp är klar när kriteriet är uppfyllt.
+
+8. **Kontroller.** Migration för `CheckTemplate`, `SeasonWindow`, `Municipality.climateZone`, `CheckLog`, `CheckLogDocument`, `WheelSetting`, `CalendarToken`, `WorkItem.seasonAnchor` och `WorkItem.checkLogId`; komponenttyperna `private_sewage` och `water_well`. Mallar med källa per mall, klimatzoner och säsongsfönster som data, seedade. `planChecks` med tester, `list_checks`, frågorna med `decides: "check"`, fliken Årshjul i listform och kontrollsidan. **Klart när** Yxgränd 6 får ett kontrollschema utan kontroller för delar huset saknar, med tätare fuktkontroll av syllen och besiktningens anmärkningar inlagda.
+9. **Logg.** `log_check` från MCP och loggning på webben i mobilen, med foto, mätvärden, anmärkning som ger åtgärd och skick, och texten om att egenkontroll inte ersätter besiktning. **Klart när** en loggad anmärkning syns som åtgärd och som sänkt skick i prognosen.
+10. **Årshjul.** `planWheel` med lastfördelning och tester, rutnätet med flytt, `get_year_wheel`, `adjust_wheel_item`, kalenderprenumerationen med återkallbar token, utskriften och hjälpsidan om påminnelser via kalender och schemalagd uppgift i Claude. Raden i jämförelsen. **Klart när** hjulet för ett år syns i en kalenderapp och en schemalagd uppgift i Claude skriver ut månadens poster.
+11. **Ekonomiskt lager.** Pengar i hjulet, ROT med arbetsandel per profil och `diy_level` i prognosens timpris. **Klart när** hjulet visar månadens kostnad och ett hantverkarbyte visas med och utan ROT.
+
 ## Utanför version 1
 
-Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för fönsterbyten, delning, typskyltsigenkänning, händelser (service, reparation) och relationer mellan komponenter.
+Flera användare, ChatGPT-app, fakturainkorg, egen påminnelseinfrastruktur (mejl, push), energikalkyl för fönsterbyten, delning, typskyltsigenkänning, händelser (service, reparation) utöver kontrolloggen och relationer mellan komponenter.
 
 ## Öppna frågor
 
@@ -524,6 +713,14 @@ Flera användare, ChatGPT-app, fakturainkorg, påminnelser, energikalkyl för f�
 - Hur får huset sina koordinater, så att `deso_code` och snölasten kan räknas fram? Boverkets klimatlast-API ger `s_k` för en punkt (Luleå centrum 2,5 kN/m², resten av kommunen 3,0).
 - Följer pantbreven i en tomträtt med till fastigheten vid friköp, eller måste nya tas ut? Avgör om friköpet kostar stämpelskatt för pantbrev.
 - Tomträttspolicyer för hela Sverige saknar en nationell källa. Hur samlas och hålls 290 kommuners policyer aktuella i fullversionen?
+
+Att verifiera innan milstolpe 8 börjar:
+
+- Månadsfönstren per klimatzon mot SMHI:s normalperiod 1991–2020, och vilken zon Boden hör till.
+- Standardintervall för sotning per eldstadstyp och fristerna för brandskyddskontroll mot MSB:s föreskrifter; sotningsfristerna sätts av kommunen och saknar nationell källa.
+- Hur ett nej på en egenskapsfråga slås ihop med husets nuvarande `absent_features`, som är en lista i en enda observation.
+- Om svårighetsgraden ska styra prognosens pris kräver profilerna en arbetsandel (arbete mot material), som också ROT-avdraget behöver. Vilka källor ger den?
+- Kalenderrouten måste nås av Googles och Apples kalenderservrar, alltså ligga utanför både Access och WAF-regeln för Anthropics intervall. Hur avgränsas den i infra-gitops?
 
 Besvarat i milstolpe 5:
 
