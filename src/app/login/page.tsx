@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Container, Paper, Typography } from '@mui/material'
@@ -10,13 +11,21 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function LoginPage() {
   const t = await getTranslations('login')
+  // The site key is public and read at request time, so the image built by
+  // GitHub Actions needs no knowledge of it.
+  const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY?.trim() || null
   return (
     <Container maxWidth="xs" sx={{ py: 8 }}>
       <Paper sx={{ p: 4 }}>
         <Typography component="h1" variant="h5" gutterBottom>
           {t('title')}
         </Typography>
-        <LoginForm />
+        <Typography color="text.secondary" sx={{ mb: 3 }}>
+          {t('intro')}
+        </Typography>
+        <Suspense>
+          <LoginForm turnstileSiteKey={turnstileSiteKey} />
+        </Suspense>
       </Paper>
     </Container>
   )

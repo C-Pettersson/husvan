@@ -7,7 +7,8 @@
     "houses": "Hus",
     "signIn": "Logga in",
     "signOut": "Logga ut",
-    "language": "Språk"
+    "language": "Språk",
+    "users": "Användare"
   },
   "home": {
     "title": "Vad kostar huset över tid?",
@@ -94,13 +95,20 @@
     },
     "later": "När huset är köpt",
     "laterBody": "Samma hus blir utgångspunkt för underhållet, utan att något flyttas. På sikt kan en AI sköta det som en förvaltare: hålla underhållsplanen aktuell, påminna om service och läsa in kvitton. Allt den skriver har källa och är ett utkast tills du godkänt det, och inget den gör kan radera det som redan är känt.",
-    "personal": "Husvan är ett personligt verktyg och tar inte emot nya användare."
+    "personal": "Husvan är ett personligt verktyg. Nya användare bjuds in av ägaren."
   },
   "login": {
     "title": "Logga in",
+    "intro": "Skriv din e-postadress så skickar vi en länk som loggar in dig.",
     "email": "E-post",
     "password": "Lösenord",
+    "sendLink": "Skicka inloggningslänk",
     "submit": "Logga in",
+    "usePassword": "Logga in med lösenord i stället",
+    "useLink": "Logga in med länk i stället",
+    "linkSent": "Om adressen får logga in har vi skickat en länk. Öppna den i den här webbläsaren inom tio minuter.",
+    "linkFailed": "Det gick inte att skicka länken. Försök igen.",
+    "linkInvalid": "Länken är ogiltig eller har gått ut. Be om en ny.",
     "failed": "Fel e-post eller lösenord."
   },
   "consent": {
@@ -112,6 +120,30 @@
     "deny": "Neka",
     "invalid": "Länken för godkännande är ogiltig eller har gått ut. Börja om från appen som bad om åtkomst.",
     "failed": "Det gick inte att spara ditt svar. Försök igen."
+  },
+  "admin": {
+    "title": "Användare",
+    "intro": "Adresser som får logga in. En ny adress får ett eget konto första gången den följer en inloggningslänk. Tar du bort en adress loggas användaren ut och Claudes åtkomst upphör; husen finns kvar.",
+    "email": "E-postadress",
+    "add": "Lägg till",
+    "remove": "Ta bort",
+    "you": "Du",
+    "admin": "Administratör",
+    "lastSeen": "Senast inloggad {date}",
+    "signedUp": "Har ett konto",
+    "neverSignedIn": "Tillagd {date}, har inte loggat in",
+    "addFailed": "Det gick inte att lägga till adressen.",
+    "removeFailed": "Det gick inte att ta bort adressen.",
+    "loadFailed": "Det gick inte att hämta listan."
+  },
+  "mail": {
+    "magicLink": {
+      "subject": "Logga in på Husvan",
+      "intro": "Klicka på länken för att logga in på Husvan.",
+      "button": "Logga in",
+      "expires": "Länken gäller i {minutes} minuter och kan bara användas en gång.",
+      "ignore": "Har du inte bett om länken kan du bortse från det här mejlet."
+    }
   },
   "scope": {
     "openid": "Veta vem du är",

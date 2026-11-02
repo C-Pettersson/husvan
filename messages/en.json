@@ -7,7 +7,8 @@
     "houses": "Houses",
     "signIn": "Sign in",
     "signOut": "Sign out",
-    "language": "Language"
+    "language": "Language",
+    "users": "Users"
   },
   "home": {
     "title": "What does the house cost over time?",
@@ -94,13 +95,20 @@
     },
     "later": "Once the house is bought",
     "laterBody": "The same house becomes the starting point for maintenance, with nothing moved. In time an AI can look after it like a property manager: keep the maintenance plan current, remind you of servicing and read in receipts. Everything it writes has a source and stays a draft until you approve it, and nothing it does can erase what is already known.",
-    "personal": "Husvan is a personal tool and does not take new users."
+    "personal": "Husvan is a personal tool. New users are invited by the owner."
   },
   "login": {
     "title": "Sign in",
+    "intro": "Enter your email address and we will send you a link that signs you in.",
     "email": "Email",
     "password": "Password",
+    "sendLink": "Send sign-in link",
     "submit": "Sign in",
+    "usePassword": "Sign in with a password instead",
+    "useLink": "Sign in with a link instead",
+    "linkSent": "If the address may sign in, a link is on its way. Open it in this browser within ten minutes.",
+    "linkFailed": "The link could not be sent. Try again.",
+    "linkInvalid": "The link is invalid or has expired. Ask for a new one.",
     "failed": "Wrong email or password."
   },
   "consent": {
@@ -112,6 +120,30 @@
     "deny": "Deny",
     "invalid": "The approval link is invalid or has expired. Start over from the app that asked for access.",
     "failed": "Your answer could not be saved. Try again."
+  },
+  "admin": {
+    "title": "Users",
+    "intro": "Addresses that may sign in. A new address gets its own account the first time it follows a sign-in link. Removing an address signs that user out and ends Claude's access; the houses stay.",
+    "email": "Email address",
+    "add": "Add",
+    "remove": "Remove",
+    "you": "You",
+    "admin": "Administrator",
+    "lastSeen": "Last signed in {date}",
+    "signedUp": "Has an account",
+    "neverSignedIn": "Added {date}, has not signed in",
+    "addFailed": "The address could not be added.",
+    "removeFailed": "The address could not be removed.",
+    "loadFailed": "The list could not be loaded."
+  },
+  "mail": {
+    "magicLink": {
+      "subject": "Sign in to Husvan",
+      "intro": "Click the link to sign in to Husvan.",
+      "button": "Sign in",
+      "expires": "The link is valid for {minutes} minutes and can be used once.",
+      "ignore": "If you did not ask for this link, you can ignore this email."
+    }
   },
   "scope": {
     "openid": "Know who you are",

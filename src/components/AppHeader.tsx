@@ -21,6 +21,11 @@ export default async function AppHeader() {
             {t('houses')}
           </Button>
         )}
+        {session?.user.role === 'ADMIN' && (
+          <Button href="/admin" color="inherit">
+            {t('users')}
+          </Button>
+        )}
         <Box sx={{ flexGrow: 1 }} />
         <LanguageSwitch />
         {session ? (
