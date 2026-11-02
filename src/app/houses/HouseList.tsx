@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   Alert,
@@ -14,7 +14,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import { trpc } from '@/lib/trpc'
 import {
   formatSek,
   formatSekRange,
@@ -23,9 +22,7 @@ import {
   keyLabel,
   type Range,
 } from '@/lib/format'
-import type { RouterOutputs } from '@/lib/trpc'
-
-type House = RouterOutputs['house']['list'][number]
+import { saveHouses, useStoredHouses, type House } from './storedList'
 
 const FEATURES = [
   'pool',
@@ -40,16 +37,36 @@ const FEATURES = [
 
 const FIGURES = ['living_area', 'construction_year', 'room_count']
 
-export default function HouseList() {
+// The list the server sends with the page. It replaces the stored copy on
+// screen and becomes the copy for the next visit.
+export function FreshHouseList({
+  houses,
+}: {
+  houses: Promise<House[] | null>
+}) {
   const t = useTranslations()
-  const houses = trpc.house.list.useQuery()
+  const list = use(houses)
+  useEffect(() => {
+    if (list) saveHouses(list)
+  }, [list])
+
+  if (!list) return <Alert severity="error">{t('error.generic')}</Alert>
+  return <HouseList houses={list} />
+}
+
+// The list from the last visit in this browser, until the fresh one
+// arrives. A spinner the first time.
+export function StoredHouseList() {
+  const stored = useStoredHouses()
+  return stored ? <HouseList houses={stored} /> : <CircularProgress />
+}
+
+function HouseList({ houses }: { houses: House[] }) {
+  const t = useTranslations()
   const [wanted, setWanted] = useState<string[]>([])
   const [selected, setSelected] = useState<string[]>([])
 
-  if (houses.isPending) return <CircularProgress />
-  if (houses.isError)
-    return <Alert severity="error">{t('error.generic')}</Alert>
-  if (houses.data.length === 0) {
+  if (houses.length === 0) {
     return <Typography color="text.secondary">{t('houses.empty')}</Typography>
   }
 
@@ -57,10 +74,10 @@ export default function HouseList() {
   // apart (CLAUDE.md, "Okänt är inte nej").
   const answer = (h: House, f: string) =>
     (h.features as Record<string, string>)[f]
-  const hidden = houses.data.filter((h) =>
+  const hidden = houses.filter((h) =>
     wanted.some((f) => answer(h, f) === 'no')
   )
-  const shown = houses.data.filter((h) => !hidden.includes(h))
+  const shown = houses.filter((h) => !hidden.includes(h))
   const unknownOf = (h: House) =>
     wanted.filter((f) => answer(h, f) === 'unknown')
   const matching = shown.filter((h) => unknownOf(h).length === 0)
@@ -82,7 +99,7 @@ export default function HouseList() {
         sx={{ mb: 2 }}
       >
         <Typography color="text.secondary">
-          {t('houses.count', { count: houses.data.length })}
+          {t('houses.count', { count: houses.length })}
         </Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography variant="body2" color="text.secondary">

@@ -6,9 +6,8 @@ import {
   costSummary,
   debtRangesByType,
   features,
-  listSummary,
 } from '@/server/forecast/compare'
-import { analyseHouse, type Analysis } from '@/server/forecast/run'
+import { analyseHouse } from '@/server/forecast/run'
 import { areaStatistics, houseAreas } from '@/server/houses/area'
 import {
   answerAsUser,
@@ -21,6 +20,7 @@ import { confirmChangeset } from '@/server/houses/confirmChangeset'
 import { correct, retract, updateCore } from '@/server/houses/correct'
 import { bathroomCount, heating, valueOf } from '@/server/houses/derive'
 import { getHouse, type Label } from '@/server/houses/getHouse'
+import { listHouses } from '@/server/houses/listHouses'
 import type { AttributeDefinition } from '@/server/library/schema'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
@@ -59,27 +59,9 @@ async function typeLabels(prisma: PrismaClient) {
 export const houseRouter = createTRPCRouter({
   // Every house with price, maintenance debt and adjusted price, and the
   // features the list filters on.
-  list: protectedProcedure.query(async ({ ctx }) => {
-    const houses = await ctx.prisma.house.findMany({
-      where: { ownerId: ctx.user.id },
-      select: { id: true },
-      orderBy: { createdAt: 'desc' },
-    })
-    const analyses = await Promise.all(
-      houses.map((h) =>
-        analyseHouse(ctx.prisma, { ownerId: ctx.user.id, houseId: h.id })
-      )
-    )
-    return analyses
-      .filter((a): a is Analysis => a !== null)
-      .map((a) => ({
-        ...listSummary(a),
-        maintenanceDebt: a.debt.total,
-        maintenanceAdjustedPrice: a.adjustedPrice,
-        features: features(a),
-        inspected: a.gaps.inspected,
-      }))
-  }),
+  list: protectedProcedure.query(({ ctx }) =>
+    listHouses(ctx.prisma, ctx.user.id)
+  ),
 
   // One house as approved, or with one of its drafts shown in place.
   get: protectedProcedure
