@@ -28,9 +28,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./next.config.ts
-# Migrations, the seed and the import scripts run from a checkout against the
-# database through a port-forward (CLAUDE.md, "Leverans och drift"). prisma/
-# is here for the generated client's schema.
+# prisma/ carries the schema for the generated client and the migrations:
+# in production an Argo CD PreSync Job runs `yarn prisma migrate deploy`
+# from this image before each rollout (CLAUDE.md, "Leverans och drift").
+# The seed and the import scripts still run from a checkout.
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
