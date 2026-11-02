@@ -139,6 +139,7 @@
   "mail": {
     "magicLink": {
       "subject": "Logga in på Husvan",
+      "context": "Du bad om en inloggningslänk till husvan.se.",
       "intro": "Klicka på länken för att logga in på Husvan.",
       "button": "Logga in",
       "expires": "Länken gäller i {minutes} minuter och kan bara användas en gång.",

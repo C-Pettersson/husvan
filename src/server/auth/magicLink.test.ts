@@ -63,6 +63,34 @@ describe('magicLinkMail', () => {
     })
     expect(mail.subject).toBe('Sign in to Husvan')
     expect(mail.text).toContain('10 minutes')
+    expect(mail.html).toContain('<html lang="en">')
+    expect(mail.html).toContain('<title>Sign in to Husvan</title>')
+    expect(mail.html).toContain('You asked for a login link to husvan.se.')
+  })
+
+  it('wraps the html part in a document and keeps the text part plain', () => {
+    const mail = magicLinkMail({
+      url: link,
+      locale: 'sv',
+      expiresInMinutes: 10,
+    })
+    expect(mail.html).toMatch(/^<!DOCTYPE html>\n<html lang="sv">\n<head>/)
+    expect(mail.html).toContain('<meta charset="utf-8">')
+    expect(mail.html).toContain('<title>Logga in på Husvan</title>')
+    expect(mail.html).toContain(
+      '<body>\n<p>Du bad om en inloggningslänk till husvan.se.</p>\n<p>Klicka på länken'
+    )
+    expect(mail.html).toMatch(/<\/body>\n<\/html>$/)
+    expect(mail.text).toBe(
+      [
+        'Klicka på länken för att logga in på Husvan.',
+        '',
+        link,
+        '',
+        'Länken gäller i 10 minuter och kan bara användas en gång.',
+        'Har du inte bett om länken kan du bortse från det här mejlet.',
+      ].join('\n')
+    )
   })
 
   it('escapes html in the link', () => {

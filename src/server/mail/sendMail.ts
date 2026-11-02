@@ -5,7 +5,8 @@
 // Configuration (see .env.example): SMTP_HOST (smtp.mx.cloudflare.net),
 // SMTP_PORT (465, implicit TLS), SMTP_TOKEN (an API token with the Email
 // Sending permission, used as the password for the user "api_token") and
-// MAIL_FROM (an address on a domain enabled for sending in Cloudflare).
+// MAIL_FROM (an address on a domain enabled for sending in Cloudflare, bare
+// or with a display name: "Husvan <noreply@husvan.se>").
 import nodemailer from 'nodemailer'
 
 export type MailMessage = {
@@ -15,12 +16,19 @@ export type MailMessage = {
   html?: string
 }
 
+// The sender as nodemailer takes it: kept apart so the display name is
+// encoded by the library rather than pasted into a header.
+export type MailAddress = {
+  name?: string
+  address: string
+}
+
 export type MailConfig = {
   host: string
   port: number
   user: string
   token: string
-  from: string
+  from: MailAddress
 }
 
 export type Mailer = (message: MailMessage) => Promise<void>
@@ -31,7 +39,24 @@ const DEFAULTS = {
   host: 'smtp.mx.cloudflare.net',
   port: 465,
   user: 'api_token',
-  from: 'noreply@husvan.se',
+  from: 'Husvan <noreply@husvan.se>',
+}
+
+// Accepts "address" or "Name <address>". Quotes around the name are dropped,
+// since nodemailer adds its own when the name needs them. Anything else, a
+// bare name or a missing @ among them, is a misconfiguration worth failing on
+// at startup rather than at the first login.
+export function parseMailAddress(value: string): MailAddress {
+  const trimmed = value.trim()
+  const withName = /^(.*?)\s*<([^<>\s]+@[^<>\s]+)>$/.exec(trimmed)
+  if (withName) {
+    const name = withName[1].replace(/^"(.*)"$/, '$1').trim()
+    return name ? { name, address: withName[2] } : { address: withName[2] }
+  }
+  if (/^[^<>\s]+@[^<>\s]+$/.test(trimmed)) return { address: trimmed }
+  throw new Error(
+    `MAIL_FROM is not an address or "Name <address>": ${JSON.stringify(value)}`
+  )
 }
 
 export function mailConfigFromEnv(env: Env = process.env): MailConfig | null {
@@ -46,7 +71,7 @@ export function mailConfigFromEnv(env: Env = process.env): MailConfig | null {
     port,
     user: env.SMTP_USER?.trim() || DEFAULTS.user,
     token,
-    from: env.MAIL_FROM?.trim() || DEFAULTS.from,
+    from: parseMailAddress(env.MAIL_FROM?.trim() || DEFAULTS.from),
   }
 }
 

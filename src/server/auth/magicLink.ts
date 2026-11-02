@@ -36,12 +36,44 @@ export function magicLinkMail({
     t('expires', { minutes: expiresInMinutes }),
     t('ignore'),
   ].join('\n')
-  const html = [
-    `<p>${escapeHtml(t('intro'))}</p>`,
-    `<p><a href="${escapeAttribute(url)}">${escapeHtml(t('button'))}</a></p>`,
-    `<p>${escapeHtml(t('expires', { minutes: expiresInMinutes }))}<br>${escapeHtml(t('ignore'))}</p>`,
-  ].join('\n')
+  // A complete document: mail clients and spam filters treat a bare fragment
+  // as a sign of a careless sender. The context line exists only here; the
+  // text part is the plain link as before.
+  const html = htmlDocument({
+    lang: locale,
+    title: subject,
+    body: [
+      `<p>${escapeHtml(t('context'))}</p>`,
+      `<p>${escapeHtml(t('intro'))}</p>`,
+      `<p><a href="${escapeAttribute(url)}">${escapeHtml(t('button'))}</a></p>`,
+      `<p>${escapeHtml(t('expires', { minutes: expiresInMinutes }))}<br>${escapeHtml(t('ignore'))}</p>`,
+    ],
+  })
   return { subject, text, html }
+}
+
+function htmlDocument({
+  lang,
+  title,
+  body,
+}: {
+  lang: string
+  title: string
+  body: string[]
+}): string {
+  return [
+    '<!DOCTYPE html>',
+    `<html lang="${escapeAttribute(lang)}">`,
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    `<title>${escapeHtml(title)}</title>`,
+    '</head>',
+    '<body>',
+    ...body,
+    '</body>',
+    '</html>',
+  ].join('\n')
 }
 
 export async function deliverMagicLink(
