@@ -1,5 +1,5 @@
 import { headers } from 'next/headers'
-import { getTranslations } from 'next-intl/server'
+import { getFormatter, getTranslations } from 'next-intl/server'
 import { Box, Button, Container, Paper, Stack, Typography } from '@mui/material'
 import { auth } from '@/lib/auth'
 
@@ -19,9 +19,49 @@ const STEPS = ['connect', 'upload', 'approve', 'compare'] as const
 const MEASURES = ['debt', 'adjusted', 'forecast'] as const
 const PRINCIPLES = ['unknown', 'disclosure', 'sources', 'model'] as const
 
+// The year wheel for the house in the conversation above, once bought:
+// Boden, built 1978, concrete roof tiles from the build year and a remark on
+// damp in the crawl space. Months are 0-based. The crawl space check comes
+// twice because the remark shortens its interval to six months.
+const WHEEL_YEAR = 2027
+const WHEEL = [
+  { month: 0, key: 'snow', source: 'routine' },
+  { month: 0, key: 'radon', source: 'routine' },
+  { month: 1, key: 'bathroom', source: 'routine' },
+  { month: 2, key: 'earthFault', source: 'routine' },
+  { month: 2, key: 'garageDoor', source: 'own' },
+  { month: 3, key: 'meltwater', source: 'inspection' },
+  { month: 4, key: 'crawlSpace', source: 'routine' },
+  { month: 5, key: 'facade', source: 'routine' },
+  { month: 6, key: 'crawlSpaceFix', source: 'inspection' },
+  { month: 7, key: 'roof', source: 'project' },
+  { month: 7, key: 'heatPump', source: 'routine' },
+  { month: 8, key: 'gutters', source: 'routine' },
+  { month: 9, key: 'outdoorTaps', source: 'routine' },
+  { month: 10, key: 'crawlSpace', source: 'routine' },
+  { month: 11, key: 'smokeAlarms', source: 'routine' },
+] as const
+// Colours follow the cost chart where the meaning is the same: work items
+// from the inspection and replacements from the forecast.
+const WHEEL_SOURCES = {
+  routine: '#2f5d50',
+  inspection: '#eda100',
+  project: '#eb6834',
+  own: '#6b6a66',
+} as const
+const REMINDER = [
+  { key: 'ask', from: 'you' },
+  { key: 'month', from: 'ai', note: true },
+  { key: 'log', from: 'you', files: true },
+  { key: 'remark', from: 'ai', note: true },
+] as const
+const CHECK_LOOK_FOR = ['moisture', 'smell', 'stains'] as const
+const WHEEL_POINTS = ['local', 'calendar', 'history'] as const
+
 // The public start page. Everything else requires sign-in.
 export default async function HomePage() {
   const t = await getTranslations('home')
+  const format = await getFormatter()
   const session = await auth.api.getSession({ headers: await headers() })
 
   return (
@@ -160,7 +200,198 @@ export default async function HomePage() {
       </Section>
 
       <Section title={t('later')}>
-        <Typography variant="body1">{t('laterBody')}</Typography>
+        <Typography variant="body1" sx={{ mb: 2.5 }}>
+          {t('laterBody')}
+        </Typography>
+
+        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, mb: 2 }}>
+          <Typography variant="overline" color="text.secondary" component="p">
+            {t('wheel.label', { year: WHEEL_YEAR })}
+          </Typography>
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            columnGap={2}
+            rowGap={0.5}
+            sx={{ mb: 2 }}
+          >
+            {Object.entries(WHEEL_SOURCES).map(([source, color]) => (
+              <Stack
+                key={source}
+                direction="row"
+                spacing={0.75}
+                alignItems="center"
+              >
+                <Dot color={color} />
+                <Typography variant="caption" color="text.secondary">
+                  {t(`wheel.sources.${source}`)}
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+          <Box
+            component="ol"
+            sx={{
+              listStyle: 'none',
+              p: 0,
+              m: 0,
+              display: 'grid',
+              gap: 1,
+              gridTemplateColumns: {
+                xs: '1fr 1fr',
+                sm: 'repeat(3, 1fr)',
+                md: 'repeat(4, 1fr)',
+              },
+            }}
+          >
+            {Array.from({ length: 12 }, (_, month) => (
+              <Box
+                key={month}
+                component="li"
+                sx={{ bgcolor: 'grey.100', borderRadius: 1, p: 1.25 }}
+              >
+                <Typography
+                  variant="caption"
+                  fontWeight={600}
+                  component="p"
+                  sx={{ mb: 0.5, textTransform: 'capitalize' }}
+                >
+                  {format.dateTime(new Date(Date.UTC(WHEEL_YEAR, month, 15)), {
+                    month: 'long',
+                    timeZone: 'UTC',
+                  })}
+                </Typography>
+                <Stack
+                  component="ul"
+                  spacing={0.5}
+                  sx={{ listStyle: 'none', p: 0, m: 0 }}
+                >
+                  {WHEEL.filter((w) => w.month === month).map((w) => (
+                    <Stack
+                      key={w.key}
+                      component="li"
+                      direction="row"
+                      spacing={0.75}
+                      alignItems="baseline"
+                    >
+                      <Dot color={WHEEL_SOURCES[w.source]} />
+                      <Typography variant="caption" sx={{ lineHeight: 1.35 }}>
+                        {t(`wheel.items.${w.key}`)}
+                      </Typography>
+                    </Stack>
+                  ))}
+                </Stack>
+              </Box>
+            ))}
+          </Box>
+          <Typography
+            variant="caption"
+            component="p"
+            sx={{ mt: 1.5, color: 'secondary.main' }}
+          >
+            {t('wheel.question')}
+          </Typography>
+        </Paper>
+
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+            alignItems: 'start',
+            mb: 3,
+          }}
+        >
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography variant="overline" color="text.secondary" component="p">
+              {t('check.label')}
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={600}>
+              {t('check.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              {t('check.meta')}
+            </Typography>
+            <Box
+              sx={{
+                borderLeft: 3,
+                borderColor: WHEEL_SOURCES.inspection,
+                pl: 1.5,
+                mb: 1.5,
+              }}
+            >
+              <Typography variant="body2">{t('check.why')}</Typography>
+            </Box>
+            <Typography variant="body2" fontWeight={600}>
+              {t('check.lookFor')}
+            </Typography>
+            <Stack
+              component="ul"
+              spacing={0.5}
+              sx={{ pl: 2.5, mt: 0.5, mb: 1.5 }}
+            >
+              {CHECK_LOOK_FOR.map((l) => (
+                <Typography key={l} component="li" variant="body2">
+                  {t(`check.items.${l}`)}
+                </Typography>
+              ))}
+            </Stack>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              {t('check.result')}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" component="p">
+              {t('check.notInspection')}
+            </Typography>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography
+              variant="overline"
+              color="text.secondary"
+              component="p"
+              sx={{ mb: 1.5 }}
+            >
+              {t('reminder.label')}
+            </Typography>
+            <Stack spacing={1.5}>
+              {REMINDER.map((m) => (
+                <ChatMessage
+                  key={m.key}
+                  from={m.from}
+                  speaker={t(`chat.${m.from}`)}
+                  text={t(`reminder.messages.${m.key}.text`)}
+                  files={
+                    'files' in m ? t(`reminder.messages.${m.key}.files`) : null
+                  }
+                  note={
+                    'note' in m
+                      ? `${t('chat.husvan')}: ${t(`reminder.messages.${m.key}.note`)}`
+                      : null
+                  }
+                />
+              ))}
+            </Stack>
+          </Paper>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+          }}
+        >
+          {WHEEL_POINTS.map((p) => (
+            <Box key={p}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                {t(`wheelPoints.${p}.title`)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t(`wheelPoints.${p}.body`)}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
       </Section>
 
       <Typography variant="body2" color="text.secondary">
@@ -234,6 +465,21 @@ function ChatMessage({
         </Typography>
       )}
     </Box>
+  )
+}
+
+function Dot({ color }: { color: string }) {
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        flex: '0 0 auto',
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        bgcolor: color,
+      }}
+    />
   )
 }
 

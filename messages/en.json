@@ -93,8 +93,82 @@
       "sources": "Every value has a source: which document, which passage and how sure the reading is.",
       "model": "The server interprets no documents and calls no AI. Nothing in Husvan is built for a particular model, so a better AI gives better answers without anything being rebuilt."
     },
-    "later": "Once the house is bought",
-    "laterBody": "The same house becomes the starting point for maintenance, with nothing moved. In time an AI can look after it like a property manager: keep the maintenance plan current, remind you of servicing and read in receipts. Everything it writes has a source and stays a draft until you approve it, and nothing it does can erase what is already known.",
+    "later": "Once the house is bought: maintenance plan and year wheel",
+    "laterBody": "The same house becomes the starting point for maintenance, with nothing moved and nothing for you to type in. Every part gets its checks by type, condition and location, and the year wheel lays them out month by month together with the inspection's remarks and the forecast's renewals. Even as a candidate you see the first year's checks and how many need a professional.",
+    "wheel": {
+      "label": "Year wheel {year} · Videvägen 7, Boden",
+      "sources": {
+        "routine": "Routine",
+        "inspection": "From the inspection",
+        "project": "Renewal from the forecast",
+        "own": "Your own item"
+      },
+      "items": {
+        "snow": "Keep an eye on snow on the roof",
+        "radon": "Radon measurement, none on record",
+        "bathroom": "Joints and floor drain in the bathroom",
+        "earthFault": "Test the earth fault breaker",
+        "garageDoor": "Lubricate the garage door",
+        "meltwater": "Lead meltwater away from the foundation",
+        "crawlSpace": "Damp check in the crawl space",
+        "facade": "Look over the facade and window putty",
+        "crawlSpaceFix": "Fix the damp in the crawl space",
+        "roof": "New roof, the concrete tiles are from 1978",
+        "heatPump": "Service the ground source heat pump",
+        "gutters": "Clear gutters and downpipes",
+        "outdoorTaps": "Shut off the outdoor taps",
+        "smokeAlarms": "Test smoke alarms, change batteries"
+      },
+      "question": "Open question: is there a fireplace? A yes adds chimney sweeping and fire safety inspection, a no removes the question."
+    },
+    "check": {
+      "label": "Check",
+      "title": "Damp check in the crawl space",
+      "meta": "Every six months · Easy · Yourself",
+      "why": "The inspection remarked on damp in the crawl space. That is why it is every six months instead of once a year, until the work is done.",
+      "lookFor": "What to look for",
+      "items": {
+        "moisture": "Moisture content in the sill plate. Above 17% is a remark.",
+        "smell": "A smell of mould or earth when the hatch is opened.",
+        "stains": "White stains, discoloured wood or water on the plastic sheeting."
+      },
+      "result": "A remark becomes a work item and lowers the part's condition, so the forecast is recalculated.",
+      "notInspection": "A self-check does not replace an inspection."
+    },
+    "reminder": {
+      "label": "A reminder in Claude",
+      "messages": {
+        "ask": {
+          "text": "What needs doing on the house in May?"
+        },
+        "month": {
+          "text": "One thing: the damp check in the crawl space. Measure the sill plate in three places; in November it was 15% at the north corner. Send a photo of the meter when you are done and I will log it.",
+          "note": "the month's items from the year wheel, with the latest log"
+        },
+        "log": {
+          "files": "moisture-meter.jpg",
+          "text": "19% at the north corner, 14% at the other two."
+        },
+        "remark": {
+          "text": "That is above the 17% limit. The draft holds a remark, a work item to investigate the north corner and condition 2 instead of 3 for the crawl space. Once you approve it, the forecast is recalculated.",
+          "note": "the log as a draft with reading, work item and new condition"
+        }
+      }
+    },
+    "wheelPoints": {
+      "local": {
+        "title": "By your location",
+        "body": "Checks name a season, not a month. Snowmelt comes in April–May in Boden and in March in Malmö, and the wheel follows."
+      },
+      "calendar": {
+        "title": "In your calendar and your Claude",
+        "body": "Subscribe to the wheel in your calendar app, or let a scheduled task in Claude post the month's items in the chat. Move an item and it stays moved in the years ahead."
+      },
+      "history": {
+        "title": "The log becomes the house's history",
+        "body": "When selling, it backs up the disclosure questionnaire, and in an insurance claim it shows the house has been maintained."
+      }
+    },
     "personal": "Husvan is a personal tool. New users are invited by the owner."
   },
   "login": {

@@ -379,7 +379,7 @@ Webben läser genom samma kod som MCP-verktygen (`getHouse`, `analyseHouse`, `co
 
 | Sida | Innehåll |
 | --- | --- |
-| `/` | Den publika startsidan: vad Husvan räknar och hur det används. |
+| `/` | Den publika startsidan: vad Husvan räknar och hur det används. Sektionen "När huset är köpt" visar underhållsläget som om milstolpe 8–10 vore byggda: årshjulet, en kontroll och en påminnelse i Claude för exempelhuset Videvägen 7 i Boden. Texten stäms av mot det som byggs. |
 | `/houses` | Husen med pris, underhållsskuld och underhållsjusterat pris med spann. Filter på egenskaper döljer bara hus där svaret är nej och visar hus med okänt svar för sig. 2–6 hus markeras för jämförelse. |
 | `/houses/[id]` | Flikar som stannar överst när man skrollar, en i taget (`?tab=`): **Kostnad** (nyckeltal med spann, vad summan saknar eller gissar, kostnad per år som diagram och tabell, eller fördelad över livslängden, underhållsskuld per del, prognosens poster med flaggor, och antagandena), **Inför visningen** (`viewing`, checklistan), **Huset** (`house`: egenskaper och risker, värden, komponenter, åtgärder), **Dokument** och **Området**. Utan `?tab=` öppnas Kostnad, eller Huset när `?draft=` visar ett utkast på plats. |
 | `/compare?ids=` | Husen sida vid sida som `compare`: nyckeltal, skillnaden mot det första per del, fel från besiktningen med okänt för obesiktigade hus, största skillnaderna i prognosen, egenskaper, risker och området. |

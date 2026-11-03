@@ -93,8 +93,82 @@
       "sources": "Varje värde har en källa: vilket dokument, vilken mening och hur säker läsningen är.",
       "model": "Servern tolkar inga dokument och anropar ingen AI. Inget i Husvan är byggt för en viss modell, så en bättre AI ger bättre svar utan att något byggs om."
     },
-    "later": "När huset är köpt",
-    "laterBody": "Samma hus blir utgångspunkt för underhållet, utan att något flyttas. På sikt kan en AI sköta det som en förvaltare: hålla underhållsplanen aktuell, påminna om service och läsa in kvitton. Allt den skriver har källa och är ett utkast tills du godkänt det, och inget den gör kan radera det som redan är känt.",
+    "later": "När huset är köpt: underhållsplan och årshjul",
+    "laterBody": "Samma hus blir utgångspunkt för underhållet, utan att något flyttas och utan att du skriver in något. Varje del får sina kontroller efter typ, skick och ort, och årshjulet lägger ut dem månad för månad tillsammans med besiktningens anmärkningar och prognosens förnyelser. Redan som kandidat ser du första årets kontroller och hur många som kräver fackman.",
+    "wheel": {
+      "label": "Årshjul {year} · Videvägen 7, Boden",
+      "sources": {
+        "routine": "Rutin",
+        "inspection": "Från besiktningen",
+        "project": "Förnyelse ur prognosen",
+        "own": "Egen post"
+      },
+      "items": {
+        "snow": "Håll koll på snön på taket",
+        "radon": "Radonmätning, ingen finns i underlaget",
+        "bathroom": "Fogar och golvbrunn i badrummet",
+        "earthFault": "Testa jordfelsbrytaren",
+        "garageDoor": "Smörj garageporten",
+        "meltwater": "Led bort smältvattnet från grunden",
+        "crawlSpace": "Fuktkontroll i krypgrunden",
+        "facade": "Se över fasaden och fönsterkittet",
+        "crawlSpaceFix": "Åtgärda fukten i krypgrunden",
+        "roof": "Nytt tak, betongpannorna är från 1978",
+        "heatPump": "Se över bergvärmepumpen",
+        "gutters": "Rensa hängrännor och stuprör",
+        "outdoorTaps": "Stäng av utekranarna",
+        "smokeAlarms": "Testa brandvarnarna, byt batterier"
+      },
+      "question": "Öppen fråga: finns det en eldstad? Ett ja lägger till sotning och brandskyddskontroll, ett nej tar bort frågan."
+    },
+    "check": {
+      "label": "Kontroll",
+      "title": "Fuktkontroll i krypgrunden",
+      "meta": "Var sjätte månad · Lätt · Du själv",
+      "why": "Besiktningen anmärkte på fukt i krypgrunden. Därför var sjätte månad i stället för en gång om året, tills åtgärden är gjord.",
+      "lookFor": "Det här letar du efter",
+      "items": {
+        "moisture": "Fuktkvoten i syllen. Över 17 % är en anmärkning.",
+        "smell": "Lukt av mögel eller jord när luckan öppnas.",
+        "stains": "Vita fläckar, missfärgat trä eller vatten på plasten."
+      },
+      "result": "En anmärkning blir en åtgärd och sänker delens skick, så att prognosen räknas om.",
+      "notInspection": "Egenkontroll ersätter inte en besiktning."
+    },
+    "reminder": {
+      "label": "Påminnelse i Claude",
+      "messages": {
+        "ask": {
+          "text": "Vad ska göras med huset i maj?"
+        },
+        "month": {
+          "text": "En sak: fuktkontrollen i krypgrunden. Mät syllen på tre ställen, i november låg den på 15 % vid norra hörnet. Skicka en bild på mätaren när du är klar så loggar jag det.",
+          "note": "månadens poster ur årshjulet, med senaste loggen"
+        },
+        "log": {
+          "files": "fuktmätare.jpg",
+          "text": "19 % vid norra hörnet, 14 % på de andra två."
+        },
+        "remark": {
+          "text": "Det är över gränsen på 17 %. I utkastet ligger en anmärkning, en åtgärd att undersöka norra hörnet och skick 2 i stället för 3 på krypgrunden. Godkänner du det räknas prognosen om.",
+          "note": "loggen som utkast med mätvärde, åtgärd och nytt skick"
+        }
+      }
+    },
+    "wheelPoints": {
+      "local": {
+        "title": "Efter din ort",
+        "body": "Kontrollerna anger säsong, inte månad. Snösmältningen kommer i april–maj i Boden och i mars i Malmö, och hjulet följer med."
+      },
+      "calendar": {
+        "title": "I din kalender och din Claude",
+        "body": "Prenumerera på hjulet i kalenderappen, eller låt en schemalagd uppgift i Claude skriva månadens poster i chatten. Flytta en post så gäller det kommande år."
+      },
+      "history": {
+        "title": "Loggen blir husets historik",
+        "body": "Vid försäljning är den underlag för frågelistan, och vid ett försäkringsärende visar den att underhållet är skött."
+      }
+    },
     "personal": "Husvan är ett personligt verktyg. Nya användare bjuds in av ägaren."
   },
   "login": {
