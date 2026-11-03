@@ -854,8 +854,14 @@ describe('urgency from the inspection', () => {
 
   it('spreads a part nobody judged, now only in high', () => {
     expect(years(false).typical).toBe(2030)
-    // An item of unknown severity is not known to be minor.
-    expect(years(true, [work({ componentId: 'roof' })]).typical).toBe(2030)
+    // A finding of unknown severity still means the inspector saw the part.
+    const unrated = years(true, [work({ componentId: 'roof' })])
+    expect(unrated.typical).toBe(2034)
+    expect(unrated.flag).toContain('without a severity')
+    // A defect or a risk on it is a concern, as before.
+    expect(
+      years(true, [work({ componentId: 'roof', severity: 'DEFECT' })]).typical
+    ).toBe(2030)
   })
 
   it('replaces a part with a serious finding at once', () => {

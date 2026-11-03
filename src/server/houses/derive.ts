@@ -83,10 +83,14 @@ export const MAIN_HEATING = [
 ]
 export const COMPLEMENTARY_HEATING = ['wood_stove', 'heat_pump_air_air']
 
+// The duct heater in a ventilation unit heats the house only where nothing
+// else does; beside another main source it is the unit's after-heater.
 export function heating(components: ComponentView[]) {
   const types = new Set(flatten(components).map((c) => c.type))
+  const main = MAIN_HEATING.filter((t) => types.has(t))
   return {
-    main: MAIN_HEATING.filter((t) => types.has(t)),
+    main:
+      main.length > 1 ? main.filter((t) => t !== 'electric_duct_heater') : main,
     complementary: COMPLEMENTARY_HEATING.filter((t) => types.has(t)),
   }
 }

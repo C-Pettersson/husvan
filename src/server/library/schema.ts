@@ -95,6 +95,10 @@ export const forecastDefaultsSchema = z.object({
       factor: z.number().positive(),
     })
     .optional(),
+  // A usual quantity, in the unit of the profile's costUnit, for a part
+  // whose own is missing and that nothing in the house can estimate: a shed
+  // of 12 m2, a driveway of 60 m2. Flagged as assumed.
+  assumedQuantity: z.number().positive().optional(),
   // Attributes read from another component of the house, attribute to
   // component type, such as drainage priced by the foundation type. The
   // component's own value wins; profiles may match on them.
@@ -121,6 +125,42 @@ export const forecastDefaultsSchema = z.object({
   // absent_features does not name it, the forecast assumes one from the
   // construction year.
   assumeUndocumented: z.boolean().optional(),
+  // The assumption holds only for houses that have one of these parts, such
+  // as radiators where the heat source is water-borne, or a chimney where
+  // there is a stove.
+  assumeWhenTypes: z.array(keySchema).min(1).optional(),
+  // Not assumed when the house has, at top level, a part that does the same
+  // job: water underfloor heating in place of radiators. `where` narrows it
+  // to choice values; an unknown value does not rule the assumption out.
+  assumeUnlessParts: z
+    .array(
+      z.object({
+        type: keySchema,
+        where: z.record(keySchema, z.array(z.string()).min(1)).optional(),
+      })
+    )
+    .min(1)
+    .optional(),
+  // Further assumed parts of the type with given choice values, when the
+  // context says so and no documented part of the type has those values:
+  // the sewer section under the slab of a house on a slab on ground. They
+  // come in addition to assumeUndocumented's plain part.
+  assumeVariants: z
+    .array(
+      z.object({
+        values: z.record(keySchema, z.string()),
+        whenContext: z.record(keySchema, z.array(z.string()).min(1)),
+      })
+    )
+    .min(1)
+    .optional(),
+  // Another attribute that gives the part's year when installation_year is
+  // missing: the attic's additional_insulation_year.
+  installationYearKey: keySchema.optional(),
+  // The first year the type was realistically installed in Swedish houses.
+  // A part without installation_year in an older house counts from this
+  // year, not the construction year: a 1979 house's charger is not from 1979.
+  earliestYear: z.number().int().min(1900).max(2100).optional(),
   // A building of its own on the plot, such as a garage: the parts under it
   // state their own quantities and neither take from nor count toward the
   // house's estimated quantities, and they do not stand in for a part the
@@ -278,6 +318,45 @@ export function validateLibrary(
             errors.push(
               `${t.type}: assumeUnless names ${key}=${value}, not a choice option`
             )
+    }
+    for (const variant of t.forecastDefaults?.assumeVariants ?? []) {
+      for (const [key, value] of Object.entries(variant.values)) {
+        const attr = t.attributeSchema[key]
+        if (attr?.datatype !== 'choice' || !(value in attr.options))
+          errors.push(
+            `${t.type}: assumeVariants names ${key}=${value}, not a choice option`
+          )
+      }
+      for (const [key, values] of Object.entries(variant.whenContext)) {
+        const from = context[key]
+        const attr = from ? byType.get(from)?.attributeSchema[key] : undefined
+        if (!attr)
+          errors.push(`${t.type}: assumeVariants ${key} is not context`)
+        else
+          for (const value of values)
+            if (attr.datatype !== 'choice' || !(value in attr.options))
+              errors.push(
+                `${t.type}: assumeVariants names ${key}=${value}, not a choice option`
+              )
+      }
+    }
+    for (const type of t.forecastDefaults?.assumeWhenTypes ?? [])
+      if (!byType.has(type))
+        errors.push(`${t.type}: assumeWhenTypes names unknown type ${type}`)
+    for (const part of t.forecastDefaults?.assumeUnlessParts ?? []) {
+      const other = byType.get(part.type)
+      if (!other) {
+        errors.push(`${t.type}: assumeUnlessParts names unknown type ${part.type}`)
+        continue
+      }
+      for (const [key, values] of Object.entries(part.where ?? {})) {
+        const attr = other.attributeSchema[key]
+        for (const value of values)
+          if (attr?.datatype !== 'choice' || !(value in attr.options))
+            errors.push(
+              `${t.type}: assumeUnlessParts names ${part.type}.${key}=${value}, not a choice option`
+            )
+      }
     }
   }
 

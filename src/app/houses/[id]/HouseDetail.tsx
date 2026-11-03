@@ -31,6 +31,7 @@ import CostSection from './CostSection'
 import DocumentsSection from './DocumentsSection'
 import DraftBanner from './DraftBanner'
 import LibraryUpdatesNote from './LibraryUpdatesNote'
+import WarningsNote from './WarningsNote'
 import {
   EditValueDialog,
   RetractDialog,
@@ -276,6 +277,7 @@ export default function HouseDetail({
 
       <DraftBanner houseId={h.id} drafts={h.drafts} preview={h.preview} />
       <LibraryUpdatesNote updates={h.libraryUpdates} />
+      <WarningsNote warnings={h.warnings} />
 
       <Box
         sx={{

@@ -647,7 +647,15 @@
     "one_of_several": "The house has {count} of these; while another one works, this one is less urgent",
     "scenarios_cross": "Low, typical and high are whole paths with their own replacement years, and a replacement resets the repainting, so this item’s range is not ordered; the house totals are",
     "ground_rent_revised": "The ground rent is revised in {year}; the same amount is kept after that but is uncertain",
-    "ground_rent_no_revision_year": "Revision year missing; the rent may be revised within the horizon, so it is uncertain throughout"
+    "ground_rent_no_revision_year": "Revision year missing; the rent may be revised within the horizon, so it is uncertain throughout",
+    "earliest_year_used": "Installation year missing; the type did not exist when the house was built, so it counts from {year}",
+    "partial_renovation": "Partly renovated in {year}; counted as half as old since then, since the frame, membrane or ducts were not renewed",
+    "profile_default_used": "{keys} unknown; the type’s default profile with its wide range is used",
+    "quantity_by_share": "{key} as share {share} of the house’s estimated whole",
+    "quantity_assumed": "{key} missing; a usual {value} is assumed",
+    "footprint_includes_secondary_area": "Footprint from living and secondary area over one floor more, since the house has a basement",
+    "looks_like_other_building": "By its name this part belongs to a garage or an outbuilding but sits at top level and takes a share of the house’s estimated area; register it under that building with its own area",
+    "finding_without_severity": "The inspection noted this part without a severity; counted as seen, but how serious it is is unknown"
   },
   "risk": {
     "title": "Risks",
@@ -893,5 +901,16 @@
     "RISK": "Risk",
     "DEFECT": "Defect",
     "SEVERE": "Serious defect"
+  },
+  "warning": {
+    "title": "{count, plural, one {# thing} other {# things}} to check in the data",
+    "bedroom_count_exceeds_rooms": "Bedroom count ({bedrooms}) leaves no other room of {rooms} rooms; one of them is likely wrong",
+    "conflicting_values": "{key} has values that differ by more than {percent} %: {values}; the current one is {current}",
+    "key_not_in_library": "{key} is not an attribute of {type} in the type library; the forecast does not read it",
+    "house_key_not_in_library": "{key} is not a known key on the house; the forecast does not read it",
+    "installation_year_without_evidence": "Installation year {year} comes from Claude without a document or a quote; confirm it or lower its confidence",
+    "installation_year_before_type": "Installation year {year} is before {earliest}, when the type first came into Swedish houses",
+    "separate_building_part_at_top_level": "{type} \"{name}\" sits at top level but by its name belongs to a garage or an outbuilding, so it takes a share of the house’s estimated area; move it under that building with its own area",
+    "building_without_parts": "{type} \"{name}\" has no roof under it; a building is priced through its parts, so it costs nothing in the forecast"
   }
 }

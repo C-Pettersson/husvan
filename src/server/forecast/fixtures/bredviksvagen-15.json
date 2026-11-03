@@ -1,0 +1,2608 @@
+{
+  "exportedAt": "2026-11-03T20:31:22.469Z",
+  "house": {
+    "id": "01a197a7-7764-75c3-b0f9-625b0db15389",
+    "address": "Bredviksvägen 15, 974 41 Luleå",
+    "propertyDesignation": "Bäckstranden 1",
+    "status": "CANDIDATE",
+    "municipality": {
+      "code": "2580",
+      "name": "Luleå"
+    },
+    "values": [
+      {
+        "key": "asking_price_sek",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b49632ed5f57",
+          "key": "asking_price_sek",
+          "value": 2995000,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Pris: 2 995 000 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "sale_status",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b4a4ddb2b079",
+          "key": "sale_status",
+          "value": "upcoming",
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.85,
+          "quote": "På förhand",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "house_type",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b4b3ab7b1da3",
+          "key": "house_type",
+          "value": "linked",
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.7,
+          "quote": "Byggnadstyp: Kedjehus 1plan med källare",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": [
+          {
+            "id": "01a197a9-1325-7680-a135-b4c690e27e96",
+            "key": "house_type",
+            "value": "detached",
+            "unit": null,
+            "source": "CLAUDE",
+            "confidence": 0.5,
+            "quote": "Byggnadstyp: Friliggande",
+            "documentId": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+            "recordedAt": "2026-11-01T15:10:02.533Z",
+            "draft": false
+          }
+        ]
+      },
+      {
+        "key": "tenure",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b4d6a3070d0f",
+          "key": "tenure",
+          "value": "freehold",
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Upplåtelseform: Friköpt",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "construction_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b4e60aeb2610",
+          "key": "construction_year",
+          "value": 1964,
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Byggår: 1964",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": [
+          {
+            "id": "01a197a9-1325-7680-a135-b4ff2a130108",
+            "key": "construction_year",
+            "value": 1964,
+            "unit": null,
+            "source": "CLAUDE",
+            "confidence": 0.95,
+            "quote": "Nybyggnadsår: 1964",
+            "documentId": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+            "recordedAt": "2026-11-01T15:10:02.533Z",
+            "draft": false
+          }
+        ]
+      },
+      {
+        "key": "living_area",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b50c488552fc",
+          "key": "living_area",
+          "value": 94,
+          "unit": "m2",
+          "source": "CLAUDE",
+          "confidence": 0.85,
+          "quote": "Boarea: 94 kvm*",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "secondary_area",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b518c7574ad4",
+          "key": "secondary_area",
+          "value": 90,
+          "unit": "m2",
+          "source": "CLAUDE",
+          "confidence": 0.85,
+          "quote": "Biarea: 90 kvm",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "plot_area",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b52f362c361d",
+          "key": "plot_area",
+          "value": 768,
+          "unit": "m2",
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Tomtarea: 768 kvm",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "room_count",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b53834a1fd0f",
+          "key": "room_count",
+          "value": 4,
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Rum: 4",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "bedroom_count",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b54788c4d60e",
+          "key": "bedroom_count",
+          "value": 2,
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.9,
+          "quote": "Antal sovrum: 2",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "floor_count",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b5553c78f682",
+          "key": "floor_count",
+          "value": 1,
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.8,
+          "quote": "Byggnadstyp: Kedjehus 1plan med källare",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "ventilation_type",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b56bc027590b",
+          "key": "ventilation_type",
+          "value": "natural_draft",
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.75,
+          "quote": "Typ av ventilationssystem: Självdrag",
+          "documentId": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "energy_class",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b575da9d1142",
+          "key": "energy_class",
+          "value": "D",
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Energiklass: D",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "energy_performance_kwh_per_m2",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b587d51d10f0",
+          "key": "energy_performance_kwh_per_m2",
+          "value": 113,
+          "unit": "kWh/m2",
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Energiprestanda, primärenergital: 113 kWh/m² och år",
+          "documentId": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "energy_declaration_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b59a140aab40",
+          "key": "energy_declaration_year",
+          "value": 2020,
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Datum för godkännande: 2020-01-21",
+          "documentId": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "heating_kwh_per_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b5a46eaafe94",
+          "key": "heating_kwh_per_year",
+          "value": 21204,
+          "unit": "kWh",
+          "source": "CLAUDE",
+          "confidence": 0.7,
+          "quote": "Fjärrvärme (1): uppvärmning 21204 kWh, tappvarmvatten 3600 kWh",
+          "documentId": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "operating_cost_sek_per_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b5b5869bfe1e",
+          "key": "operating_cost_sek_per_year",
+          "value": 48068,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.85,
+          "quote": "Summa: 48 068 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "heating_cost_sek_per_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b5c2719d37d9",
+          "key": "heating_cost_sek_per_year",
+          "value": 16502,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.85,
+          "quote": "Värme: 16 502 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "household_electricity_cost_sek_per_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b5da17b75b33",
+          "key": "household_electricity_cost_sek_per_year",
+          "value": 15520,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.85,
+          "quote": "Hushållsström: 15 520 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "water_sewage_cost_sek_per_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b5ebd7863575",
+          "key": "water_sewage_cost_sek_per_year",
+          "value": 12602,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.85,
+          "quote": "Vatten/Avlopp: 12 602 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "waste_cost_sek_per_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b5f6758f286b",
+          "key": "waste_cost_sek_per_year",
+          "value": 3444,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.85,
+          "quote": "Renhållning: 3 444 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "assessed_value_sek",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b60fe166d3c2",
+          "key": "assessed_value_sek",
+          "value": 1809000,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Taxeringsvärde: 1 809 000 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "assessed_building_value_sek",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b6187c83da53",
+          "key": "assessed_building_value_sek",
+          "value": 1214000,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Byggnadsvärde: 1 214 000 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "assessment_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b62cb82b36e3",
+          "key": "assessment_year",
+          "value": 2024,
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.95,
+          "quote": "Fastställt: 2024",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "property_fee_sek_per_year",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b63e439d2292",
+          "key": "property_fee_sek_per_year",
+          "value": 10425,
+          "unit": "SEK",
+          "source": "CLAUDE",
+          "confidence": 0.9,
+          "quote": "Fastighetsskatt/Avgift: 10 425 kr",
+          "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      },
+      {
+        "key": "radon_measured",
+        "current": {
+          "id": "01a197a9-1325-7680-a135-b640abbb2d73",
+          "key": "radon_measured",
+          "value": false,
+          "unit": null,
+          "source": "CLAUDE",
+          "confidence": 0.9,
+          "quote": "Är radonhalten mätt? Nej",
+          "documentId": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+          "recordedAt": "2026-11-01T15:10:02.533Z",
+          "draft": false
+        },
+        "alternatives": []
+      }
+    ],
+    "components": [
+      {
+        "id": "01a197a9-130b-7870-9ec5-b757678d4be6",
+        "type": "foundation",
+        "name": "Källare",
+        "draft": false,
+        "values": [
+          {
+            "key": "foundation_type",
+            "current": {
+              "id": "01a197a9-1325-7680-a135-b656e53f0b60",
+              "key": "foundation_type",
+              "value": "basement",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.95,
+              "quote": "Grund: Källare",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": [
+          {
+            "id": "01a197a9-130d-76f2-934c-7c7e077efbc2",
+            "type": "drainage",
+            "name": "Dränering, omdränerad 2021",
+            "draft": false,
+            "values": [
+              {
+                "key": "installation_year",
+                "current": {
+                  "id": "01a197a9-1325-7680-a135-b66d709d0484",
+                  "key": "installation_year",
+                  "value": 2021,
+                  "unit": null,
+                  "source": "CLAUDE",
+                  "confidence": 0.85,
+                  "quote": null,
+                  "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+                  "recordedAt": "2026-11-01T15:10:02.533Z",
+                  "draft": false
+                },
+                "alternatives": []
+              },
+              {
+                "key": "installer",
+                "current": {
+                  "id": "01a197a9-1325-7680-a135-b674441c9d40",
+                  "key": "installer",
+                  "value": "BD gräv",
+                  "unit": null,
+                  "source": "CLAUDE",
+                  "confidence": 0.8,
+                  "quote": null,
+                  "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+                  "recordedAt": "2026-11-01T15:10:02.533Z",
+                  "draft": false
+                },
+                "alternatives": []
+              }
+            ],
+            "children": []
+          },
+          {
+            "id": "01a197a9-130e-7e52-a276-e4a894e34a04",
+            "type": "foundation_waterproofing",
+            "name": "Fuktskydd Isodrän",
+            "draft": false,
+            "values": [
+              {
+                "key": "installation_year",
+                "current": {
+                  "id": "01a197a9-1325-7680-a135-b680e61aedd5",
+                  "key": "installation_year",
+                  "value": 2021,
+                  "unit": null,
+                  "source": "CLAUDE",
+                  "confidence": 0.85,
+                  "quote": null,
+                  "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+                  "recordedAt": "2026-11-01T15:10:02.533Z",
+                  "draft": false
+                },
+                "alternatives": []
+              },
+              {
+                "key": "installer",
+                "current": {
+                  "id": "01a197a9-1325-7680-a135-b69509a6fce6",
+                  "key": "installer",
+                  "value": "BD gräv",
+                  "unit": null,
+                  "source": "CLAUDE",
+                  "confidence": 0.8,
+                  "quote": null,
+                  "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+                  "recordedAt": "2026-11-01T15:10:02.533Z",
+                  "draft": false
+                },
+                "alternatives": []
+              }
+            ],
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "01a197a9-130f-7f82-8171-ddc5b57aa4b4",
+        "type": "roof_covering",
+        "name": "Plåttak, bostadshus",
+        "draft": false,
+        "values": [
+          {
+            "key": "material",
+            "current": {
+              "id": "01a197a9-1325-7680-a135-b6a686d60518",
+              "key": "material",
+              "value": "sheet_metal",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.9,
+              "quote": "Takbeklädnad: Plåt",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          },
+          {
+            "key": "installation_year",
+            "current": {
+              "id": "01a197a9-1325-7680-a135-b6b5e0890a0b",
+              "key": "installation_year",
+              "value": 2011,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.8,
+              "quote": "2011- Byttes yttertak på hus och garage.",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-1310-70d2-8170-3ca5be0f058d",
+        "type": "roof_covering",
+        "name": "Papptak, garage",
+        "draft": false,
+        "values": [
+          {
+            "key": "material",
+            "current": {
+              "id": "01a197a9-1325-7680-a135-b6c3ef0fec33",
+              "key": "material",
+              "value": "roofing_felt",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.85,
+              "quote": null,
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          },
+          {
+            "key": "installation_year",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6b74bbc54c1b",
+              "key": "installation_year",
+              "value": 2020,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.85,
+              "quote": null,
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          },
+          {
+            "key": "installer",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6b86402fad3c",
+              "key": "installer",
+              "value": "Svenska papptak",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.8,
+              "quote": null,
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-1311-7492-93ad-d569be30a446",
+        "type": "facade",
+        "name": "Träpanel, ommålad 2024",
+        "draft": false,
+        "values": [
+          {
+            "key": "material",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6b900cb0daab",
+              "key": "material",
+              "value": "wood_panel",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.9,
+              "quote": "Fasad: Trä",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          },
+          {
+            "key": "last_painted_year",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6baddeb1b4f6",
+              "key": "last_painted_year",
+              "value": 2024,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.9,
+              "quote": "2024 - Ommålning av fasadpanel",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          },
+          {
+            "key": "installation_year",
+            "current": {
+              "id": "01a1994b-16df-74f1-b49b-d9fd251a56ad",
+              "key": "installation_year",
+              "value": 1964,
+              "unit": null,
+              "source": "USER",
+              "confidence": 0.7,
+              "quote": null,
+              "documentId": null,
+              "recordedAt": "2026-11-01T22:46:37.536Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-1312-7750-b318-0a8c2c548b88",
+        "type": "window",
+        "name": "Fönster, treglas",
+        "draft": false,
+        "values": [
+          {
+            "key": "glazing",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6bbb3b8fbb42",
+              "key": "glazing",
+              "value": "triple",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.85,
+              "quote": "Fönster: 3-glasfönster samt enstaka 1+1",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-1313-77c2-80eb-34d63e0f300a",
+        "type": "window",
+        "name": "Fönster, enstaka 1+1",
+        "draft": false,
+        "values": [
+          {
+            "key": "glazing",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6bc0e95b59a6",
+              "key": "glazing",
+              "value": "double",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.7,
+              "quote": "Fönster: 3-glasfönster samt enstaka 1+1",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-1315-7bd1-9e8d-7c10e05b5af4",
+        "type": "district_heating_substation",
+        "name": "Fjärrvärmecentral",
+        "draft": false,
+        "values": [],
+        "children": []
+      },
+      {
+        "id": "01a197a9-1316-75a2-a045-dedc5890b7a7",
+        "type": "underfloor_heating",
+        "name": "Elgolvvärme, entréhall (utbyggd 2022)",
+        "draft": false,
+        "values": [
+          {
+            "key": "medium",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6bd95b895f64",
+              "key": "medium",
+              "value": "electric",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.85,
+              "quote": null,
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          },
+          {
+            "key": "installation_year",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6bee1f91dff1",
+              "key": "installation_year",
+              "value": 2022,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.85,
+              "quote": null,
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          },
+          {
+            "key": "installer",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6bf8d3acd76a",
+              "key": "installer",
+              "value": "Epic bygg",
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.8,
+              "quote": null,
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-1318-7382-be55-91ffb899db69",
+        "type": "bathroom",
+        "name": "Badrum, entréplan (dusch/wc)",
+        "draft": false,
+        "values": [
+          {
+            "key": "installation_year",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6c0d336c9250",
+              "key": "installation_year",
+              "value": 2011,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.85,
+              "quote": "2011- Renoverades dusch/wc på entréplan.",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": [
+          {
+            "id": "01a197a9-1318-7382-be55-9219f528aea9",
+            "type": "underfloor_heating",
+            "name": "Golvvärme, badrum entréplan",
+            "draft": false,
+            "values": [],
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "01a197a9-1319-7fa3-9e76-bd1ceaab4672",
+        "type": "bathroom",
+        "name": "Dusch, källare",
+        "draft": false,
+        "values": [
+          {
+            "key": "installation_year",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6c1ed0985013",
+              "key": "installation_year",
+              "value": 2005,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.8,
+              "quote": "2005- Renoverades dusch och bastu i källaren.",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-131a-77b3-85e2-e40ddc3b8a9d",
+        "type": "sauna",
+        "name": "Bastu, källare",
+        "draft": false,
+        "values": [
+          {
+            "key": "installation_year",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6c2e8ba7b3b2",
+              "key": "installation_year",
+              "value": 2005,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.8,
+              "quote": "2005- Renoverades dusch och bastu i källaren.",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-131b-73c3-9f6c-e3c96d796d23",
+        "type": "kitchen",
+        "name": "Arbetskök med matplats",
+        "draft": false,
+        "values": [],
+        "children": []
+      },
+      {
+        "id": "01a197a9-131c-7040-9d17-f07aff60cff0",
+        "type": "garage",
+        "name": "Vidbyggt garage med carport",
+        "draft": false,
+        "values": [
+          {
+            "key": "attached",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6c3e95499200",
+              "key": "attached",
+              "value": true,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.9,
+              "quote": "Övriga byggnader/utrymmen: Vidbyggt garage med carport framför.",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-131d-74d3-8316-8f5939bd197e",
+        "type": "deck",
+        "name": "Altan, baksidan",
+        "draft": false,
+        "values": [
+          {
+            "key": "installation_year",
+            "current": {
+              "id": "01a197a9-1326-7ac0-bfb7-6c411a12bddc",
+              "key": "installation_year",
+              "value": 2024,
+              "unit": null,
+              "source": "CLAUDE",
+              "confidence": 0.9,
+              "quote": "2024 -Ny altan på baksidan",
+              "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+              "recordedAt": "2026-11-01T15:10:02.533Z",
+              "draft": false
+            },
+            "alternatives": []
+          }
+        ],
+        "children": []
+      },
+      {
+        "id": "01a197a9-131e-7663-8a9f-7ca8c581373c",
+        "type": "electrical_installation",
+        "name": null,
+        "draft": false,
+        "values": [],
+        "children": [
+          {
+            "id": "01a197a9-1321-7592-a16a-faf8a995dff4",
+            "type": "electrical_panel",
+            "name": null,
+            "draft": false,
+            "values": [
+              {
+                "key": "main_fuse_a",
+                "current": {
+                  "id": "01a197a9-1326-7ac0-bfb7-6c5841ac6abd",
+                  "key": "main_fuse_a",
+                  "value": 16,
+                  "unit": "A",
+                  "source": "CLAUDE",
+                  "confidence": 0.6,
+                  "quote": null,
+                  "documentId": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+                  "recordedAt": "2026-11-01T15:10:02.533Z",
+                  "draft": false
+                },
+                "alternatives": []
+              }
+            ],
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "01a197a9-1322-7342-ab8f-d418e384cd0e",
+        "type": "water_pipes",
+        "name": null,
+        "draft": false,
+        "values": [],
+        "children": []
+      },
+      {
+        "id": "01a197a9-1323-7be0-8b08-13f1a1769312",
+        "type": "sewer_pipes",
+        "name": "Avlopp, kommunalt (material okänt)",
+        "draft": false,
+        "values": [],
+        "children": []
+      }
+    ],
+    "types": {
+      "foundation_waterproofing": {
+        "label": {
+          "en": "Foundation waterproofing",
+          "sv": "Fuktskydd av grund"
+        },
+        "category": "envelope",
+        "attributeSchema": {
+          "area": {
+            "min": 0,
+            "unit": "m2",
+            "label": {
+              "en": "Area",
+              "sv": "Yta"
+            },
+            "datatype": "number"
+          },
+          "length": {
+            "min": 0,
+            "unit": "m",
+            "label": {
+              "en": "Length",
+              "sv": "Längd"
+            },
+            "datatype": "number"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "district_heating_substation": {
+        "label": {
+          "en": "District heating substation",
+          "sv": "Fjärrvärmecentral"
+        },
+        "category": "heating",
+        "attributeSchema": {
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "model_name": {
+            "label": {
+              "en": "Model name",
+              "sv": "Modellnamn"
+            },
+            "datatype": "text"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "sauna": {
+        "label": {
+          "en": "Sauna",
+          "sv": "Bastu"
+        },
+        "category": "feature",
+        "attributeSchema": {
+          "heating": {
+            "label": {
+              "en": "Heater",
+              "sv": "Aggregat"
+            },
+            "options": {
+              "wood": {
+                "en": "Wood",
+                "sv": "Ved"
+              },
+              "electric": {
+                "en": "Electric",
+                "sv": "El"
+              }
+            },
+            "datatype": "choice"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "water_pipes": {
+        "label": {
+          "en": "Water pipes",
+          "sv": "Vattenledningar"
+        },
+        "category": "plumbing",
+        "attributeSchema": {
+          "material": {
+            "label": {
+              "en": "Material",
+              "sv": "Material"
+            },
+            "options": {
+              "pex": {
+                "en": "PEX",
+                "sv": "PEX"
+              },
+              "copper": {
+                "en": "Copper",
+                "sv": "Koppar"
+              },
+              "composite": {
+                "en": "Composite",
+                "sv": "Komposit"
+              },
+              "galvanized_steel": {
+                "en": "Galvanized steel",
+                "sv": "Galvaniserat stål"
+              }
+            },
+            "datatype": "choice"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "inspected_year": {
+            "label": {
+              "en": "Last inspected",
+              "sv": "Senast besiktigat"
+            },
+            "datatype": "year"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "kitchen": {
+        "label": {
+          "en": "Kitchen",
+          "sv": "Kök"
+        },
+        "category": "interior",
+        "attributeSchema": {
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "model_name": {
+            "label": {
+              "en": "Model name",
+              "sv": "Modellnamn"
+            },
+            "datatype": "text"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "bathroom": {
+        "label": {
+          "en": "Bathroom",
+          "sv": "Badrum"
+        },
+        "category": "interior",
+        "attributeSchema": {
+          "area": {
+            "min": 0,
+            "unit": "m2",
+            "label": {
+              "en": "Area",
+              "sv": "Yta"
+            },
+            "datatype": "number"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          },
+          "wet_room_certified": {
+            "label": {
+              "en": "Wet room certificate",
+              "sv": "Våtrumsintyg"
+            },
+            "datatype": "boolean"
+          }
+        }
+      },
+      "garage": {
+        "label": {
+          "en": "Garage",
+          "sv": "Garage"
+        },
+        "category": "feature",
+        "attributeSchema": {
+          "area": {
+            "min": 0,
+            "unit": "m2",
+            "label": {
+              "en": "Area",
+              "sv": "Yta"
+            },
+            "datatype": "number"
+          },
+          "attached": {
+            "label": {
+              "en": "Attached to the house",
+              "sv": "Sammanbyggt med huset"
+            },
+            "datatype": "boolean"
+          },
+          "capacity": {
+            "min": 1,
+            "label": {
+              "en": "Parking spaces",
+              "sv": "Bilplatser"
+            },
+            "datatype": "number"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "electrical_installation": {
+        "label": {
+          "en": "Electrical installation",
+          "sv": "Elinstallation"
+        },
+        "category": "electrical",
+        "attributeSchema": {
+          "wiring": {
+            "label": {
+              "en": "Wiring",
+              "sv": "Ledningar"
+            },
+            "options": {
+              "grounded": {
+                "en": "Grounded",
+                "sv": "Jordat"
+              },
+              "two_wire": {
+                "en": "Ungrounded two-wire",
+                "sv": "Ojordat tvåledarsystem"
+              },
+              "cloth_insulated": {
+                "en": "Cloth insulated",
+                "sv": "Tygisolerade"
+              }
+            },
+            "datatype": "choice"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "inspected_year": {
+            "label": {
+              "en": "Last inspected",
+              "sv": "Senast besiktigat"
+            },
+            "datatype": "year"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "deck": {
+        "label": {
+          "en": "Deck",
+          "sv": "Altan"
+        },
+        "category": "feature",
+        "attributeSchema": {
+          "area": {
+            "min": 0,
+            "unit": "m2",
+            "label": {
+              "en": "Area",
+              "sv": "Yta"
+            },
+            "datatype": "number"
+          },
+          "glazing": {
+            "label": {
+              "en": "Glazing",
+              "sv": "Inglasning"
+            },
+            "options": {
+              "open": {
+                "en": "Open",
+                "sv": "Öppen"
+              },
+              "glazed": {
+                "en": "Glazed",
+                "sv": "Inglasad"
+              }
+            },
+            "datatype": "choice"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "orientation": {
+            "label": {
+              "en": "Orientation",
+              "sv": "Väderstreck"
+            },
+            "options": {
+              "east": {
+                "en": "East",
+                "sv": "Öster"
+              },
+              "west": {
+                "en": "West",
+                "sv": "Väster"
+              },
+              "north": {
+                "en": "North",
+                "sv": "Norr"
+              },
+              "south": {
+                "en": "South",
+                "sv": "Söder"
+              },
+              "north_east": {
+                "en": "North-east",
+                "sv": "Nordost"
+              },
+              "north_west": {
+                "en": "North-west",
+                "sv": "Nordväst"
+              },
+              "south_east": {
+                "en": "South-east",
+                "sv": "Sydost"
+              },
+              "south_west": {
+                "en": "South-west",
+                "sv": "Sydväst"
+              }
+            },
+            "datatype": "choice"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "window": {
+        "label": {
+          "en": "Window",
+          "sv": "Fönster"
+        },
+        "category": "envelope",
+        "attributeSchema": {
+          "glazing": {
+            "label": {
+              "en": "Glazing",
+              "sv": "Glas"
+            },
+            "options": {
+              "double": {
+                "en": "Double glazing",
+                "sv": "Tvåglas"
+              },
+              "single": {
+                "en": "Single glazing",
+                "sv": "Enkelglas"
+              },
+              "triple": {
+                "en": "Triple glazing",
+                "sv": "Treglas"
+              }
+            },
+            "datatype": "choice"
+          },
+          "u_value": {
+            "min": 0,
+            "unit": "W/m2K",
+            "label": {
+              "en": "U-value",
+              "sv": "U-värde"
+            },
+            "datatype": "number"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "quantity": {
+            "min": 1,
+            "label": {
+              "en": "Quantity",
+              "sv": "Antal"
+            },
+            "datatype": "number"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "model_name": {
+            "label": {
+              "en": "Model name",
+              "sv": "Modellnamn"
+            },
+            "datatype": "text"
+          },
+          "paint_type": {
+            "label": {
+              "en": "Paint type",
+              "sv": "Färgtyp"
+            },
+            "options": {
+              "stain": {
+                "en": "Stain",
+                "sv": "Lasyr"
+              },
+              "acrylic": {
+                "en": "Acrylic or latex paint",
+                "sv": "Akrylat- eller latexfärg"
+              },
+              "alkyd_oil": {
+                "en": "Alkyd oil paint",
+                "sv": "Alkydoljefärg"
+              },
+              "linseed_oil": {
+                "en": "Linseed oil paint",
+                "sv": "Linoljefärg"
+              },
+              "slurry_paint": {
+                "en": "Slurry paint, e.g. Falu red",
+                "sv": "Slamfärg, t.ex. Falu Rödfärg"
+              }
+            },
+            "datatype": "choice"
+          },
+          "painted_by": {
+            "label": {
+              "en": "Painted by",
+              "sv": "Målad av"
+            },
+            "datatype": "actor"
+          },
+          "orientation": {
+            "label": {
+              "en": "Orientation",
+              "sv": "Väderstreck"
+            },
+            "options": {
+              "east": {
+                "en": "East",
+                "sv": "Öster"
+              },
+              "west": {
+                "en": "West",
+                "sv": "Väster"
+              },
+              "north": {
+                "en": "North",
+                "sv": "Norr"
+              },
+              "south": {
+                "en": "South",
+                "sv": "Söder"
+              },
+              "north_east": {
+                "en": "North-east",
+                "sv": "Nordost"
+              },
+              "north_west": {
+                "en": "North-west",
+                "sv": "Nordväst"
+              },
+              "south_east": {
+                "en": "South-east",
+                "sv": "Sydost"
+              },
+              "south_west": {
+                "en": "South-west",
+                "sv": "Sydväst"
+              }
+            },
+            "datatype": "choice"
+          },
+          "paint_colour": {
+            "label": {
+              "en": "Colour",
+              "sv": "Kulör"
+            },
+            "datatype": "text",
+            "description": {
+              "en": "Colour code or name, e.g. NCS S 0502-Y",
+              "sv": "Kulörkod eller namn, t.ex. NCS S 0502-Y"
+            }
+          },
+          "paint_product": {
+            "label": {
+              "en": "Paint product",
+              "sv": "Färgprodukt"
+            },
+            "datatype": "text",
+            "description": {
+              "en": "Maker and product, e.g. Alcro Bestå Utsikt",
+              "sv": "Tillverkare och produkt, t.ex. Alcro Bestå Utsikt"
+            }
+          },
+          "frame_material": {
+            "label": {
+              "en": "Frame material",
+              "sv": "Karmmaterial"
+            },
+            "options": {
+              "pvc": {
+                "en": "PVC",
+                "sv": "PVC"
+              },
+              "wood": {
+                "en": "Wood",
+                "sv": "Trä"
+              },
+              "aluminium": {
+                "en": "Aluminium",
+                "sv": "Aluminium"
+              },
+              "wood_aluminium": {
+                "en": "Wood and aluminium",
+                "sv": "Trä och aluminium"
+              }
+            },
+            "datatype": "choice"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          },
+          "last_painted_year": {
+            "label": {
+              "en": "Last painted",
+              "sv": "Senast målad"
+            },
+            "datatype": "year",
+            "description": {
+              "en": "Year the surface was last repainted, for painted wood",
+              "sv": "Året ytan senast målades om, för målat trä"
+            }
+          }
+        }
+      },
+      "electrical_panel": {
+        "label": {
+          "en": "Electrical panel",
+          "sv": "Elcentral"
+        },
+        "category": "electrical",
+        "attributeSchema": {
+          "rcd": {
+            "label": {
+              "en": "Residual current device",
+              "sv": "Jordfelsbrytare"
+            },
+            "datatype": "boolean"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "panel_type": {
+            "label": {
+              "en": "Type",
+              "sv": "Typ"
+            },
+            "options": {
+              "fuses": {
+                "en": "Fuses",
+                "sv": "Proppskåp"
+              },
+              "circuit_breakers": {
+                "en": "Circuit breakers",
+                "sv": "Automatsäkringar"
+              }
+            },
+            "datatype": "choice"
+          },
+          "main_fuse_a": {
+            "min": 0,
+            "unit": "A",
+            "label": {
+              "en": "Main fuse",
+              "sv": "Huvudsäkring"
+            },
+            "datatype": "number"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "foundation": {
+        "label": {
+          "en": "Foundation",
+          "sv": "Grund"
+        },
+        "category": "envelope",
+        "attributeSchema": {
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "foundation_type": {
+            "label": {
+              "en": "Foundation type",
+              "sv": "Grundtyp"
+            },
+            "options": {
+              "plinth": {
+                "en": "Plinth foundation",
+                "sv": "Plintgrund"
+              },
+              "basement": {
+                "en": "Basement",
+                "sv": "Källare"
+              },
+              "crawl_space": {
+                "en": "Crawl space",
+                "sv": "Krypgrund"
+              },
+              "slab_on_ground": {
+                "en": "Slab on ground",
+                "sv": "Platta på mark"
+              },
+              "stone_foundation": {
+                "en": "Stone foundation",
+                "sv": "Torpargrund"
+              }
+            },
+            "datatype": "choice"
+          },
+          "slab_insulation": {
+            "label": {
+              "en": "Slab insulation",
+              "sv": "Isolering av plattan"
+            },
+            "options": {
+              "above": {
+                "en": "Above the slab",
+                "sv": "Ovanpå plattan"
+              },
+              "below": {
+                "en": "Below the slab",
+                "sv": "Under plattan"
+              }
+            },
+            "datatype": "choice"
+          },
+          "crawl_space_ventilation": {
+            "label": {
+              "en": "Crawl space ventilation",
+              "sv": "Ventilation av krypgrunden"
+            },
+            "options": {
+              "outdoor_air": {
+                "en": "Ventilated with outdoor air",
+                "sv": "Uteluftsventilerad"
+              },
+              "dehumidified": {
+                "en": "Dehumidified",
+                "sv": "Avfuktad"
+              }
+            },
+            "datatype": "choice"
+          },
+          "basement_wall_insulation": {
+            "label": {
+              "en": "Basement wall insulation",
+              "sv": "Isolering av källarväggar"
+            },
+            "options": {
+              "exterior": {
+                "en": "Exterior",
+                "sv": "Utvändig"
+              },
+              "interior": {
+                "en": "Interior",
+                "sv": "Invändig"
+              }
+            },
+            "datatype": "choice"
+          }
+        }
+      },
+      "drainage": {
+        "label": {
+          "en": "Drainage",
+          "sv": "Dränering"
+        },
+        "category": "envelope",
+        "attributeSchema": {
+          "length": {
+            "min": 0,
+            "unit": "m",
+            "label": {
+              "en": "Length",
+              "sv": "Längd"
+            },
+            "datatype": "number"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "inspected_year": {
+            "label": {
+              "en": "Last inspected",
+              "sv": "Senast besiktigat"
+            },
+            "datatype": "year"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "sewer_pipes": {
+        "label": {
+          "en": "Sewer pipes",
+          "sv": "Avloppsledningar"
+        },
+        "category": "plumbing",
+        "attributeSchema": {
+          "length": {
+            "min": 0,
+            "unit": "m",
+            "label": {
+              "en": "Length",
+              "sv": "Längd"
+            },
+            "datatype": "number"
+          },
+          "section": {
+            "label": {
+              "en": "Section",
+              "sv": "Sträcka"
+            },
+            "options": {
+              "ground": {
+                "en": "In the ground to the connection point or the private sewage system",
+                "sv": "I mark till förbindelsepunkten eller det enskilda avloppet"
+              },
+              "indoor": {
+                "en": "Indoor",
+                "sv": "Inomhus"
+              },
+              "under_slab": {
+                "en": "Under the slab",
+                "sv": "Under grundplattan"
+              }
+            },
+            "datatype": "choice"
+          },
+          "material": {
+            "label": {
+              "en": "Material",
+              "sv": "Material"
+            },
+            "options": {
+              "clay": {
+                "en": "Clay",
+                "sv": "Lera"
+              },
+              "plastic": {
+                "en": "Plastic",
+                "sv": "Plast"
+              },
+              "concrete": {
+                "en": "Concrete",
+                "sv": "Betong"
+              },
+              "cast_iron": {
+                "en": "Cast iron",
+                "sv": "Gjutjärn"
+              },
+              "early_plastic": {
+                "en": "Early plastic (about 1960–1975)",
+                "sv": "Tidig plast (cirka 1960–1975)"
+              }
+            },
+            "datatype": "choice"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "inspected_year": {
+            "label": {
+              "en": "Last inspected",
+              "sv": "Senast besiktigat"
+            },
+            "datatype": "year"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          },
+          "renovation_method": {
+            "label": {
+              "en": "Renovation method",
+              "sv": "Renoveringsmetod"
+            },
+            "options": {
+              "relined": {
+                "en": "Relined",
+                "sv": "Relinat"
+              },
+              "replaced": {
+                "en": "Replaced",
+                "sv": "Bytt"
+              }
+            },
+            "datatype": "choice"
+          }
+        }
+      },
+      "facade": {
+        "label": {
+          "en": "Facade",
+          "sv": "Fasad"
+        },
+        "category": "envelope",
+        "attributeSchema": {
+          "area": {
+            "min": 0,
+            "unit": "m2",
+            "label": {
+              "en": "Area",
+              "sv": "Yta"
+            },
+            "datatype": "number"
+          },
+          "material": {
+            "label": {
+              "en": "Material",
+              "sv": "Material"
+            },
+            "options": {
+              "brick": {
+                "en": "Brick",
+                "sv": "Tegel"
+              },
+              "render": {
+                "en": "Render",
+                "sv": "Puts"
+              },
+              "wood_panel": {
+                "en": "Wood panel",
+                "sv": "Träpanel"
+              },
+              "sheet_metal": {
+                "en": "Sheet metal",
+                "sv": "Plåt"
+              },
+              "fibre_cement": {
+                "en": "Fibre cement",
+                "sv": "Fibercement"
+              }
+            },
+            "datatype": "choice"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "model_name": {
+            "label": {
+              "en": "Model name",
+              "sv": "Modellnamn"
+            },
+            "datatype": "text"
+          },
+          "paint_type": {
+            "label": {
+              "en": "Paint type",
+              "sv": "Färgtyp"
+            },
+            "options": {
+              "stain": {
+                "en": "Stain",
+                "sv": "Lasyr"
+              },
+              "acrylic": {
+                "en": "Acrylic or latex paint",
+                "sv": "Akrylat- eller latexfärg"
+              },
+              "alkyd_oil": {
+                "en": "Alkyd oil paint",
+                "sv": "Alkydoljefärg"
+              },
+              "linseed_oil": {
+                "en": "Linseed oil paint",
+                "sv": "Linoljefärg"
+              },
+              "slurry_paint": {
+                "en": "Slurry paint, e.g. Falu red",
+                "sv": "Slamfärg, t.ex. Falu Rödfärg"
+              }
+            },
+            "datatype": "choice"
+          },
+          "painted_by": {
+            "label": {
+              "en": "Painted by",
+              "sv": "Målad av"
+            },
+            "datatype": "actor"
+          },
+          "paint_colour": {
+            "label": {
+              "en": "Colour",
+              "sv": "Kulör"
+            },
+            "datatype": "text",
+            "description": {
+              "en": "Colour code or name, e.g. NCS S 0502-Y",
+              "sv": "Kulörkod eller namn, t.ex. NCS S 0502-Y"
+            }
+          },
+          "paint_product": {
+            "label": {
+              "en": "Paint product",
+              "sv": "Färgprodukt"
+            },
+            "datatype": "text",
+            "description": {
+              "en": "Maker and product, e.g. Alcro Bestå Utsikt",
+              "sv": "Tillverkare och produkt, t.ex. Alcro Bestå Utsikt"
+            }
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          },
+          "last_painted_year": {
+            "label": {
+              "en": "Last painted",
+              "sv": "Senast målad"
+            },
+            "datatype": "year",
+            "description": {
+              "en": "Year the surface was last repainted, for painted wood",
+              "sv": "Året ytan senast målades om, för målat trä"
+            }
+          }
+        }
+      },
+      "roof_covering": {
+        "label": {
+          "en": "Roof covering",
+          "sv": "Taktäckning"
+        },
+        "category": "envelope",
+        "attributeSchema": {
+          "area": {
+            "min": 0,
+            "unit": "m2",
+            "label": {
+              "en": "Area",
+              "sv": "Yta"
+            },
+            "datatype": "number"
+          },
+          "material": {
+            "label": {
+              "en": "Material",
+              "sv": "Material"
+            },
+            "options": {
+              "clay_tile": {
+                "en": "Clay tiles",
+                "sv": "Tegelpannor"
+              },
+              "sheet_metal": {
+                "en": "Sheet metal",
+                "sv": "Plåt"
+              },
+              "roofing_felt": {
+                "en": "Roofing felt",
+                "sv": "Papp"
+              },
+              "concrete_tile": {
+                "en": "Concrete tiles",
+                "sv": "Betongpannor"
+              },
+              "asphalt_shingle": {
+                "en": "Asphalt shingles",
+                "sv": "Shingel"
+              }
+            },
+            "datatype": "choice"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "model_name": {
+            "label": {
+              "en": "Model name",
+              "sv": "Modellnamn"
+            },
+            "datatype": "text"
+          },
+          "sheet_profile": {
+            "label": {
+              "en": "Sheet profile",
+              "sv": "Plåtprofil"
+            },
+            "options": {
+              "profiled": {
+                "en": "Profiled",
+                "sv": "Profilerad"
+              },
+              "standing_seam": {
+                "en": "Standing seam",
+                "sv": "Bandtäckt"
+              }
+            },
+            "datatype": "choice"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      },
+      "underfloor_heating": {
+        "label": {
+          "en": "Underfloor heating",
+          "sv": "Golvvärme"
+        },
+        "category": "heating",
+        "attributeSchema": {
+          "area": {
+            "min": 0,
+            "unit": "m2",
+            "label": {
+              "en": "Area",
+              "sv": "Yta"
+            },
+            "datatype": "number"
+          },
+          "medium": {
+            "label": {
+              "en": "Electric or water",
+              "sv": "El eller vatten"
+            },
+            "options": {
+              "water": {
+                "en": "Water",
+                "sv": "Vatten"
+              },
+              "electric": {
+                "en": "Electric",
+                "sv": "El"
+              }
+            },
+            "datatype": "choice"
+          },
+          "purchase": {
+            "label": {
+              "en": "Purchase or invoice",
+              "sv": "Inköp eller faktura"
+            },
+            "datatype": "document"
+          },
+          "condition": {
+            "max": 5,
+            "min": 1,
+            "label": {
+              "en": "Condition",
+              "sv": "Skick"
+            },
+            "datatype": "number",
+            "description": {
+              "en": "1 to 5, where 5 is new",
+              "sv": "1 till 5, där 5 är nytt"
+            }
+          },
+          "installer": {
+            "label": {
+              "en": "Installer",
+              "sv": "Installatör"
+            },
+            "datatype": "actor"
+          },
+          "model_name": {
+            "label": {
+              "en": "Model name",
+              "sv": "Modellnamn"
+            },
+            "datatype": "text"
+          },
+          "installation_year": {
+            "label": {
+              "en": "Installation year",
+              "sv": "Installationsår"
+            },
+            "datatype": "year"
+          }
+        }
+      }
+    },
+    "workItems": [
+      {
+        "id": "01a197a9-132c-7390-82ec-58bb2f8a312b",
+        "replacesId": null,
+        "componentId": "01a197a9-1315-7bd1-9e8d-7c10e05b5af4",
+        "kind": "REPAIR",
+        "severity": null,
+        "description": "Installera inomhusgivare och injustera värme- och reglersystemet (energideklarationens åtgärdsförslag, sparar ca 1 000 kWh/år).",
+        "yearMin": null,
+        "yearMax": null,
+        "costLowSek": 2000,
+        "costHighSek": 2000,
+        "quote": "Installation av inomhusgivare och injustering av värme och reglersystem. Kostnad ca.2000:-.",
+        "documentId": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+        "draft": false
+      }
+    ],
+    "documents": [
+      {
+        "id": "01a197a8-0a2f-7e51-8fe4-810ad6adf88d",
+        "type": "LISTING",
+        "title": "Bjurfors: Bredviksvägen 15, Bredviken, Luleå",
+        "sourceUrl": "https://www.bjurfors.se/sv/tillsalu/norrbottens-lan/lulea/bredviken/bredviksvagen-15",
+        "filename": null,
+        "documentDate": "2026-11-01T00:00:00.000Z",
+        "hasFile": false
+      },
+      {
+        "id": "01a197a8-1267-7da3-8df7-e34df90d2d31",
+        "type": "ENERGY_CERTIFICATE",
+        "title": "Energideklaration 1036167, Bredviksvägen 15 (Bäckstranden 1)",
+        "sourceUrl": null,
+        "filename": "bredviksvagen-15-energideklaration.pdf",
+        "documentDate": "2020-01-21T00:00:00.000Z",
+        "hasFile": false
+      }
+    ],
+    "asOf": null
+  },
+  "bki": {
+    "1975": 179.375,
+    "1976": 203.32500000000002,
+    "1977": 226.375,
+    "1978": 241.11666666666667,
+    "1979": 262.1333333333333,
+    "1980": 298.79166666666663,
+    "1981": 327.7333333333334,
+    "1982": 351.29999999999995,
+    "1983": 389.0416666666667,
+    "1984": 425.9833333333333,
+    "1985": 454.18333333333334,
+    "1986": 470.97499999999997,
+    "1987": 490.675,
+    "1988": 528.3666666666667,
+    "1989": 574.0333333333334,
+    "1990": 625.2083333333334,
+    "1991": 649.975,
+    "1992": 653.3166666666667,
+    "1993": 653.8583333333333,
+    "1994": 672.5083333333333,
+    "1995": 714.9916666666668,
+    "1996": 722.8000000000001,
+    "1997": 734.275,
+    "1998": 752.3833333333333,
+    "1999": 762.8499999999999,
+    "2000": 792.4749999999999,
+    "2001": 823.2750000000001,
+    "2002": 847.4,
+    "2003": 869.7416666666667,
+    "2004": 888.0166666666668,
+    "2005": 914.5583333333335,
+    "2006": 952.9666666666667,
+    "2007": 1008.8166666666666,
+    "2008": 1045.4499999999998,
+    "2009": 1059.175,
+    "2010": 1085.3166666666668,
+    "2011": 1120.625,
+    "2012": 1147.3666666666666,
+    "2013": 1165.7083333333333,
+    "2014": 1182.7583333333334,
+    "2015": 1200.9166666666667,
+    "2016": 1222.425,
+    "2017": 1250.2583333333334,
+    "2018": 1289.0416666666667,
+    "2019": 1331.2666666666667,
+    "2020": 1333.575,
+    "2021": 1424.2250000000001,
+    "2022": 1577.9583333333337,
+    "2023": 1721.95,
+    "2024": 1763.9750000000001,
+    "2025": 1777.5583333333332,
+    "2026": 1818.7555555555557
+  }
+}

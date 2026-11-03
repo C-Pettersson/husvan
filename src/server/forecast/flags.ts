@@ -8,6 +8,22 @@ const ENGLISH = {
   assumed_part: () => 'not in the documents; assumed, as every house has one',
   construction_year_used: () =>
     'installation_year missing; construction_year used',
+  earliest_year_used: (p: Params) =>
+    `installation_year missing; the type did not exist when the house was built, so it counts from ${p.year}`,
+  partial_renovation: (p: Params) =>
+    `partly renovated in ${p.year}; counted as half as old since then, since the frame, membrane or ducts were not renewed`,
+  profile_default_used: (p: Params) =>
+    `${p.keys} unknown; the type's default profile with its wide range is used`,
+  quantity_by_share: (p: Params) =>
+    `${p.key} as share ${p.share} of the house's estimated whole`,
+  quantity_assumed: (p: Params) =>
+    `${p.key} missing; a usual ${p.value} assumed`,
+  footprint_includes_secondary_area: () =>
+    'footprint from living and secondary area over one floor more, since the house has a basement',
+  looks_like_other_building: () =>
+    'by its name this belongs to a garage or an outbuilding but sits at top level, so it takes a share of the house’s estimated area; register it under that building with its own area',
+  finding_without_severity: () =>
+    'the inspection noted this part without a severity; counted as seen, but how serious it is is unknown',
   installation_year_unknown: () =>
     'installation year unknown; range covers the whole lifespan',
   quantity_estimated: (p: Params) => `${p.key} estimated from living_area`,

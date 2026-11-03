@@ -87,6 +87,16 @@ describe('heating and bathrooms', () => {
     })
     expect(bathroomCount(house)).toBe(2)
   })
+
+  it('lists the duct heater as main heating only when nothing else is', () => {
+    expect(heating([comp('electric_duct_heater')]).main).toEqual([
+      'electric_duct_heater',
+    ])
+    expect(
+      heating([comp('district_heating_substation'), comp('electric_duct_heater')])
+        .main
+    ).toEqual(['district_heating_substation'])
+  })
 })
 
 describe('risks', () => {

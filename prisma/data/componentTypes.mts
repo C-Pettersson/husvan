@@ -42,6 +42,22 @@ const inspectedYear: Attributes = {
   },
 }
 
+// A renovation of the parts that wear fastest (kitchen fronts and worktops,
+// bathroom fixtures and surfaces without a new membrane, the fan of a
+// ventilation unit). The forecast counts the part as half as old since then;
+// installation_year stays the year the whole was built or last fully
+// renovated (CLAUDE.md, "Regler för beräkningen").
+const partialRenovation: Attributes = {
+  partial_renovation_year: {
+    label: { sv: 'Delrenoverad år', en: 'Partly renovated' },
+    description: {
+      sv: 'Året för en delrenovering (nya luckor och bänkskivor, nytt porslin och ytskikt utan nytt tätskikt); installationsåret ändras inte',
+      en: 'Year of a partial renovation (new fronts and worktops, new fixtures and surfaces without a new membrane); the installation year stays',
+    },
+    datatype: 'year',
+  },
+}
+
 const area: Attributes = {
   area: {
     label: { sv: 'Yta', en: 'Area' },
@@ -257,11 +273,15 @@ export const componentTypes: ComponentTypeDefinition[] = [
     // Mostly basement houses, where living area spans two floors.
     forecastDefaults: { quantityPerLivingM2: 0.25 },
   },
+  // An established remedy for mouldy crawl spaces by the mid-2000s
+  // (Fuktcentrum LTH, Bygg & teknik 8/06); no source dates the first units,
+  // so the strictly sourced 2000 is used.
   {
     type: 'crawl_space_dehumidifier',
     label: { sv: 'Avfuktare i krypgrund', en: 'Crawl space dehumidifier' },
     category: 'envelope',
     attributeSchema: { ...replaceable, ...modelName },
+    forecastDefaults: { earliestYear: 2000 },
   },
   {
     type: 'roof_covering',
@@ -308,6 +328,20 @@ export const componentTypes: ComponentTypeDefinition[] = [
       }),
       ...replaceable,
       ...area,
+      // A mixed facade is several facade components, one per material, each
+      // with its own area. Without areas, share says how the house's
+      // estimated wall area is split (brick 0.7, wood 0.3) instead of
+      // equally (type_library conventions).
+      share: {
+        label: { sv: 'Andel av fasaden', en: 'Share of the facade' },
+        description: {
+          sv: 'Andel 0–1 av husets fasadyta när ytan saknas, för en blandad fasad',
+          en: 'Share 0–1 of the house’s wall area when the area is missing, for a mixed facade',
+        },
+        datatype: 'number',
+        min: 0,
+        max: 1,
+      },
       ...modelName,
       ...paint,
     },
@@ -413,10 +447,11 @@ export const componentTypes: ComponentTypeDefinition[] = [
     type: 'attic',
     label: { sv: 'Vind', en: 'Attic' },
     category: 'envelope',
-    // No lifespan profile, like the foundation: context for the forecast.
-    // Thin insulation explains a high heating cost, and the attic is where
-    // the inspector most often finds moisture and mould. Additional
-    // insulation is a work item.
+    // What wears out on an attic is the insulation: its profile is a new
+    // layer of loose fill per m2 of attic floor, counted from the year it
+    // was last added (additional_insulation_year stands in for
+    // installation_year). Thin insulation explains a high heating cost, and
+    // the attic is where the inspector most often finds moisture and mould.
     attributeSchema: {
       attic_type: choice('Typ', 'Type', {
         cold: ['Kallvind', 'Cold attic'],
@@ -439,9 +474,16 @@ export const componentTypes: ComponentTypeDefinition[] = [
         label: { sv: 'Tilläggsisolerad år', en: 'Additional insulation' },
         datatype: 'year',
       },
+      ...area,
       ...condition,
       ...inspectedYear,
       ...provenance,
+    },
+    // The attic floor is the footprint; a storey under the roof leaves less.
+    forecastDefaults: {
+      installationYearKey: 'additional_insulation_year',
+      quantityPerLivingM2: 0.8,
+      quantityFromFootprint: { basis: 'area', factor: 1 },
     },
   },
   {
@@ -462,17 +504,35 @@ export const componentTypes: ComponentTypeDefinition[] = [
   },
 
   // Heating -------------------------------------------------------------------
+  // earliestYear: a part without installation_year in an older house counts
+  // from the type's first years in Swedish villas, not the construction
+  // year. Years and sources (researched 2026-11-03): outdoor-air heat pumps
+  // for hydronic systems were sold in the Swedish heat pump boom of
+  // 1979-1985 (Fehrm 1993, https://iifiir.org/en/fridoc/exhaust-air-heat-pumps-experiences-12201;
+  // IEA HPT Sweden market report 2025).
   {
     type: 'heat_pump_air_water',
     label: { sv: 'Luft-vattenvärmepump', en: 'Air-to-water heat pump' },
     category: 'heating',
     attributeSchema: { ...replaceable, ...modelName, ...capacityKw },
+    forecastDefaults: { earliestYear: 1980 },
   },
+  // Rock, ground loop or lake: the same heat pump with a different
+  // collector, so one type. IVT built Sweden's first bergvärmepump in 1977
+  // (Tekniska museet, https://digitaltmuseum.se/021026362462/borrkrona).
   {
     type: 'heat_pump_ground',
-    label: { sv: 'Bergvärmepump', en: 'Ground source heat pump' },
+    label: {
+      sv: 'Berg- eller jordvärmepump',
+      en: 'Ground source heat pump',
+    },
     category: 'heating',
     attributeSchema: {
+      collector_type: choice('Kollektor', 'Collector', {
+        borehole: ['Borrhål (bergvärme)', 'Borehole (rock)'],
+        surface_ground: ['Ytjordvärme', 'Horizontal ground loop'],
+        lake: ['Sjövärme', 'Lake'],
+      }),
       ...replaceable,
       ...modelName,
       ...capacityKw,
@@ -483,12 +543,18 @@ export const componentTypes: ComponentTypeDefinition[] = [
         min: 0,
       },
     },
+    forecastDefaults: { earliestYear: 1977 },
   },
+  // About 15 000 air-to-air units had been installed in Sweden by the end of
+  // 1989, 6 000 of them that year (Byggforskningsrådet R60:1990,
+  // https://aivc.org/sites/default/files/airbase_5541.pdf), so sales began
+  // in the mid-1980s.
   {
     type: 'heat_pump_air_air',
     label: { sv: 'Luft-luftvärmepump', en: 'Air-to-air heat pump' },
     category: 'heating',
     attributeSchema: { ...replaceable, ...modelName, ...quantity },
+    forecastDefaults: { earliestYear: 1985 },
   },
   {
     type: 'district_heating_substation',
@@ -509,17 +575,22 @@ export const componentTypes: ComponentTypeDefinition[] = [
     attributeSchema: { ...replaceable, ...quantity },
   },
   // A central air-handling unit with an electric coil that heats the house
-  // through ducts, common in villas from about 1975 to 1990. Replaced like
-  // for like; converting to water-borne heating is a work item.
+  // through ducts, "mycket vanlig" in houses from 1980-1992 (Swegon, Varför
+  // FTX) and built on the FT systems of the early 1970s (SFV, Ventilation i
+  // äldre byggnader 2009). Replaced like for like; converting to water-borne
+  // heating is a work item.
   {
     type: 'electric_air_heating',
     label: { sv: 'Luftburen elvärme', en: 'Air-borne electric heating' },
     category: 'heating',
     attributeSchema: { ...replaceable, ...modelName, ...capacityKw },
+    forecastDefaults: { earliestYear: 1975 },
   },
   // The electric heating coil (elbatteri, eftervärmare) in a ventilation
   // unit. When it is the house's heat source, it is the part that costs to
-  // replace; registered under the ventilation unit it sits in.
+  // replace; registered under the ventilation unit it sits in. Beside
+  // another main heat source it is not listed as one (derive.ts, heating).
+  // As old as FTX at the earliest.
   {
     type: 'electric_duct_heater',
     label: {
@@ -528,12 +599,17 @@ export const componentTypes: ComponentTypeDefinition[] = [
     },
     category: 'heating',
     attributeSchema: { ...replaceable, ...modelName, ...capacityKw },
+    forecastDefaults: { earliestYear: 1975 },
   },
+  // Pellet factories from the early 1980s, a villa market from the mid-1990s
+  // (Chalmers, Wood pellets as a small-scale biofuel,
+  // https://publications.lib.chalmers.se/records/fulltext/5788.pdf).
   {
     type: 'pellet_boiler',
     label: { sv: 'Pelletspanna', en: 'Pellet boiler' },
     category: 'heating',
     attributeSchema: { ...replaceable, ...modelName, ...capacityKw },
+    forecastDefaults: { earliestYear: 1990 },
   },
   {
     type: 'wood_stove',
@@ -558,6 +634,12 @@ export const componentTypes: ComponentTypeDefinition[] = [
       }),
       ...replaceable,
       ...inspectedYear,
+    },
+    // A stove or a pellet boiler needs a flue: a house with one and no
+    // documented chimney is assumed to have one from the construction year.
+    forecastDefaults: {
+      assumeUndocumented: true,
+      assumeWhenTypes: ['wood_stove', 'pellet_boiler'],
     },
   },
   {
@@ -587,8 +669,27 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
     },
     // Radiators per m2 living area: the price guides count 10 to 12 in a
-    // villa of 120 to 150 m2 (Rörfiness, Brabyggfirmor 2026).
-    forecastDefaults: { quantityPerLivingM2: 0.08 },
+    // villa of 120 to 150 m2 (Rörfiness, Brabyggfirmor 2026). A house with a
+    // water-borne heat source distributes the heat somehow: radiators are
+    // assumed unless water underfloor heating is registered at top level
+    // (floor heating under a bathroom is that room's) or the heat is
+    // electric at the radiators.
+    forecastDefaults: {
+      quantityPerLivingM2: 0.08,
+      assumeUndocumented: true,
+      assumeWhenTypes: [
+        'district_heating_substation',
+        'heat_pump_ground',
+        'heat_pump_air_water',
+        'pellet_boiler',
+        'electric_boiler',
+      ],
+      assumeUnlessParts: [
+        { type: 'underfloor_heating', where: { medium: ['water'] } },
+        { type: 'electric_radiators' },
+        { type: 'electric_air_heating' },
+      ],
+    },
   },
   {
     type: 'underfloor_heating',
@@ -606,6 +707,10 @@ export const componentTypes: ComponentTypeDefinition[] = [
   },
 
   // Ventilation ---------------------------------------------------------------
+  // About 40 000 FTX units stood in Swedish småhus by 1980, after SBN 75
+  // (Gezelius, VVS 1980:1, https://www.aivc.org/node/14028; SFV,
+  // Ventilation i äldre byggnader 2009). A new fan or heat exchanger in the
+  // same unit is a partial renovation.
   {
     type: 'ventilation_ftx',
     label: {
@@ -613,14 +718,26 @@ export const componentTypes: ComponentTypeDefinition[] = [
       en: 'Balanced ventilation with heat recovery',
     },
     category: 'ventilation',
-    attributeSchema: { ...replaceable, ...modelName },
+    attributeSchema: { ...replaceable, ...partialRenovation, ...modelName },
     allowedSubcomponents: ['electric_duct_heater'],
+    forecastDefaults: { earliestYear: 1975 },
   },
+  // Mechanical exhaust became usual in new homes in the early 1970s, with
+  // early systems before that (Flexit; SFV 2009). With heat recovery it is
+  // an FX unit, an exhaust-air heat pump, from 1980 (Fehrm 1993).
   {
     type: 'ventilation_exhaust',
     label: { sv: 'Frånluftsventilation', en: 'Exhaust ventilation' },
     category: 'ventilation',
-    attributeSchema: { ...replaceable, ...modelName },
+    attributeSchema: {
+      heat_recovery: yesNo(
+        'Värmeåtervinning (FX)',
+        'Heat recovery (exhaust-air heat pump)'
+      ),
+      ...replaceable,
+      ...modelName,
+    },
+    forecastDefaults: { earliestYear: 1965 },
   },
 
   // Plumbing ------------------------------------------------------------------
@@ -692,8 +809,18 @@ export const componentTypes: ComponentTypeDefinition[] = [
     // Old cast-iron, concrete and clay pipes are filmed first, and most can
     // be relined instead of replaced; a collapsed or badly deformed pipe
     // cannot, which is the high scenario.
+    // A house on a slab on ground also has its sewer under the slab, the
+    // section that costs most to reach: assumed with section under_slab
+    // unless such a section is documented (assumeVariants).
     forecastDefaults: {
       assumeUndocumented: true,
+      context: { foundation_type: 'foundation' },
+      assumeVariants: [
+        {
+          values: { section: 'under_slab' },
+          whenContext: { foundation_type: ['slab_on_ground'] },
+        },
+      ],
       profileKeyOrder: ['renovation_method', 'material', 'section'],
       cheaperRenewal: {
         when: { material: ['cast_iron', 'concrete', 'clay'] },
@@ -931,13 +1058,20 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...orientation,
     },
     allowedSubcomponents: ['solar_inverter', 'battery_storage'],
+    // Grid-connected panels on private houses came with the investment
+    // support of July 2009; Sweden had about 8 MW in all before that
+    // (Elforsk 10:46, https://energiforsk.se/media/21068/10-46-konsekvensanalys-av-investeringsstod-till-solceller.pdf).
+    forecastDefaults: { earliestYear: 2009 },
   },
   {
     type: 'solar_inverter',
     label: { sv: 'Växelriktare', en: 'Inverter' },
     category: 'electrical',
     attributeSchema: { ...replaceable, ...modelName, ...capacityKw },
+    forecastDefaults: { earliestYear: 2009 },
   },
+  // The first grant for home batteries covers installations started from
+  // 1 January 2016 (SFS 2016:899, https://data.riksdagen.se/dokument/sfs-2016-899.text).
   {
     type: 'battery_storage',
     label: { sv: 'Batterilager', en: 'Battery storage' },
@@ -952,13 +1086,18 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
       ...modelName,
     },
+    forecastDefaults: { earliestYear: 2016 },
   },
+  // The first mass-produced electric cars reached Swedish dealers in 2010
+  // (Vi Bilägare 2009-12-22, https://www.vibilagare.se/nyheter/2010-aret-vi-far-riktig-elkontakt-1784);
+  // 157 chargeable cars were on the road in 2009 (SVT, citing Trafikanalys).
   {
     type: 'ev_charger',
     label: { sv: 'Laddbox', en: 'EV charger' },
     category: 'electrical',
     // Without load balancing a charger may need a larger main fuse
     // (electrical_panel, main_fuse_a).
+    forecastDefaults: { earliestYear: 2010 },
     attributeSchema: {
       power_kw: {
         label: { sv: 'Laddeffekt', en: 'Charging power' },
@@ -982,7 +1121,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
     type: 'kitchen',
     label: { sv: 'Kök', en: 'Kitchen' },
     category: 'interior',
-    attributeSchema: { ...replaceable, ...modelName },
+    attributeSchema: { ...replaceable, ...partialRenovation, ...modelName },
     forecastDefaults: { assumeUndocumented: true },
   },
   {
@@ -990,17 +1129,34 @@ export const componentTypes: ComponentTypeDefinition[] = [
     label: { sv: 'Badrum', en: 'Bathroom' },
     category: 'interior',
     // Bathrooms are counted, not stored: "2 badrum" becomes two components.
-    // A room with a shower or a bath; a toilet without one is a wc, so that
-    // it does not get the bathroom's lifespan and renovation cost
-    // (type_library conventions).
+    // A room with a shower or a bath and a toilet; a toilet without one is a
+    // wc and a shower without a toilet a shower_room, so that neither gets
+    // the bathroom's lifespan and renovation cost (type_library
+    // conventions).
     attributeSchema: {
       ...replaceable,
+      ...partialRenovation,
       ...area,
       wet_room_certified: yesNo('Våtrumsintyg', 'Wet room certificate'),
     },
     allowedSubcomponents: ['underfloor_heating'],
     // With two, the second in need is less urgent while the first works.
     forecastDefaults: { assumeUndocumented: true, oneOfSeveral: true },
+  },
+  // A shower room without a toilet, such as the one beside a sauna or in a
+  // basement: a small wet room with a membrane and a drain, at half to two
+  // thirds of a bathroom's cost.
+  {
+    type: 'shower_room',
+    label: { sv: 'Duschrum', en: 'Shower room' },
+    category: 'interior',
+    attributeSchema: {
+      ...replaceable,
+      ...partialRenovation,
+      ...area,
+      wet_room_certified: yesNo('Våtrumsintyg', 'Wet room certificate'),
+    },
+    allowedSubcomponents: ['underfloor_heating'],
   },
   // A toilet room without a shower or bath (a WC with a shower is a
   // bathroom): new fixtures and surfaces, often without a wet-room membrane,
@@ -1011,9 +1167,11 @@ export const componentTypes: ComponentTypeDefinition[] = [
     category: 'interior',
     attributeSchema: {
       ...replaceable,
+      ...partialRenovation,
       ...area,
       floor_drain: yesNo('Golvbrunn', 'Floor drain'),
     },
+    allowedSubcomponents: ['underfloor_heating'],
   },
   // A smaller wet room: laundry room or utility room with a floor drain.
   {
@@ -1022,7 +1180,9 @@ export const componentTypes: ComponentTypeDefinition[] = [
     category: 'interior',
     attributeSchema: {
       ...replaceable,
+      ...partialRenovation,
       ...area,
+      floor_drain: yesNo('Golvbrunn', 'Floor drain'),
       wet_room_certified: yesNo('Våtrumsintyg', 'Wet room certificate'),
     },
     allowedSubcomponents: ['underfloor_heating'],
@@ -1034,7 +1194,9 @@ export const componentTypes: ComponentTypeDefinition[] = [
     attributeSchema: { ...replaceable, ...modelName },
   },
 
-  // Features, without a lifespan profile in version 1 -------------------------
+  // Features. Sauna, deck and balcony have lifespan profiles; the pool and
+  // the sunroom none yet. Garage and carport are priced through their
+  // parts: no source gives a lifespan for the building itself. ------------------
   {
     type: 'pool',
     label: { sv: 'Pool', en: 'Pool' },
@@ -1077,9 +1239,12 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...condition,
       ...orientation,
     },
+    // A deck without an area is taken as the guides' standard example of
+    // 25 m2 (BraByggare 2026; Hantverkskollen's 30 and Offerta's 20).
+    forecastDefaults: { assumedQuantity: 25 },
   },
   // A balcony on an upper floor, as the deck is on the ground: a glazed one
-  // is a common search criterion. No profile in version 1.
+  // is a common search criterion. Priced per balcony.
   {
     type: 'balcony',
     label: { sv: 'Balkong', en: 'Balcony' },
@@ -1153,6 +1318,10 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
       ...area,
     },
+    // Without a surface the type's default profile spans asphalt to stone;
+    // without an area a usual villa driveway of 60 m2 (the guides' examples
+    // run 50 to 120 m2).
+    forecastDefaults: { assumedQuantity: 60 },
   },
   {
     type: 'fence',
@@ -1240,10 +1409,12 @@ export const componentTypes: ComponentTypeDefinition[] = [
       'exterior_door',
       'foundation',
     ],
-    forecastDefaults: { separateBuilding: true },
+    // A shed without an area is taken as 12 m2 (the guides' kits run 10 to
+    // 15 m2, and a friggebod is at most 15).
+    forecastDefaults: { separateBuilding: true, assumedQuantity: 12 },
   },
-  // No lifespan of its own: the roof through roof_covering, the paint
-  // through last_painted_year.
+  // No lifespan of its own, since no source gives one for the structure: the
+  // roof through roof_covering, the paint through last_painted_year.
   {
     type: 'carport',
     label: { sv: 'Carport', en: 'Carport' },
@@ -1265,8 +1436,16 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...condition,
       last_painted_year: paint.last_painted_year,
     },
-    // A carport with storage has walls and a door as well as the roof.
-    allowedSubcomponents: ['roof_covering', 'facade', 'exterior_door'],
+    // A carport with storage has walls, a window and a door as well as the
+    // roof, its gutters and the space under the roof.
+    allowedSubcomponents: [
+      'roof_covering',
+      'roof_drainage',
+      'facade',
+      'window',
+      'exterior_door',
+      'attic',
+    ],
     forecastDefaults: { separateBuilding: true },
   },
 ]

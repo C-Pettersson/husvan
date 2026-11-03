@@ -113,12 +113,24 @@ export function seenByInspection(
   const own = workItems.filter((w) => w.componentId === plan.componentId)
   if (own.some((w) => w.severity === 'SEVERE')) return 'flagged'
   if (!inspected || plan.assumed) return 'unjudged'
-  // An item without a severity is not known to be minor.
+  // A finding without a severity still means the inspector looked at the
+  // part; the forecast flags the missing severity (finding_without_severity).
   const concern = own.some(
-    (w) => w.kind === 'INVESTIGATION' || w.severity !== 'MINOR'
+    (w) =>
+      w.kind === 'INVESTIGATION' ||
+      (w.severity != null && w.severity !== 'MINOR')
   )
   return concern ? 'unjudged' : 'ok'
 }
+
+// Whether the inspection noted the part without saying how serious it was.
+export const hasUnratedFinding = (
+  plan: ComponentPlan,
+  workItems: WorkItemInput[]
+) =>
+  workItems.some(
+    (w) => w.componentId === plan.componentId && w.severity == null
+  )
 
 // Years from the start year to the replacement of a part already past its
 // lifespan, as a share of its lifespan. A part the inspection saw working
@@ -294,6 +306,8 @@ export function computeForecast(input: ForecastInput): Forecast {
       )
     if (w)
       flags.push(flag('timed_by_work_item', { description: w.description }))
+    if (input.inspected && hasUnratedFinding(plan, input.workItems))
+      flags.push(flag('finding_without_severity'))
     if (!plan.cost && !cost) flags.push(flag('replacement_not_costed'))
     if (plan.renewal && !cost)
       flags.push(

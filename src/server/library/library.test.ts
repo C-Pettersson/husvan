@@ -126,6 +126,8 @@ describe('seeded type library', () => {
       'driveway',
       'fence',
       'retaining_wall',
+      'shower_room',
+      'balcony',
     ]
     const types = new Set(componentTypes.map((t) => t.type))
     expect(listed.filter((t) => !types.has(t))).toEqual([])
