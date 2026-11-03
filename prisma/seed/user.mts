@@ -8,6 +8,7 @@
 import { randomUUID } from 'node:crypto'
 import type { PrismaClient } from '@prisma/client'
 import { hashPassword } from 'better-auth/crypto'
+import type { SeedMode } from '../../src/server/library/seedMerge.ts'
 
 function requireEnv(name: string): string {
   const value = process.env[name]?.trim()
@@ -15,7 +16,20 @@ function requireEnv(name: string): string {
   return value
 }
 
-export async function seedUser(prisma: PrismaClient) {
+export async function seedUser(prisma: PrismaClient, mode: SeedMode = 'full') {
+  // In add-only mode the owner is created once and never changed: without
+  // SEED_USER_EMAIL, or when the user exists, nothing happens.
+  if (mode === 'add_only') {
+    const email = process.env.SEED_USER_EMAIL?.trim().toLowerCase()
+    if (!email) {
+      console.log('No SEED_USER_EMAIL; user left alone')
+      return
+    }
+    if (await prisma.user.findUnique({ where: { email } })) {
+      console.log(`User ${email} exists; left alone`)
+      return
+    }
+  }
   const email = requireEnv('SEED_USER_EMAIL').toLowerCase()
   const name = requireEnv('SEED_USER_NAME')
   const password = process.env.SEED_USER_PASSWORD?.trim()

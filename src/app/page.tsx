@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { getFormatter, getTranslations } from 'next-intl/server'
 import { Box, Button, Container, Paper, Stack, Typography } from '@mui/material'
 import { auth } from '@/lib/auth'
+import { LogoMark } from '@/components/Logo'
 
 // An example conversation. The AI does the reading and the judging; the note
 // under each answer says what Husvan stored or calculated for it.
@@ -49,9 +50,12 @@ const WHEEL_SOURCES = {
   project: '#eb6834',
   own: '#6b6a66',
 } as const
+// A scheduled task in the user's Claude that runs every morning, so Claude
+// speaks first.
 const REMINDER = [
-  { key: 'ask', from: 'you' },
-  { key: 'month', from: 'ai', note: true },
+  { key: 'due', from: 'ai', note: true },
+  { key: 'yes', from: 'you' },
+  { key: 'planned', from: 'ai', note: true },
   { key: 'log', from: 'you', files: true },
   { key: 'remark', from: 'ai', note: true },
 ] as const
@@ -65,285 +69,37 @@ export default async function HomePage() {
   const session = await auth.api.getSession({ headers: await headers() })
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 6, md: 10 } }}>
-      <Stack spacing={3} alignItems="flex-start" sx={{ mb: { xs: 6, md: 9 } }}>
-        <Typography
-          component="h1"
-          variant="h3"
-          fontWeight={700}
-          sx={{ fontSize: { xs: '2.1rem', md: '3rem' } }}
+    <>
+      <Container maxWidth="md" sx={{ py: { xs: 6, md: 10 } }}>
+        <Stack
+          spacing={3}
+          alignItems="flex-start"
+          sx={{ mb: { xs: 6, md: 9 } }}
         >
-          {t('title')}
-        </Typography>
-        <Typography variant="h6" color="text.secondary" fontWeight={400}>
-          {t('lead')}
-        </Typography>
-        <Button
-          href={session ? '/houses' : '/login'}
-          variant="contained"
-          size="large"
-        >
-          {session ? t('open') : t('signIn')}
-        </Button>
-      </Stack>
-
-      <Section title={t('split')}>
-        <Typography variant="body1" sx={{ mb: 2.5 }}>
-          {t('splitLead')}
-        </Typography>
-        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
           <Typography
-            variant="overline"
-            color="text.secondary"
-            component="p"
-            sx={{ mb: 1.5 }}
+            component="h1"
+            variant="h3"
+            fontWeight={700}
+            sx={{ fontSize: { xs: '2.1rem', md: '3rem' } }}
           >
-            {t('chat.label')}
+            {t('title')}
           </Typography>
-          <Stack spacing={1.5}>
-            {CHAT.map((m) => (
-              <ChatMessage
-                key={m.key}
-                from={m.from}
-                speaker={t(`chat.${m.from}`)}
-                text={t(`chat.messages.${m.key}.text`)}
-                files={'files' in m ? t(`chat.messages.${m.key}.files`) : null}
-                note={
-                  'note' in m
-                    ? `${t('chat.husvan')}: ${t(`chat.messages.${m.key}.note`)}`
-                    : null
-                }
-              />
-            ))}
-          </Stack>
-        </Paper>
-      </Section>
-
-      <Section title={t('how')}>
-        <Box
-          component="ol"
-          sx={{
-            listStyle: 'none',
-            p: 0,
-            m: 0,
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-            counterReset: 'step',
-          }}
-        >
-          {STEPS.map((step, i) => (
-            <Paper
-              key={step}
-              component="li"
-              variant="outlined"
-              sx={{ p: 2.5, display: 'flex', gap: 2 }}
-            >
-              <Box
-                aria-hidden
-                sx={{
-                  flex: '0 0 auto',
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontWeight: 700,
-                }}
-              >
-                {i + 1}
-              </Box>
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {t(`steps.${step}.title`)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t(`steps.${step}.body`)}
-                </Typography>
-              </Box>
-            </Paper>
-          ))}
-        </Box>
-      </Section>
-
-      <Section title={t('measures')}>
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
-          }}
-        >
-          {MEASURES.map((m) => (
-            <Box key={m}>
-              <Typography variant="subtitle1" fontWeight={600}>
-                {t(`${m}.title`)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t(`${m}.body`)}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      </Section>
-
-      <Section title={t('principles')}>
-        <Stack component="ul" spacing={1.5} sx={{ pl: 2.5, m: 0 }}>
-          {PRINCIPLES.map((p) => (
-            <Typography key={p} component="li" variant="body1">
-              {t(`principle.${p}`)}
-            </Typography>
-          ))}
+          <Typography variant="h6" color="text.secondary" fontWeight={400}>
+            {t('lead')}
+          </Typography>
+          <Button
+            href={session ? '/houses' : '/login'}
+            variant="contained"
+            size="large"
+          >
+            {session ? t('open') : t('signIn')}
+          </Button>
         </Stack>
-      </Section>
 
-      <Section title={t('later')}>
-        <Typography variant="body1" sx={{ mb: 2.5 }}>
-          {t('laterBody')}
-        </Typography>
-
-        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, mb: 2 }}>
-          <Typography variant="overline" color="text.secondary" component="p">
-            {t('wheel.label', { year: WHEEL_YEAR })}
+        <Section title={t('split')}>
+          <Typography variant="body1" sx={{ mb: 2.5 }}>
+            {t('splitLead')}
           </Typography>
-          <Stack
-            direction="row"
-            flexWrap="wrap"
-            columnGap={2}
-            rowGap={0.5}
-            sx={{ mb: 2 }}
-          >
-            {Object.entries(WHEEL_SOURCES).map(([source, color]) => (
-              <Stack
-                key={source}
-                direction="row"
-                spacing={0.75}
-                alignItems="center"
-              >
-                <Dot color={color} />
-                <Typography variant="caption" color="text.secondary">
-                  {t(`wheel.sources.${source}`)}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
-          <Box
-            component="ol"
-            sx={{
-              listStyle: 'none',
-              p: 0,
-              m: 0,
-              display: 'grid',
-              gap: 1,
-              gridTemplateColumns: {
-                xs: '1fr 1fr',
-                sm: 'repeat(3, 1fr)',
-                md: 'repeat(4, 1fr)',
-              },
-            }}
-          >
-            {Array.from({ length: 12 }, (_, month) => (
-              <Box
-                key={month}
-                component="li"
-                sx={{ bgcolor: 'grey.100', borderRadius: 1, p: 1.25 }}
-              >
-                <Typography
-                  variant="caption"
-                  fontWeight={600}
-                  component="p"
-                  sx={{ mb: 0.5, textTransform: 'capitalize' }}
-                >
-                  {format.dateTime(new Date(Date.UTC(WHEEL_YEAR, month, 15)), {
-                    month: 'long',
-                    timeZone: 'UTC',
-                  })}
-                </Typography>
-                <Stack
-                  component="ul"
-                  spacing={0.5}
-                  sx={{ listStyle: 'none', p: 0, m: 0 }}
-                >
-                  {WHEEL.filter((w) => w.month === month).map((w) => (
-                    <Stack
-                      key={w.key}
-                      component="li"
-                      direction="row"
-                      spacing={0.75}
-                      alignItems="baseline"
-                    >
-                      <Dot color={WHEEL_SOURCES[w.source]} />
-                      <Typography variant="caption" sx={{ lineHeight: 1.35 }}>
-                        {t(`wheel.items.${w.key}`)}
-                      </Typography>
-                    </Stack>
-                  ))}
-                </Stack>
-              </Box>
-            ))}
-          </Box>
-          <Typography
-            variant="caption"
-            component="p"
-            sx={{ mt: 1.5, color: 'secondary.main' }}
-          >
-            {t('wheel.question')}
-          </Typography>
-        </Paper>
-
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-            alignItems: 'start',
-            mb: 3,
-          }}
-        >
-          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
-            <Typography variant="overline" color="text.secondary" component="p">
-              {t('check.label')}
-            </Typography>
-            <Typography variant="subtitle1" fontWeight={600}>
-              {t('check.title')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              {t('check.meta')}
-            </Typography>
-            <Box
-              sx={{
-                borderLeft: 3,
-                borderColor: WHEEL_SOURCES.inspection,
-                pl: 1.5,
-                mb: 1.5,
-              }}
-            >
-              <Typography variant="body2">{t('check.why')}</Typography>
-            </Box>
-            <Typography variant="body2" fontWeight={600}>
-              {t('check.lookFor')}
-            </Typography>
-            <Stack
-              component="ul"
-              spacing={0.5}
-              sx={{ pl: 2.5, mt: 0.5, mb: 1.5 }}
-            >
-              {CHECK_LOOK_FOR.map((l) => (
-                <Typography key={l} component="li" variant="body2">
-                  {t(`check.items.${l}`)}
-                </Typography>
-              ))}
-            </Stack>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              {t('check.result')}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" component="p">
-              {t('check.notInspection')}
-            </Typography>
-          </Paper>
-
           <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
             <Typography
               variant="overline"
@@ -351,53 +107,353 @@ export default async function HomePage() {
               component="p"
               sx={{ mb: 1.5 }}
             >
-              {t('reminder.label')}
+              {t('chat.label')}
             </Typography>
             <Stack spacing={1.5}>
-              {REMINDER.map((m) => (
+              {CHAT.map((m) => (
                 <ChatMessage
                   key={m.key}
                   from={m.from}
                   speaker={t(`chat.${m.from}`)}
-                  text={t(`reminder.messages.${m.key}.text`)}
+                  text={t(`chat.messages.${m.key}.text`)}
                   files={
-                    'files' in m ? t(`reminder.messages.${m.key}.files`) : null
+                    'files' in m ? t(`chat.messages.${m.key}.files`) : null
                   }
                   note={
                     'note' in m
-                      ? `${t('chat.husvan')}: ${t(`reminder.messages.${m.key}.note`)}`
+                      ? `${t('chat.husvan')}: ${t(`chat.messages.${m.key}.note`)}`
                       : null
                   }
                 />
               ))}
             </Stack>
           </Paper>
-        </Box>
+        </Section>
 
-        <Box
+        <Section title={t('how')}>
+          <Box
+            component="ol"
+            sx={{
+              listStyle: 'none',
+              p: 0,
+              m: 0,
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              counterReset: 'step',
+            }}
+          >
+            {STEPS.map((step, i) => (
+              <Paper
+                key={step}
+                component="li"
+                variant="outlined"
+                sx={{ p: 2.5, display: 'flex', gap: 2 }}
+              >
+                <Box
+                  aria-hidden
+                  sx={{
+                    flex: '0 0 auto',
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontWeight: 700,
+                  }}
+                >
+                  {i + 1}
+                </Box>
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {t(`steps.${step}.title`)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t(`steps.${step}.body`)}
+                  </Typography>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        </Section>
+
+        <Section title={t('measures')}>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+            }}
+          >
+            {MEASURES.map((m) => (
+              <Box key={m}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {t(`${m}.title`)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t(`${m}.body`)}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Section>
+
+        <Section title={t('principles')}>
+          <Stack component="ul" spacing={1.5} sx={{ pl: 2.5, m: 0 }}>
+            {PRINCIPLES.map((p) => (
+              <Typography key={p} component="li" variant="body1">
+                {t(`principle.${p}`)}
+              </Typography>
+            ))}
+          </Stack>
+        </Section>
+
+        <Section title={t('later')}>
+          <Typography variant="body1" sx={{ mb: 2.5 }}>
+            {t('laterBody')}
+          </Typography>
+
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, mb: 2 }}>
+            <Typography variant="overline" color="text.secondary" component="p">
+              {t('wheel.label', { year: WHEEL_YEAR })}
+            </Typography>
+            <Stack
+              direction="row"
+              flexWrap="wrap"
+              columnGap={2}
+              rowGap={0.5}
+              sx={{ mb: 2 }}
+            >
+              {Object.entries(WHEEL_SOURCES).map(([source, color]) => (
+                <Stack
+                  key={source}
+                  direction="row"
+                  spacing={0.75}
+                  alignItems="center"
+                >
+                  <Dot color={color} />
+                  <Typography variant="caption" color="text.secondary">
+                    {t(`wheel.sources.${source}`)}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+            <Box
+              component="ol"
+              sx={{
+                listStyle: 'none',
+                p: 0,
+                m: 0,
+                display: 'grid',
+                gap: 1,
+                gridTemplateColumns: {
+                  xs: '1fr 1fr',
+                  sm: 'repeat(3, 1fr)',
+                  md: 'repeat(4, 1fr)',
+                },
+              }}
+            >
+              {Array.from({ length: 12 }, (_, month) => (
+                <Box
+                  key={month}
+                  component="li"
+                  sx={{ bgcolor: 'grey.100', borderRadius: 1, p: 1.25 }}
+                >
+                  <Typography
+                    variant="caption"
+                    fontWeight={600}
+                    component="p"
+                    sx={{ mb: 0.5, textTransform: 'capitalize' }}
+                  >
+                    {format.dateTime(
+                      new Date(Date.UTC(WHEEL_YEAR, month, 15)),
+                      {
+                        month: 'long',
+                        timeZone: 'UTC',
+                      }
+                    )}
+                  </Typography>
+                  <Stack
+                    component="ul"
+                    spacing={0.5}
+                    sx={{ listStyle: 'none', p: 0, m: 0 }}
+                  >
+                    {WHEEL.filter((w) => w.month === month).map((w) => (
+                      <Stack
+                        key={w.key}
+                        component="li"
+                        direction="row"
+                        spacing={0.75}
+                        alignItems="baseline"
+                      >
+                        <Dot color={WHEEL_SOURCES[w.source]} />
+                        <Typography variant="caption" sx={{ lineHeight: 1.35 }}>
+                          {t(`wheel.items.${w.key}`)}
+                        </Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Box>
+              ))}
+            </Box>
+            <Typography
+              variant="caption"
+              component="p"
+              sx={{ mt: 1.5, color: 'secondary.main' }}
+            >
+              {t('wheel.question')}
+            </Typography>
+          </Paper>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+              alignItems: 'start',
+              mb: 3,
+            }}
+          >
+            <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+              <Typography
+                variant="overline"
+                color="text.secondary"
+                component="p"
+              >
+                {t('check.label')}
+              </Typography>
+              <Typography variant="subtitle1" fontWeight={600}>
+                {t('check.title')}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 1.5 }}
+              >
+                {t('check.meta')}
+              </Typography>
+              <Box
+                sx={{
+                  borderLeft: 3,
+                  borderColor: WHEEL_SOURCES.inspection,
+                  pl: 1.5,
+                  mb: 1.5,
+                }}
+              >
+                <Typography variant="body2">{t('check.why')}</Typography>
+              </Box>
+              <Typography variant="body2" fontWeight={600}>
+                {t('check.lookFor')}
+              </Typography>
+              <Stack
+                component="ul"
+                spacing={0.5}
+                sx={{ pl: 2.5, mt: 0.5, mb: 1.5 }}
+              >
+                {CHECK_LOOK_FOR.map((l) => (
+                  <Typography key={l} component="li" variant="body2">
+                    {t(`check.items.${l}`)}
+                  </Typography>
+                ))}
+              </Stack>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                {t('check.result')}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                component="p"
+              >
+                {t('check.notInspection')}
+              </Typography>
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+              <Typography
+                variant="overline"
+                color="text.secondary"
+                component="p"
+                sx={{ mb: 1.5 }}
+              >
+                {t('reminder.label')}
+              </Typography>
+              <Stack spacing={1.5}>
+                {REMINDER.map((m) => (
+                  <ChatMessage
+                    key={m.key}
+                    from={m.from}
+                    speaker={t(`chat.${m.from}`)}
+                    text={t(`reminder.messages.${m.key}.text`)}
+                    files={
+                      'files' in m
+                        ? t(`reminder.messages.${m.key}.files`)
+                        : null
+                    }
+                    note={
+                      'note' in m
+                        ? `${t('chat.husvan')}: ${t(`reminder.messages.${m.key}.note`)}`
+                        : null
+                    }
+                  />
+                ))}
+              </Stack>
+            </Paper>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+            }}
+          >
+            {WHEEL_POINTS.map((p) => (
+              <Box key={p}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {t(`wheelPoints.${p}.title`)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t(`wheelPoints.${p}.body`)}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Section>
+      </Container>
+
+      <Box
+        component="footer"
+        sx={{
+          borderTop: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Container
+          maxWidth="md"
           sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+            py: 3,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 1.5,
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          {WHEEL_POINTS.map((p) => (
-            <Box key={p}>
-              <Typography variant="subtitle1" fontWeight={600}>
-                {t(`wheelPoints.${p}.title`)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t(`wheelPoints.${p}.body`)}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      </Section>
-
-      <Typography variant="body2" color="text.secondary">
-        {t('personal')}
-      </Typography>
-    </Container>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <LogoMark sx={{ fontSize: 20 }} />
+            <Typography variant="body2" color="text.secondary">
+              © {new Date().getFullYear()} Husvan
+            </Typography>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            {t('invite')}
+          </Typography>
+        </Container>
+      </Box>
+    </>
   )
 }
 
