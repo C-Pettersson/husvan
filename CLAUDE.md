@@ -146,6 +146,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 | Observationer med `retractedAt` | `valid_from`/`valid_to` per värde | Blandade ihop när något gällde med när vi fick veta det. Krävde ett partiellt unikt index som Prisma inte kan uttrycka och som förbjöd två aktuella Claude-värden från olika dokument. |
 | Utkast som rader i `DRAFT`-ändringsset | Utkastet som JSON i `changeset.proposal` | JSON-varianten krävde en andra datamodell för utkast, egen validering, egen rendering och en transformering vid godkännande. |
 | `replacesId` på den nya komponenten | `replaced_on`/`replaced_by` på den gamla | Ett utkast kan då uttrycka ett byte med bara en insert. Den gamla raden rörs aldrig. |
+| Utlämnade utkastrader flyttas till ett eget `REJECTED`-ändringsset | `retractedAt` på komponenter, eller en kolumn `excludedAt` på varje tabell, eller en lista `exclude` som tolkas vid godkännandet | Varje läsning filtrerar redan på ändringssetets status, så ingen läsning behöver ändras och raderna kan aldrig läcka. `retractedAt` behåller betydelsen "gällde och togs tillbaka"; en utlämnad rad har aldrig gällt. Komponenter får ingen ny kolumn, så att "ersatt" förblir det enda som härleds om dem. Raden byter bara beslut, inte innehåll, och den är synlig för ingen när det sker. |
 | `LifespanProfile` med kurerade värden och `sources` som JSON | En rad per typ och källa som vägs ihop vid körning | Sammanvägningen är redaktionellt arbete som görs en gång, inte en beräkning per prognos. Råvärdena finns kvar för spårbarhet. |
 | `MunicipalTariffChange` och `PriceIndex` som egna tabeller | `tariff_changes` som JSON på kommunen | Typade värden med unika nycklar. En nullbar kommunkolumn i ett unikt index släpper igenom dubbletter i Postgres. |
 | `MunicipalTaxRate` och `TaxParameter` per år | Skattesatser som kolumner på kommunen, nationella belopp som konstanter i koden | Takbeloppet för fastighetsavgiften ändras varje år och skattesatserna kan ändras. Med en rad per år och källa går en gammal prognos att förklara, och ett nytt år är en import, inte en release. |
@@ -167,10 +168,19 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 | `set_assumption` | `APPROVED` direkt. | Användarens eget val, uttalat i chatten. |
 | `propose_changes`, `add_work_item` | `DRAFT` tills `confirm_changes`. | Påståenden om huset som Claude läst ut. |
 | `answer_questions` | `DRAFT` tills `confirm_changes`. | Svaren går genom Claude, som kan ha missförstått dem. |
+| `edit_draft` | Rader som inte ska med flyttas från utkastet till ett eget `REJECTED`-ändringsset; nya rader läggs i utkastet. | Ett fel modellval ska inte tvinga fram att hela utkastet avvisas och görs om. Se "Rätta ett utkast". |
 | Svar på en öppen fråga på webben | `APPROVED` direkt med källa `USER`. | Användaren svarar själv. |
 | Rättning på webbsidan | `APPROVED` direkt med källa `USER`. | Användaren gör ändringen själv. Se "Webben". |
 
-`confirm_changes` tar `approve` eller `reject`. Avslagna rader finns kvar men syns aldrig. Utkast valideras mot typbiblioteket redan vid `propose_changes`, så att Claude får felet medan den har dokumentet framför sig.
+`confirm_changes` tar `approve` eller `reject` för hela utkastet. Avslagna rader finns kvar men syns aldrig. Utkast valideras mot typbiblioteket redan vid `propose_changes`, så att Claude får felet medan den har dokumentet framför sig.
+
+#### Rätta ett utkast
+
+Ett öppet utkast rättas rad för rad med `edit_draft` (`src/server/houses/editDraft.ts`, valideringen `validateDraftEdit` i `changes.ts`), på webben med samma knappar som för godkända rader när utkastet visas på plats:
+
+- **Lämna ut en rad.** `removeComponents`, `removeValues` och `removeWorkItems` tar id:n på rader i utkastet; `get_house` med `draftId` ger utkastets värden sina id:n. Raderna flyttas till ett nytt ändringsset med status `REJECTED` och kommentaren `Left out of draft <id>`, så att de är osynliga på samma sätt som allt annat avslaget, vad användaren än beslutar om resten. En utlämnad komponent tar med sig sina underkomponenter och utkastets värden och åtgärder på dem.
+- **Rätta ett värde.** Det felaktiga värdet lämnas ut och det rätta läggs till i samma anrop (samma fält som `propose_changes`). Ett nytt värde ensamt räcker inte: regeln för aktuellt värde låter en senare läsning med lägre `confidence` förlora mot den första.
+- **Allt eller inget.** Tillägg valideras som i `propose_changes`, och får inte bygga på något som samma anrop lämnar ut. Ett avgjort utkast kan inte rättas; utkastet låses under rättningen så att ett godkännande inte kan smyga in emellan.
 
 Ordningen i chatten: `create_house`, sedan `save_document` för varje dokument, `type_library` och sist `propose_changes` där varje värde pekar på sitt `documentId`. Ett dokument kräver ett hus, så värden som skickas med `create_house` kan inte peka på något dokument; de är till för det användaren skriver i chatten. Valideringen (`validateChanges` i `src/server/houses/changes.ts`, värdena i `src/server/library/checkValue.ts`):
 
@@ -334,6 +344,7 @@ Varje värde visas bredvid kommunens och rikets, med år och nivå. Ett kommunv�
 | `create_house` | Nytt kandidathus. Kärnan sparas direkt, övriga uppgifter returneras som utkast | Skriver |
 | `save_document` | Fulltext, metadata och Claudes tolkning. Originalfilen laddas upp via webben | Skriver |
 | `propose_changes` | Nya komponenter och observationer, alla med källa. Returnerar ett utkast | Skriver utkast |
+| `edit_draft` | Rättar ett öppet utkast rad för rad: lämnar ut komponenter, värden och åtgärder och lägger till rader i samma anrop, så att ett fel inte tvingar fram ett nytt utkast | Skriver utkast |
 | `confirm_changes` | Godkänner eller avslår ett utkast | Skriver |
 | `add_work_item` | Åtgärd från besiktningen eller eget val | Skriver utkast |
 | `set_assumption` | Horisont, startår, ränta, lån, antal låntagare, energipriser, drifttrend, hushållets inkomst, friköpsår | Skriver |
@@ -372,6 +383,7 @@ Webben läser genom samma kod som MCP-verktygen (`getHouse`, `analyseHouse`, `co
 - **Åtgärd.** En ny åtgärd, eller en ändrad som ersätter den gamla med `replaces`. Att avfärda en åtgärd sätter `retractedAt` på den och på de åtgärder den ersatte, så att ingen av dem räknas igen.
 - **Huset.** Status, adress, fastighetsbeteckning och kommun ändras på plats, med samma kontroll mot dubbletter som `create_house` (`isSameHouse`).
 - **Antaganden.** Som `set_assumption`, för huset eller alla hus.
+- **Utkastrader.** När ett utkast visas på plats (`?draft=`) kan användaren lämna ut en komponent, ett värde eller en åtgärd ur utkastet och rätta ett utkastvärde. Det går genom `editDraft` (se "Rätta ett utkast"); det rättade värdet läggs i utkastet med källa `USER` och godkänns med det, så att utkastet förblir ett beslut.
 
 Nya komponenter skapas inte på webben i version 1; det gör Claude med `propose_changes`. Undantaget är svaret på en öppen fråga om en del som underlaget inte nämner, som lägger till delen med svaret som enda värde.
 

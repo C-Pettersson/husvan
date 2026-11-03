@@ -70,7 +70,7 @@ export default function DraftBanner({
   return (
     <>
       <Alert severity="warning" sx={{ mb: 3 }}>
-        {t('previewing', shown.counts)}
+        {t('previewing', shown.counts)} {t('previewingEdit')}
         <Stack
           direction="row"
           spacing={1}

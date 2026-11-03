@@ -85,7 +85,12 @@ export default function HouseDetail({
   const [workItem, setWorkItem] = useState<{
     item?: (typeof h.workItems)[number]
   } | null>(null)
-  const [dismissing, setDismissing] = useState<string | null>(null)
+  const [dismissing, setDismissing] = useState<{
+    id: string
+    draft: boolean
+  } | null>(null)
+  // A draft component the user leaves out of the previewed draft.
+  const [removing, setRemoving] = useState<ComponentView | null>(null)
   // A draft's rows are shown with the rest of what is known about the house.
   const [tab, setTab] = useState<HouseTab>(
     initialTab ?? (draftId ? 'house' : 'cost')
@@ -176,6 +181,18 @@ export default function HouseDetail({
         {c.draft && (
           <Chip size="small" color="warning" label={t('houseDetail.draft')} />
         )}
+        {c.draft && h.preview && (
+          <IconButton
+            size="small"
+            sx={{ ml: 'auto !important' }}
+            aria-label={t('houseDetail.removeComponentLabel', {
+              name: componentLabel(c),
+            })}
+            onClick={() => setRemoving(c)}
+          >
+            <DeleteOutline fontSize="small" />
+          </IconButton>
+        )}
         {!c.draft && (
           <Button
             size="small"
@@ -211,6 +228,7 @@ export default function HouseDetail({
           edit={{
             houseId: h.id,
             componentId: c.id,
+            draftId: h.preview ?? undefined,
             kindOf: componentKind(c.type),
           }}
         />
@@ -335,7 +353,11 @@ export default function HouseDetail({
                 <ValueTable
                   values={h.values}
                   documents={documents}
-                  edit={{ houseId: h.id, kindOf: houseKind }}
+                  edit={{
+                    houseId: h.id,
+                    draftId: h.preview ?? undefined,
+                    kindOf: houseKind,
+                  }}
                 />
               </Paper>
             ) : (
@@ -434,6 +456,20 @@ export default function HouseDetail({
                           label={t('houseDetail.draft')}
                         />
                       )}
+                      {w.draft && h.preview && (
+                        <IconButton
+                          size="small"
+                          sx={{ ml: 'auto !important' }}
+                          aria-label={t('workItemEdit.removeFromDraftLabel', {
+                            description: w.description,
+                          })}
+                          onClick={() =>
+                            setDismissing({ id: w.id, draft: true })
+                          }
+                        >
+                          <DeleteOutline fontSize="small" />
+                        </IconButton>
+                      )}
                       {!w.draft && (
                         <Box
                           sx={{ ml: 'auto !important', whiteSpace: 'nowrap' }}
@@ -452,7 +488,9 @@ export default function HouseDetail({
                             aria-label={t('workItemEdit.dismissLabel', {
                               description: w.description,
                             })}
-                            onClick={() => setDismissing(w.id)}
+                            onClick={() =>
+                              setDismissing({ id: w.id, draft: false })
+                            }
                           >
                             <DeleteOutline fontSize="small" />
                           </IconButton>
@@ -535,14 +573,38 @@ export default function HouseDetail({
           onClose={() => setWorkItem(null)}
         />
       )}
-      {dismissing && (
+      {dismissing && !dismissing.draft && (
         <RetractDialog
           houseId={h.id}
-          workItemId={dismissing}
+          workItemId={dismissing.id}
           title={t('workItemEdit.dismissTitle')}
           body={t('workItemEdit.dismissBody')}
           confirm={t('workItemEdit.dismiss')}
           onClose={() => setDismissing(null)}
+        />
+      )}
+      {dismissing && dismissing.draft && h.preview && (
+        <RetractDialog
+          houseId={h.id}
+          draftId={h.preview}
+          workItemId={dismissing.id}
+          title={t('workItemEdit.removeFromDraftTitle')}
+          body={t('workItemEdit.removeFromDraftBody')}
+          confirm={t('workItemEdit.removeFromDraft')}
+          onClose={() => setDismissing(null)}
+        />
+      )}
+      {removing && h.preview && (
+        <RetractDialog
+          houseId={h.id}
+          draftId={h.preview}
+          componentId={removing.id}
+          title={t('houseDetail.removeComponentTitle', {
+            name: componentLabel(removing),
+          })}
+          body={t('houseDetail.removeComponentBody')}
+          confirm={t('houseDetail.removeFromDraft')}
+          onClose={() => setRemoving(null)}
         />
       )}
     </>

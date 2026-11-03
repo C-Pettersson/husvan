@@ -33,7 +33,9 @@ import { HOUSE_KEYS } from '@/server/library/houseKeys'
 import { StorageNotConfigured } from '@/server/storage/s3'
 import { result, toolError } from './result'
 
+// A draft value carries its id, so that edit_draft can name it.
 const row = (r: ValueRow, withQuote: boolean) => ({
+  id: r.draft ? r.id : undefined,
   value: r.value,
   unit: r.unit ?? undefined,
   source: r.source,
@@ -163,7 +165,7 @@ export function registerReadTools(
         'Everything approved about one house: current values with source, confidence, document and quote, and alternative values reported for the same key; ' +
         'the component tree; features (yes, no or unknown; unknown is not no); heating; bathroom count; flagged risk constructions, older electrical systems and radon above 200 Bq/m3; ' +
         'area statistics with level and year (a municipal figure is not the neighbourhood’s); actions from inspections; documents, whose text get_document returns; and open drafts awaiting approval, whose rows are not included. ' +
-        'With draftId, the open draft is shown together with the approved data and its rows carry draft: true, so you can tell the user what approving it would add. ' +
+        'With draftId, the open draft is shown together with the approved data and its rows carry draft: true, so you can tell the user what approving it would add; draft values also carry their id, for edit_draft. ' +
         'With asOf, the house as it stood at the end of that day, e.g. before an inspection.',
       inputSchema: z.object({
         houseId: z.uuid().describe('The house id from list_houses.'),

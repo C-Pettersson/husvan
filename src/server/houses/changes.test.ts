@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { checkValue, isIsoDate } from '@/server/library/checkValue'
 import {
   changesInput,
+  draftEditInput,
+  emptyChanges,
   validateChanges,
+  validateDraftEdit,
   type ChangeContext,
+  type DraftRows,
   type LibraryType,
 } from './changes'
 
@@ -198,5 +202,103 @@ describe('validateChanges', () => {
     expect(r.errors).toEqual([
       `${FINDING} is already replaced in open draft ${DOC}; add to that draft with draftId, or let the user decide it first`,
     ])
+  })
+})
+
+// A draft with a bathroom (with a subcomponent and a work item), a WC
+// registered as a second bathroom, and a roof value.
+const BATHROOM = '01a19755-0000-7000-8000-000000000011'
+const BATHROOM_FLOOR = '01a19755-0000-7000-8000-000000000012'
+const WC = '01a19755-0000-7000-8000-000000000013'
+const AREA = '01a19755-0000-7000-8000-000000000021'
+const YEAR = '01a19755-0000-7000-8000-000000000022'
+const WC_AREA = '01a19755-0000-7000-8000-000000000023'
+const HOUSE_YEAR = '01a19755-0000-7000-8000-000000000024'
+const REGROUT = '01a19755-0000-7000-8000-000000000031'
+const PAINT = '01a19755-0000-7000-8000-000000000032'
+
+const rows: DraftRows = {
+  components: [
+    { id: BATHROOM, parentId: null },
+    { id: BATHROOM_FLOOR, parentId: BATHROOM },
+    { id: WC, parentId: null },
+  ],
+  observations: [
+    { id: AREA, componentId: BATHROOM },
+    { id: YEAR, componentId: BATHROOM_FLOOR },
+    { id: WC_AREA, componentId: WC },
+    { id: HOUSE_YEAR, componentId: null },
+  ],
+  workItems: [
+    { id: REGROUT, componentId: BATHROOM },
+    { id: PAINT, componentId: null },
+  ],
+}
+
+const edit = (
+  input: unknown,
+  changes: unknown = emptyChanges,
+  draft: DraftRows = rows
+) =>
+  validateDraftEdit(
+    draftEditInput.parse(input),
+    changesInput.parse(changes),
+    draft
+  )
+
+describe('validateDraftEdit', () => {
+  it('leaves out a component with its subcomponents, values and work items', () => {
+    const r = edit({ removeComponents: [BATHROOM] })
+    expect(r.errors).toEqual([])
+    expect(r.remove).toEqual({
+      components: [BATHROOM, BATHROOM_FLOOR],
+      observations: [AREA, YEAR],
+      workItems: [REGROUT],
+    })
+  })
+
+  it('leaves out single values and work items, and takes additions', () => {
+    const r = edit(
+      { removeValues: [HOUSE_YEAR], removeWorkItems: [PAINT] },
+      {
+        houseValues: [{ key: 'construction_year', value: 1978, confidence: 1 }],
+      }
+    )
+    expect(r.errors).toEqual([])
+    expect(r.remove).toEqual({
+      components: [],
+      observations: [HOUSE_YEAR],
+      workItems: [PAINT],
+    })
+  })
+
+  it('refuses rows outside the draft, additions on a removed component and an empty call', () => {
+    expect(
+      edit(
+        {
+          removeComponents: [WC, ROOF],
+          removeValues: [AREA, DOC],
+          removeWorkItems: [FINDING],
+        },
+        {
+          components: [{ ref: 'floor', type: 'floor', parent: WC }],
+          componentValues: [
+            {
+              componentId: WC,
+              values: [{ key: 'area', value: 2, confidence: 1 }],
+            },
+          ],
+          workItems: [{ component: WC, kind: 'REPAIR', description: 'x' }],
+        }
+      ).errors
+    ).toEqual([
+      `removeComponents[1]: no component ${ROOF} in this draft`,
+      `removeValues[1]: no value ${DOC} in this draft`,
+      `removeWorkItems[0]: no work item ${FINDING} in this draft`,
+      `components[0].parent: component ${WC} is removed in this call`,
+      `componentValues[0]: component ${WC} is removed in this call`,
+      `workItems[0].component: component ${WC} is removed in this call`,
+    ])
+    expect(edit({}).errors).toEqual(['nothing to change'])
   })
 })
