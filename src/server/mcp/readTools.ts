@@ -30,6 +30,11 @@ import {
 } from '@/server/houses/getDocument'
 import { fileBlock, loadDocumentFile } from '@/server/houses/documentFile'
 import { loadExternalIds, matchesExternalId } from '@/server/houses/externalId'
+import {
+  libraryUpdates,
+  libraryUpdatesFor,
+  type LibraryUpdates,
+} from '@/server/houses/libraryUpdates'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
 import { StorageNotConfigured } from '@/server/storage/s3'
 import { result, toolError } from './result'
@@ -95,7 +100,8 @@ export function registerReadTools(
         'With externalId, only the house whose booli_id or listing_id matches it (open drafts count), so a watch finds a house it saw before instead of creating it again; an empty list means it is not there yet. ' +
         'Optionally filter on features (pool, sauna, deck, sunroom, garage, wood_stove, heat_pump_air_air, basement, or any component type): ' +
         'a house is left out only when a feature is known to be absent; houses where a feature is unknown come back separately under "unknown". ' +
-        'maintenanceDebt and maintenanceAdjustedPrice (price + debt) are the typical figures; forecast and compare give their ranges.',
+        'maintenanceDebt and maintenanceAdjustedPrice (price + debt) are the typical figures; forecast and compare give their ranges. ' +
+        'libraryUpdates counts the component types added to the library since the house was last read; get_house lists them, so that the documents can be re-read for parts that had no type then.',
       inputSchema: z.object({
         status: z
           .array(z.enum(['CANDIDATE', 'DECLINED', 'PURCHASED', 'SOLD']))
@@ -156,6 +162,14 @@ export function registerReadTools(
         )
       ).filter((a): a is Analysis => a !== null)
 
+      const updates = await libraryUpdatesFor(
+        prisma,
+        analyses.map((a) => a.view)
+      )
+      const summary = (a: Analysis) => ({
+        ...listSummary(a),
+        libraryUpdates: updates.get(a.view.id)?.types.length ?? 0,
+      })
       const matching = []
       const unknown = []
       let excluded = 0
@@ -168,12 +182,12 @@ export function registerReadTools(
         if (answers.some((a) => a.answer === 'no')) excluded++
         else if (answers.some((a) => a.answer === 'unknown'))
           unknown.push({
-            ...listSummary(analysis),
+            ...summary(analysis),
             unknownFeatures: answers
               .filter((a) => a.answer === 'unknown')
               .map((a) => a.feature),
           })
-        else matching.push(listSummary(analysis))
+        else matching.push(summary(analysis))
       }
       return result({ houses: matching, unknown, excludedCount: excluded })
     }
@@ -188,7 +202,9 @@ export function registerReadTools(
         'the component tree; features (yes, no or unknown; unknown is not no); heating; bathroom count; flagged risk constructions, older electrical systems, radon above 200 Bq/m3, a private sewage system the municipality has failed or that is a sludge separator alone, and well water unfit for drinking; ' +
         'area statistics with level and year (a municipal figure is not the neighbourhood’s); actions from inspections; documents, whose text get_document returns; and open drafts awaiting approval, whose rows are not included. ' +
         'With draftId, the open draft is shown together with the approved data and its rows carry draft: true, so you can tell the user what approving it would add; draft values also carry their id, for edit_draft. ' +
-        'With asOf, the house as it stood at the end of that day, e.g. before an inspection.',
+        'With asOf, the house as it stood at the end of that day, e.g. before an inspection. ' +
+        'libraryUpdates lists the component types added to the library after the house was last read (readAt: the latest approved draft from you, a marked review, or the house’s creation), with their attributes, whether they have a lifespan profile, whether the forecast already assumes one, and related: the house’s parts of the same category that the new type may describe better, such as a bathroom that is really a WC. ' +
+        'When it is not empty, re-read the documents with get_document for those parts and propose what they say with propose_changes (a retyped part is a new component with replaces set to the old id and its values given again); when the documents say nothing more, call mark_library_review so the list starts over.',
       inputSchema: z.object({
         houseId: z.uuid().describe('The house id from list_houses.'),
         draftId: z
@@ -210,6 +226,9 @@ export function registerReadTools(
         asOf: asOf ? endOfDay(asOf) : undefined,
       })
       if (!view) return toolError(`No house with id ${houseId}.`)
+      const updates: LibraryUpdates | null = asOf
+        ? null
+        : await libraryUpdates(prisma, view)
 
       return result({
         house: {
@@ -220,6 +239,20 @@ export function registerReadTools(
           status: view.status,
         },
         asOf: asOf ?? null,
+        libraryUpdates: updates && {
+          readAt: updates.readAt.at.toISOString(),
+          readAtReason: updates.readAt.reason,
+          types: updates.types.map((u) => ({
+            type: u.type,
+            label: u.label.en ?? u.label.sv,
+            category: u.category,
+            addedAt: u.addedAt.toISOString().slice(0, 10),
+            attributes: u.attributes,
+            hasProfile: u.hasProfile,
+            assumedUndocumented: u.assumedUndocumented || undefined,
+            related: u.related.length ? u.related : undefined,
+          })),
+        },
         draftId: view.preview,
         price: pickPrice(view.values),
         values: values(view.values),

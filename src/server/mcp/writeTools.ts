@@ -19,6 +19,7 @@ import {
 import { confirmChangeset } from '@/server/houses/confirmChangeset'
 import { createHouse } from '@/server/houses/createHouse'
 import { editDraft } from '@/server/houses/editDraft'
+import { markLibraryReview } from '@/server/houses/libraryUpdates'
 import {
   proposeChanges,
   type ProposeResult,
@@ -335,6 +336,40 @@ export function registerWriteTools(
         remaining: r.remaining,
         warnings: r.warnings,
         next: DRAFT_NEXT,
+      })
+    }
+  )
+
+  server.registerTool(
+    'mark_library_review',
+    {
+      title: 'Mark library review',
+      description:
+        'Record that the house’s documents were re-read against the current type library and nothing was added, so that get_house stops listing those types under libraryUpdates. ' +
+        'Call it only after re-reading the documents for the listed types; when they do say something, propose_changes does the same once the user approves the draft. Writes an approved, empty changeset from Claude; nothing about the house changes.',
+      inputSchema: z.object({
+        houseId: z.uuid(),
+        comment: z
+          .string()
+          .max(300)
+          .optional()
+          .describe(
+            'What was looked for, e.g. "wc, roof_drainage: not in the listing or the protocol".'
+          ),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
+    async ({ houseId, comment }) => {
+      const r = await markLibraryReview(prisma, {
+        ownerId: userId,
+        houseId,
+        comment,
+      })
+      if (!r.ok) return toolError(r.error)
+      return result({
+        houseId,
+        changesetId: r.changesetId,
+        reviewedAt: r.reviewedAt.toISOString(),
       })
     }
   )

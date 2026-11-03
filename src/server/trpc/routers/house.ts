@@ -26,6 +26,7 @@ import { correct, retract, updateCore } from '@/server/houses/correct'
 import { editDraft } from '@/server/houses/editDraft'
 import { bathroomCount, heating, valueOf } from '@/server/houses/derive'
 import { getHouse, type Label } from '@/server/houses/getHouse'
+import { libraryUpdates } from '@/server/houses/libraryUpdates'
 import { listHouses } from '@/server/houses/listHouses'
 import type { AttributeDefinition } from '@/server/library/schema'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
@@ -79,7 +80,11 @@ export const houseRouter = createTRPCRouter({
         draftId: input.draftId,
       })
       if (!house) throw notFound()
-      return { ...house, houseKeys: HOUSE_KEYS }
+      return {
+        ...house,
+        houseKeys: HOUSE_KEYS,
+        libraryUpdates: await libraryUpdates(ctx.prisma, house),
+      }
     }),
 
   // What the house costs: the forecast, the debt and what they leave out,

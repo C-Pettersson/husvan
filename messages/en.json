@@ -372,7 +372,9 @@
       "house": "The house",
       "documents": "Documents",
       "area": "The area"
-    }
+    },
+    "libraryUpdates": "{count, plural, one {# type has} other {# types have}} been added to the type library since the house was read ({date}): {types}.",
+    "libraryUpdatesHint": "Ask Claude to re-read the documents and propose what they say about such parts."
   },
   "source": {
     "user": "You",
