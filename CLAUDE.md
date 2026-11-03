@@ -133,7 +133,9 @@ Principerna, i den ordning de styr schemat:
 
 ### Aktuellt värde
 
-För varje (komponent, nyckel) bland observationer som inte är återkallade och vars ändringsset är `APPROVED`: `USER` före `CLAUDE` före `IMPORT`, därefter högst `confidence`, därefter senast `recordedAt`. Övriga observationer visas som alternativ med sin källa. Regeln ligger på ett ställe i koden och används av både MCP och webben.
+För varje (komponent, nyckel) bland observationer som inte är återkallade och vars ändringsset är `APPROVED`: `USER` före `CLAUDE` före `IMPORT`, därefter högst `confidence`, därefter senast `recordedAt`. Övriga observationer visas som alternativ med sin källa. Regeln ligger på ett ställe i koden (`currentValue.ts`) och används av både MCP och webben.
+
+Undantag: försäljningens uppgifter (`sale_status`, `asking_price_sek`, `highest_bid_sek`, `highest_bid_date`, `final_price_sek`, `sale_date`, listan `LATEST_WINS_KEYS`) ändras över tid av sin natur. Ett nytt bud ersätter det gamla i stället för att bestrida det, så för dem vinner senast `recordedAt` oavsett källa. Utan undantaget skulle en bevaknings `IMPORT` aldrig synas över Claudes läsning av prospektet.
 
 ### Huset ett visst datum
 
@@ -165,6 +167,7 @@ Komponenter vars ändringsset godkändes före datumet och som inte ersatts av e
 | `create_house` | Huset skapas direkt. Alla utlästa värden läggs i ett `DRAFT` som returneras tillsammans med `houseId`. | Huset är ankaret som dokument och utkast hänger på. Kärnan är synlig i chatten och lätt att rätta. |
 | `save_document` | `APPROVED` direkt. | Ett dokument är bevis, inte ett påstående om huset. Servern tolkar det inte. |
 | `set_assumption` | `APPROVED` direkt. | Användarens eget val, uttalat i chatten. |
+| `update_listing` | `APPROVED` direkt med källa `IMPORT`, ett eget ändringsset per anrop. | Pris, bud och försäljningsstatus från en bevakning är sifferuppdateringar från annonsen, inte påståenden om huset som behöver granskas. Ett värde lika med det aktuella skrivs inte om. Husets `status` är ett kärnfält och ändras på plats. |
 | `propose_changes`, `add_work_item` | `DRAFT` tills `confirm_changes`. | Påståenden om huset som Claude läst ut. |
 | `answer_questions` | `DRAFT` tills `confirm_changes`. | Svaren går genom Claude, som kan ha missförstått dem. |
 | Svar på en öppen fråga på webben | `APPROVED` direkt med källa `USER`. | Användaren svarar själv. |
@@ -326,7 +329,7 @@ Varje värde visas bredvid kommunens och rikets, med år och nivå. Ett kommunv�
 
 | Verktyg | Vad det gör | Läser/skriver |
 | --- | --- | --- |
-| `list_houses` | Alla hus med status, försäljningsstatus, pris, underhållsjusterat pris och nyckeltal. Valfritt filter på egenskaper, där okänt redovisas skilt från nej | Läser |
+| `list_houses` | Alla hus med status, försäljningsstatus, pris, underhållsjusterat pris, nyckeltal och externa id:n. Valfritt filter på egenskaper, där okänt redovisas skilt från nej, och på `externalId` (`booli_id` eller `listing_id`, även i öppna utkast), så att en bevakning hittar huset utan att skapa dubbletter | Läser |
 | `get_house` | Allt om ett hus: komponentträd, aktuella värden med källa och alternativ, egenskaper, området, dokument, åtgärder, öppna utkast. Valfritt per datum | Läser |
 | `get_document` | Ett sparat dokument: metadata, fulltexten i sidor och Claudes tolkning, så att en ny chatt kan läsa besiktningen igen utan ny uppladdning | Läser |
 | `get_document_file` | Originalfilen som användaren laddat upp, oförändrad: foton som bild, PDF och text som inbäddad resurs. Servern läser inte filen; Claude tolkar den själv, till exempel ett foto av FTX-aggregatet eller en skadad fasad | Läser |
@@ -337,10 +340,11 @@ Varje värde visas bredvid kommunens och rikets, med år och nivå. Ett kommunv�
 | `confirm_changes` | Godkänner eller avslår ett utkast | Skriver |
 | `add_work_item` | Åtgärd från besiktningen eller eget val | Skriver utkast |
 | `set_assumption` | Horisont, startår, ränta, lån, antal låntagare, energipriser, drifttrend, hushållets inkomst, friköpsår | Skriver |
+| `update_listing` | Vad annonsen säger nu om ett hus som redan följs: `sale_status`, utgångspris, högsta bud, slutpris och husets `status` när affären är över. Skriver direkt med källa `IMPORT`, eftersom det är sifferuppdateringar från en bevakning och inte påståenden om huset som behöver granskas; senaste värdet per nyckel är det aktuella. Ett eget verktyg i stället för en parameter på `set_assumption`, eftersom antaganden är användarens prognosval i tabellen `Assumption` medan pris och bud är observationer på huset som `pickPrice` läser | Skriver |
 | `forecast` | Kostnad per år och post för ett hus | Läser |
 | `open_questions` | Det analysen inte vet än om ett hus och hur mycket varje svar kan flytta underhållsskulden och prognosen, med snabbval och fritt värde per fråga: underlaget för en checklista inför visning | Läser |
 | `answer_questions` | Användarens svar på öppna frågor, per fråge-id, som ett utkast | Skriver utkast |
-| `compare` | Flera hus sida vid sida: pris, underhållsskuld och underhållsjusterat pris, prisskillnaden förklarad per komponent, därefter de största skillnaderna, egenskaper och området | Läser |
+| `compare` | Flera hus sida vid sida: pris, underhållsskuld och underhållsjusterat pris, samma tal per m² boarea (`perLivingM2`, `null` utan `living_area`), prisskillnaden förklarad per komponent, därefter de största skillnaderna, egenskaper och området | Läser |
 
 Verktygens beskrivningar och svar till Claude är på engelska. Claude svarar ändå användaren på svenska.
 
@@ -348,7 +352,7 @@ Läsverktygen ligger i `src/server/mcp/readTools.ts` och läser genom samma kod 
 
 `forecast`, `open_questions` och `compare` ligger i `src/server/mcp/forecastTools.ts`; jämförelsen räknas i `compareHouses` (`src/server/forecast/compare.ts`), som webben också använder. `forecast` sparar varje prognos i `Forecast` och returnerar den förra som `previous`, så att Claude kan säga hur bedömningen ändrats. Engångsantaganden (`overrides`) sparas inte som antaganden och märks `this_forecast`. `compare` sorterar husen efter underhållsjusterat pris och förklarar skillnaden mot det första; ett hus utan kända driftkostnader har `runningCostsKnown: false` och `null` för driften i `largestForecastDifferences`. `list_houses` visar underhållsskuld och underhållsjusterat pris (typiskt värde).
 
-Skrivverktygen ligger i `src/server/mcp/writeTools.ts` och skriver genom `createHouse`, `saveDocument`, `proposeChanges` (som även `add_work_item` använder), `answerQuestions` (för `answer_questions`), `confirmChangeset` och `setAssumptions` i `src/server/houses/`. Ett utkast returneras med `draftId` och `reviewUrl` (husets sida med `?draft=`), och `get_house` med `draftId` visar utkastets rader märkta `draft: true`, så att Claude kan berätta vad ett godkännande lägger till innan användaren bestämmer sig.
+Skrivverktygen ligger i `src/server/mcp/writeTools.ts` och skriver genom `createHouse`, `saveDocument`, `proposeChanges` (som även `add_work_item` använder), `answerQuestions` (för `answer_questions`), `confirmChangeset`, `setAssumptions` och `updateListing` i `src/server/houses/`. `createHouse` räknar samma fastighetsbeteckning, samma gata i samma kommun eller samma externa id (`booli_id`, `listing_id`, hjälpfunktionerna i `externalId.ts`) som samma hus. Ett utkast returneras med `draftId` och `reviewUrl` (husets sida med `?draft=`), och `get_house` med `draftId` visar utkastets rader märkta `draft: true`, så att Claude kan berätta vad ett godkännande lägger till innan användaren bestämmer sig.
 
 Ett anrop i protokollet 2026-07-28 kräver headrarna `Mcp-Protocol-Version`, `Mcp-Method` (och `Mcp-Name` för `tools/call`) och `params._meta` med `io.modelcontextprotocol/protocolVersion` och `io.modelcontextprotocol/clientCapabilities`. Det behövs för att anropa routen för hand.
 

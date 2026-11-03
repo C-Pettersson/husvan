@@ -187,6 +187,7 @@ export function registerForecastTools(
       title: 'Compare houses',
       description:
         'Several houses side by side, cheapest maintenance-adjusted price first: price, maintenance debt and maintenance-adjusted price with ranges, price to assessed value, the forecast total and per month, and annualCost.perMonth: running costs plus every replacement and repaint spread over the years it lasts, which does not depend on when things fall due. ' +
+        'perLivingM2 gives price, maintenance-adjusted price, the forecast total and per month, and annualCost.perMonth per square metre of living area (null without living_area), so that houses of different size compare. ' +
         'A house without known running costs has a lower forecast for that reason only: runningCostsKnown says so, and its running items are null in largestForecastDifferences. ' +
         'Then, against the first house, the price difference explained per component type (debt differences under 20 000 kr pooled as "other"); the forecast items that differ most; features (unknown is not no); flagged risks, which are never turned into kronor; and area statistics with their level and year. ' +
         'Area figures are context: never call one area better or worse. ' +

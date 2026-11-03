@@ -651,7 +651,8 @@
       "replacement": "Replacement work items",
       "investigation": "Investigations"
     },
-    "annualPerMonth": "Per month, spread"
+    "annualPerMonth": "Per month, spread",
+    "perM2": "SEK {value}/m² living area"
   },
   "edit": {
     "edit": "Change",

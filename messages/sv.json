@@ -651,7 +651,8 @@
       "replacement": "Bytesåtgärder",
       "investigation": "Undersökningar"
     },
-    "annualPerMonth": "Per månad, fördelat"
+    "annualPerMonth": "Per månad, fördelat",
+    "perM2": "{value} kr/m² boarea"
   },
   "edit": {
     "edit": "Ändra",
