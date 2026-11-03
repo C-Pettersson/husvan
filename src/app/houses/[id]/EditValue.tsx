@@ -84,10 +84,16 @@ function parse(kind: ValueKind, text: string): unknown {
   }
 }
 
+// A draft shown in place: the user's value goes into the draft in place of
+// the draft value it corrects, and is approved with it.
+export type DraftTarget = { draftId: string; replaces?: string }
+
 // Sets a value as the user's own: a new observation with source USER,
-// approved at once. With keys, the user picks which value to add.
+// approved at once, or put into a draft. With keys, the user picks which
+// value to add.
 export function EditValueDialog({
   target,
+  draft,
   title,
   fixedKey,
   keys,
@@ -95,6 +101,7 @@ export function EditValueDialog({
   onClose,
 }: {
   target: Target
+  draft?: DraftTarget
   title: string
   fixedKey?: { key: string; kind: ValueKind }
   keys?: { key: string; label: string; kind: ValueKind }[]
@@ -109,20 +116,27 @@ export function EditValueDialog({
     keys?.find((k) => k.key === key)?.kind ?? {
       datatype: 'text',
     }
-  const save = trpc.house.setValue.useMutation({
-    onSuccess: async () => {
-      await utils.house.invalidate()
-      onClose()
-    },
-  })
-  const submit = () =>
-    save.mutate({
-      ...target,
-      value: {
-        key,
-        value: parse(kind, text) as string | number | boolean | string[],
-      },
-    })
+  const done = async () => {
+    await utils.house.invalidate()
+    onClose()
+  }
+  const setValue = trpc.house.setValue.useMutation({ onSuccess: done })
+  const editDraft = trpc.house.editDraft.useMutation({ onSuccess: done })
+  const save = draft ? editDraft : setValue
+  const submit = () => {
+    const next = {
+      key,
+      value: parse(kind, text) as string | number | boolean | string[],
+    }
+    if (draft)
+      editDraft.mutate({
+        houseId: target.houseId,
+        draftId: draft.draftId,
+        removeValues: draft.replaces ? [draft.replaces] : [],
+        value: { componentId: target.componentId, value: next },
+      })
+    else setValue.mutate({ ...target, value: next })
+  }
 
   const input =
     kind.options || kind.datatype === 'boolean' ? (
@@ -197,7 +211,7 @@ export function EditValueDialog({
           )}
           {input}
           <Typography variant="caption" color="text.secondary">
-            {t('userWins')}
+            {t(draft ? 'draftUserWins' : 'userWins')}
           </Typography>
           {save.isError && (
             <Alert severity="error" sx={{ whiteSpace: 'pre-line' }}>
@@ -220,9 +234,13 @@ export function EditValueDialog({
   )
 }
 
-// Retracts an approved value or dismisses a work item after asking.
+// Retracts an approved value or dismisses a work item after asking. With
+// draftId, the row (a value, a work item or a whole component) is a draft
+// row and leaves the draft instead.
 export function RetractDialog({
   houseId,
+  draftId,
+  componentId,
   observationId,
   workItemId,
   title,
@@ -231,6 +249,8 @@ export function RetractDialog({
   onClose,
 }: {
   houseId: string
+  draftId?: string
+  componentId?: string
   observationId?: string
   workItemId?: string
   title: string
@@ -240,12 +260,29 @@ export function RetractDialog({
 }) {
   const t = useTranslations('edit')
   const utils = trpc.useUtils()
-  const retract = trpc.house.retract.useMutation({
-    onSuccess: async () => {
-      await utils.house.invalidate()
-      onClose()
-    },
-  })
+  const done = async () => {
+    await utils.house.invalidate()
+    onClose()
+  }
+  const retractApproved = trpc.house.retract.useMutation({ onSuccess: done })
+  const editDraft = trpc.house.editDraft.useMutation({ onSuccess: done })
+  const retract = draftId ? editDraft : retractApproved
+  const run = () => {
+    if (draftId)
+      editDraft.mutate({
+        houseId,
+        draftId,
+        removeComponents: componentId ? [componentId] : [],
+        removeValues: observationId ? [observationId] : [],
+        removeWorkItems: workItemId ? [workItemId] : [],
+      })
+    else
+      retractApproved.mutate(
+        observationId
+          ? { houseId, observationId }
+          : { houseId, workItemId: workItemId! }
+      )
+  }
   return (
     <Dialog open onClose={onClose}>
       <DialogTitle>{title}</DialogTitle>
@@ -259,17 +296,7 @@ export function RetractDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t('cancel')}</Button>
-        <Button
-          color="error"
-          disabled={retract.isPending}
-          onClick={() =>
-            retract.mutate(
-              observationId
-                ? { houseId, observationId }
-                : { houseId, workItemId: workItemId! }
-            )
-          }
-        >
+        <Button color="error" disabled={retract.isPending} onClick={run}>
           {confirm}
         </Button>
       </DialogActions>

@@ -37,6 +37,7 @@ describe('seeded type library', () => {
       ['facade', { material: 'wood_panel' }],
       ['window', { frame_material: 'wood' }],
       ['exterior_door', { material: 'wood' }],
+      ['fence', { material: 'wood' }],
     ])
     const facade = componentTypes.find((t) => t.type === 'facade')!
     const paintType = facade.attributeSchema.paint_type
@@ -48,6 +49,26 @@ describe('seeded type library', () => {
         paintType.datatype === 'choice' ? paintType.options : {}
       ).sort()
     )
+  })
+
+  it('keeps the parts of other buildings apart from the house’s', () => {
+    // A type that carries a roof or a facade of its own is a building on the
+    // plot: its parts must not take from the house’s estimated areas.
+    const buildings = componentTypes
+      .filter((t) =>
+        (t.allowedSubcomponents ?? []).some((s) =>
+          ['roof_covering', 'facade'].includes(s)
+        )
+      )
+      .map((t) => t.type)
+      .sort()
+    expect(buildings).toEqual(['carport', 'garage', 'outbuilding'])
+    for (const type of buildings)
+      expect(
+        componentTypes.find((t) => t.type === type)!.forecastDefaults
+          ?.separateBuilding,
+        type
+      ).toBe(true)
   })
 
   it('covers every type CLAUDE.md lists', () => {
@@ -91,6 +112,20 @@ describe('seeded type library', () => {
       'deck',
       'sunroom',
       'garage',
+      'water_well',
+      'well_pump',
+      'water_treatment',
+      'private_sewage',
+      'solar_panels',
+      'solar_inverter',
+      'battery_storage',
+      'ev_charger',
+      'hydronic_radiators',
+      'attic',
+      'roof_safety',
+      'driveway',
+      'fence',
+      'retaining_wall',
     ]
     const types = new Set(componentTypes.map((t) => t.type))
     expect(listed.filter((t) => !types.has(t))).toEqual([])

@@ -28,7 +28,8 @@ export type DocumentRef = { type: string; title: string | null }
 
 // Values with where each came from. Rows from a previewed draft are marked,
 // so the draft and the approved data render through the same table. With
-// edit, the user can set their own value or retract the current one.
+// edit, the user can set their own value or retract the current one; with
+// edit.draftId, a draft row can be corrected or left out of the draft too.
 export default function ValueTable({
   values,
   attributes,
@@ -41,6 +42,7 @@ export default function ValueTable({
   edit?: {
     houseId: string
     componentId?: string
+    draftId?: string
     kindOf: (key: string) => ValueKind
   }
 }) {
@@ -117,7 +119,7 @@ export default function ValueTable({
                       label={t('houseDetail.draft')}
                     />
                   )}
-                  {edit && !current.draft && (
+                  {edit && (!current.draft || edit.draftId) && (
                     <Box sx={{ ml: 'auto !important', whiteSpace: 'nowrap' }}>
                       <IconButton
                         size="small"
@@ -130,7 +132,12 @@ export default function ValueTable({
                       </IconButton>
                       <IconButton
                         size="small"
-                        aria-label={t('edit.retractLabel', { key: label(key) })}
+                        aria-label={t(
+                          current.draft
+                            ? 'edit.removeFromDraftLabel'
+                            : 'edit.retractLabel',
+                          { key: label(key) }
+                        )}
                         onClick={() =>
                           setRetracting({ key, current, alternatives })
                         }
@@ -185,13 +192,29 @@ export default function ValueTable({
       {edit && editing && (
         <EditValueDialog
           target={{ houseId: edit.houseId, componentId: edit.componentId }}
+          draft={
+            editing.current.draft && edit.draftId
+              ? { draftId: edit.draftId, replaces: editing.current.id }
+              : undefined
+          }
           title={t('edit.title', { key: label(editing.key) })}
           fixedKey={{ key: editing.key, kind: edit.kindOf(editing.key) }}
           value={editing.current.value}
           onClose={() => setEditing(null)}
         />
       )}
-      {edit && retracting && (
+      {edit && retracting && retracting.current.draft && edit.draftId && (
+        <RetractDialog
+          houseId={edit.houseId}
+          draftId={edit.draftId}
+          observationId={retracting.current.id}
+          title={t('edit.removeValueFromDraftTitle')}
+          body={t('edit.removeValueFromDraftBody')}
+          confirm={t('edit.removeFromDraft')}
+          onClose={() => setRetracting(null)}
+        />
+      )}
+      {edit && retracting && !retracting.current.draft && (
         <RetractDialog
           houseId={edit.houseId}
           observationId={retracting.current.id}

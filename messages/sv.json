@@ -221,7 +221,11 @@
       "radon_measurement_year": "Radonmätning, år",
       "radon_measured": "Radon mätt",
       "deso_code": "DeSO-område",
-      "police_area_code": "Lokalpolisområde"
+      "police_area_code": "Lokalpolisområde",
+      "water_supply": "Vatten",
+      "sewage_system": "Avlopp",
+      "sludge_emptying_cost_sek_per_year": "Slamtömning per år",
+      "community_association_fee_sek_per_year": "Samfällighetsavgift per år"
     },
     "value": {
       "sale_status": {
@@ -237,6 +241,16 @@
       },
       "ventilation_type": {
         "natural_draft": "Självdrag"
+      },
+      "water_supply": {
+        "municipal": "Kommunalt",
+        "private_well": "Egen brunn",
+        "shared_well": "Gemensam brunn"
+      },
+      "sewage_system": {
+        "municipal": "Kommunalt",
+        "private": "Enskilt avlopp",
+        "shared": "Gemensamt avlopp"
       }
     }
   },
@@ -260,6 +274,11 @@
     "draftWaiting": "Ett utkast väntar på ditt godkännande: {components} komponenter, {observations} värden och {workItems} åtgärder.",
     "showDraft": "Visa utkastet",
     "previewing": "Du ser utkastet med {components} komponenter, {observations} värden och {workItems} åtgärder, markerade som utkast. Inget av det räknas förrän du godkänner det.",
+    "previewingEdit": "Du kan ta bort enskilda rader ur utkastet och rätta värden innan du godkänner resten.",
+    "removeFromDraft": "Ta bort ur utkastet",
+    "removeComponentLabel": "Ta bort {name} ur utkastet",
+    "removeComponentTitle": "Ta bort {name} ur utkastet?",
+    "removeComponentBody": "Komponenten läggs åt sidan med sina värden, underkomponenter och åtgärder och godkänns inte med utkastet. Resten av utkastet påverkas inte.",
     "approve": "Godkänn",
     "reject": "Avslå",
     "hideDraft": "Dölj utkastet",
@@ -308,7 +327,8 @@
     "plumbing": "Vatten och avlopp",
     "electrical": "El",
     "interior": "Inomhus",
-    "feature": "Egenskaper"
+    "feature": "Egenskaper",
+    "site": "Tomt och mark"
   },
   "value": {
     "yes": "Ja",
@@ -417,7 +437,11 @@
         "rcd": "Finns det jordfelsbrytare?",
         "panel_type": "Proppar eller automatsäkringar?"
       },
-      "other": "{label}?"
+      "other": "{label}?",
+      "water_supply": "Kommunalt vatten eller egen brunn?",
+      "sewage_system": "Kommunalt eller enskilt avlopp?",
+      "sludge_emptying_cost_sek_per_year": "Vad kostar slamtömningen per år?",
+      "community_association_fee_sek_per_year": "Vad är avgiften till samfälligheten per år?"
     },
     "intro": "Svara på det du kan under visningen. Varje svar räknas in direkt. Beloppet är hur mycket svaret kan ändra kalkylen; störst först.",
     "notInspected": "Huset saknar besiktningsprotokoll, så felen är okända. Ingen fråga här ersätter en besiktning.",
@@ -464,11 +488,11 @@
     "impactForecast": "Kostnaden de närmaste {years} åren kan ändras med upp till {sek}.",
     "decides": "Avgör: {risk}",
     "condition": {
-      "5": "Som nytt",
-      "4": "Gott",
-      "3": "Normalt slitage",
+      "1": "Behöver bytas",
       "2": "Slitet",
-      "1": "Behöver bytas"
+      "3": "Normalt slitage",
+      "4": "Gott",
+      "5": "Som nytt"
     },
     "original": "Original ({year})",
     "notSince": "Inte sedan {year}",
@@ -550,7 +574,9 @@
     "note": "Risker flaggas men räknas inte om till kronor.",
     "risk_construction": "Riskkonstruktion",
     "older_electrical": "Äldre elsystem",
-    "radon": "Radon över referensnivån 200 Bq/m³"
+    "radon": "Radon över referensnivån 200 Bq/m³",
+    "private_sewage": "Enskilt avlopp som måste göras om",
+    "well_water": "Otjänligt dricksvatten i brunnen"
   },
   "facts": {
     "title": "Egenskaper",
@@ -686,6 +712,11 @@
     "cancel": "Avbryt",
     "failed": "Det gick inte att spara.",
     "userWins": "Ditt värde sparas som en ny uppgift och går före Claudes. Det gamla finns kvar som alternativ.",
+    "draftUserWins": "Ditt värde tar utkastvärdets plats i utkastet och godkänns tillsammans med resten. Utkastvärdet läggs åt sidan.",
+    "removeFromDraft": "Ta bort ur utkastet",
+    "removeFromDraftLabel": "Ta bort {key} ur utkastet",
+    "removeValueFromDraftTitle": "Ta bort värdet ur utkastet?",
+    "removeValueFromDraftBody": "Värdet läggs åt sidan och godkänns inte med utkastet. Resten av utkastet påverkas inte.",
     "retract": "Ta bort värdet",
     "retractLabel": "Ta bort {key}",
     "retractTitle": "Ta bort värdet?",
@@ -705,6 +736,10 @@
     "dismissLabel": "Avfärda åtgärden {description}",
     "dismissTitle": "Avfärda åtgärden?",
     "dismissBody": "Åtgärden sparas men räknas inte längre i prognosen eller underhållsskulden.",
+    "removeFromDraft": "Ta bort ur utkastet",
+    "removeFromDraftLabel": "Ta bort åtgärden {description} ur utkastet",
+    "removeFromDraftTitle": "Ta bort åtgärden ur utkastet?",
+    "removeFromDraftBody": "Åtgärden läggs åt sidan och godkänns inte med utkastet. Resten av utkastet påverkas inte.",
     "kind": "Typ",
     "description": "Beskrivning",
     "component": "Del",

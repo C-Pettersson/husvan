@@ -67,3 +67,14 @@ describe('currentValues', () => {
     expect(values.get('area')!.alternatives).toEqual([])
   })
 })
+
+// Why edit_draft removes the value it corrects: a later reading with a
+// lower confidence does not take over on its own.
+describe('a correction in a draft', () => {
+  it('does not win when it is less sure than the value it corrects', () => {
+    expect(
+      pick([obs('wrong', 'CLAUDE', 0.9, 1), obs('right', 'CLAUDE', 0.7, 2)])
+        .current.id
+    ).toBe('wrong')
+  })
+})

@@ -121,6 +121,11 @@ export const forecastDefaultsSchema = z.object({
   // absent_features does not name it, the forecast assumes one from the
   // construction year.
   assumeUndocumented: z.boolean().optional(),
+  // A building of its own on the plot, such as a garage: the parts under it
+  // state their own quantities and neither take from nor count toward the
+  // house's estimated quantities, and they do not stand in for a part the
+  // house itself is assumed to have.
+  separateBuilding: z.boolean().optional(),
   // A cheaper renewal than replacement when the component's attributes are
   // among `when` or unknown, such as relining a cast-iron pipe. Low and typical renew
   // with the profile that `match` selects; high replaces.

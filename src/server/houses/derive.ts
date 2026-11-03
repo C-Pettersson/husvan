@@ -95,7 +95,12 @@ export function bathroomCount(components: ComponentView[]) {
 }
 
 export type Risk = {
-  kind: 'risk_construction' | 'older_electrical' | 'radon'
+  kind:
+    | 'risk_construction'
+    | 'older_electrical'
+    | 'radon'
+    | 'private_sewage'
+    | 'well_water'
   componentId: string | null // null = about the house itself
   type: string
   // The value that makes it a risk, for showing it in the user's language.
@@ -108,8 +113,10 @@ export type Risk = {
 export const RADON_REFERENCE_BQ_M3 = 200
 
 // Foundations whose type and variant are known risk constructions, older
-// electrical systems, and radon measured above the reference level. Flagged,
-// never turned into kronor beyond the replacement cost.
+// electrical systems, radon measured above the reference level, a private
+// sewage system the municipality has failed or that is a sludge separator
+// alone, and well water unfit for drinking. Flagged, never turned into
+// kronor beyond the replacement cost.
 export const RISK_FOUNDATIONS: Record<
   string,
   [attribute: string, value: string]
@@ -117,6 +124,12 @@ export const RISK_FOUNDATIONS: Record<
   slab_on_ground: ['slab_insulation', 'above'],
   crawl_space: ['crawl_space_ventilation', 'outdoor_air'],
   basement: ['basement_wall_insulation', 'interior'],
+}
+
+// Values of a private sewage system that mean a new system is due.
+export const RISK_SEWAGE: Record<string, string[]> = {
+  municipal_assessment: ['needs_action', 'discharge_ban'],
+  system_type: ['sludge_separator_only'],
 }
 
 export function risks(
@@ -174,6 +187,34 @@ export function risks(
         value: false,
         reason: 'no residual current device (rcd = false)',
       })
+    }
+    if (c.type === 'private_sewage') {
+      for (const [key, values] of Object.entries(RISK_SEWAGE)) {
+        const value = valueOf(c.values, key)
+        if (typeof value === 'string' && values.includes(value)) {
+          result.push({
+            kind: 'private_sewage',
+            componentId: c.id,
+            type: c.type,
+            key,
+            value,
+            reason: `${key} = ${value}`,
+          })
+        }
+      }
+    }
+    if (c.type === 'water_well') {
+      const test = valueOf(c.values, 'water_test_result')
+      if (test === 'unfit') {
+        result.push({
+          kind: 'well_water',
+          componentId: c.id,
+          type: c.type,
+          key: 'water_test_result',
+          value: test,
+          reason: 'water_test_result = unfit',
+        })
+      }
     }
   }
   return result

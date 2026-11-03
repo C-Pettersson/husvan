@@ -221,7 +221,11 @@
       "radon_measurement_year": "Radon measurement year",
       "radon_measured": "Radon measured",
       "deso_code": "DeSO area",
-      "police_area_code": "Local police area"
+      "police_area_code": "Local police area",
+      "water_supply": "Water supply",
+      "sewage_system": "Sewage",
+      "sludge_emptying_cost_sek_per_year": "Sludge emptying per year",
+      "community_association_fee_sek_per_year": "Community association fee per year"
     },
     "value": {
       "sale_status": {
@@ -237,6 +241,16 @@
       },
       "ventilation_type": {
         "natural_draft": "Natural draught"
+      },
+      "water_supply": {
+        "municipal": "Municipal",
+        "private_well": "Private well",
+        "shared_well": "Shared well"
+      },
+      "sewage_system": {
+        "municipal": "Municipal",
+        "private": "Private system",
+        "shared": "Shared system"
       }
     }
   },
@@ -260,6 +274,11 @@
     "draftWaiting": "A draft is waiting for your approval: {components} components, {observations} values and {workItems} actions.",
     "showDraft": "Show the draft",
     "previewing": "You are looking at the draft with {components} components, {observations} values and {workItems} actions, marked as draft. None of it counts until you approve it.",
+    "previewingEdit": "You can leave single rows out of the draft and correct values before you approve the rest.",
+    "removeFromDraft": "Leave out of the draft",
+    "removeComponentLabel": "Leave {name} out of the draft",
+    "removeComponentTitle": "Leave {name} out of the draft?",
+    "removeComponentBody": "The component is set aside with its values, subcomponents and actions and is not approved with the draft. The rest of the draft is not affected.",
     "approve": "Approve",
     "reject": "Reject",
     "hideDraft": "Hide the draft",
@@ -308,7 +327,8 @@
     "plumbing": "Water and sewage",
     "electrical": "Electrical",
     "interior": "Interior",
-    "feature": "Features"
+    "feature": "Features",
+    "site": "Plot and grounds"
   },
   "value": {
     "yes": "Yes",
@@ -417,7 +437,11 @@
         "rcd": "Is there a residual current device?",
         "panel_type": "Fuses or circuit breakers?"
       },
-      "other": "{label}?"
+      "other": "{label}?",
+      "water_supply": "Municipal water or a well?",
+      "sewage_system": "Municipal or private sewage?",
+      "sludge_emptying_cost_sek_per_year": "What does sludge emptying cost per year?",
+      "community_association_fee_sek_per_year": "What is the community association fee per year?"
     },
     "intro": "Answer what you can at the viewing. Each answer counts at once. The amount is how much the answer can change the estimate; largest first.",
     "notInspected": "The house has no inspection protocol, so its defects are unknown. No question here replaces an inspection.",
@@ -464,11 +488,11 @@
     "impactForecast": "The cost over the next {years} years can change by up to {sek}.",
     "decides": "Decides: {risk}",
     "condition": {
-      "5": "As new",
-      "4": "Good",
-      "3": "Normal wear",
+      "1": "Needs replacing",
       "2": "Worn",
-      "1": "Needs replacing"
+      "3": "Normal wear",
+      "4": "Good",
+      "5": "As new"
     },
     "original": "Original ({year})",
     "notSince": "Not since {year}",
@@ -550,7 +574,9 @@
     "note": "Risks are flagged but not turned into kronor.",
     "risk_construction": "Risk construction",
     "older_electrical": "Older electrical system",
-    "radon": "Radon above the reference level of 200 Bq/m³"
+    "radon": "Radon above the reference level of 200 Bq/m³",
+    "private_sewage": "Private sewage system that must be renewed",
+    "well_water": "Well water unfit for drinking"
   },
   "facts": {
     "title": "Features",
@@ -686,6 +712,11 @@
     "cancel": "Cancel",
     "failed": "Could not save.",
     "userWins": "Your value is saved as a new entry and wins over Claude’s. The old one stays as an alternative.",
+    "draftUserWins": "Your value takes the draft value’s place in the draft and is approved with the rest. The draft value is set aside.",
+    "removeFromDraft": "Leave out of the draft",
+    "removeFromDraftLabel": "Leave {key} out of the draft",
+    "removeValueFromDraftTitle": "Leave the value out of the draft?",
+    "removeValueFromDraftBody": "The value is set aside and is not approved with the draft. The rest of the draft is not affected.",
     "retract": "Remove the value",
     "retractLabel": "Remove {key}",
     "retractTitle": "Remove the value?",
@@ -705,6 +736,10 @@
     "dismissLabel": "Dismiss the work item {description}",
     "dismissTitle": "Dismiss the work item?",
     "dismissBody": "The work item is kept but no longer counts in the forecast or the maintenance debt.",
+    "removeFromDraft": "Leave out of the draft",
+    "removeFromDraftLabel": "Leave the work item {description} out of the draft",
+    "removeFromDraftTitle": "Leave the work item out of the draft?",
+    "removeFromDraftBody": "The work item is set aside and is not approved with the draft. The rest of the draft is not affected.",
     "kind": "Kind",
     "description": "Description",
     "component": "Part",

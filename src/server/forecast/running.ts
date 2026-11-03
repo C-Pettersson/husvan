@@ -52,6 +52,8 @@ const PARTS: { key: string; trend: TariffCategory | null }[] = [
   { key: 'waste_cost_sek_per_year', trend: 'WASTE' },
   { key: 'insurance_cost_sek_per_year', trend: null },
   { key: 'chimney_sweeping_cost_sek_per_year', trend: null },
+  { key: 'sludge_emptying_cost_sek_per_year', trend: null },
+  { key: 'community_association_fee_sek_per_year', trend: null },
 ]
 
 // BBR 29 weighting factors (viktningsfaktorer) for the primary energy number.

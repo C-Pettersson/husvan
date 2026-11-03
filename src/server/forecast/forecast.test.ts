@@ -258,6 +258,44 @@ describe('undocumented parts', () => {
     ).toEqual([])
   })
 
+  it('keeps the house’s parts apart from a garage’s', () => {
+    const garageLib: Library = {
+      ...lib,
+      defaults: new Map([
+        ...lib.defaults,
+        ['garage', { separateBuilding: true }],
+        [
+          'roof_covering',
+          { assumeUndocumented: true, quantityPerLivingM2: 1.3 },
+        ],
+      ]),
+    }
+    const garage: ComponentView = {
+      ...comp('garage'),
+      children: [comp('roof_covering', {}, 'garage-roof'), comp('window')],
+    }
+    const plans = planComponents(
+      [garage, comp('window', {}, 'house-window')],
+      house,
+      garageLib,
+      START
+    )
+    const byId = Object.fromEntries(plans.map((p) => [p.componentId, p]))
+    // The garage roof does not stand in for the house's, and takes none of
+    // its estimated area.
+    expect(byId['assumed:roof_covering']).toBeDefined()
+    expect(byId['garage-roof'].quantity).toBeNull()
+    expect(byId['garage-roof'].flags.map(flagText)).toContain(
+      'area missing; no cost'
+    )
+    // The house's 12 estimated windows go to its own window alone; the
+    // garage window counts as one.
+    expect(byId['house-window'].quantity).toBe(12)
+    expect(
+      plans.filter((p) => p.type === 'window').map((p) => p.quantity)
+    ).toEqual([1, 12])
+  })
+
   it('leaves an uninspected house’s findings unknown, not zero', () => {
     const rows = findingsByType([
       {

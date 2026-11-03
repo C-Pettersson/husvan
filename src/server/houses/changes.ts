@@ -144,6 +144,19 @@ export const changesShape = {
 export const changesInput = z.object(changesShape)
 export type ChangesInput = z.infer<typeof changesInput>
 
+export const emptyChanges: ChangesInput = {
+  houseValues: [],
+  components: [],
+  componentValues: [],
+  workItems: [],
+}
+
+export const isEmpty = (input: ChangesInput) =>
+  !input.houseValues.length &&
+  !input.components.length &&
+  !input.componentValues.length &&
+  !input.workItems.length
+
 export type LibraryType = {
   attributeSchema: Record<string, AttributeDefinition>
   allowedSubcomponents: string[]
@@ -304,11 +317,128 @@ export function validateChanges(
       )
   }
 
-  const empty =
-    !input.houseValues.length &&
-    !input.components.length &&
-    !input.componentValues.length &&
-    !input.workItems.length
-  if (empty) errors.push('nothing to propose')
+  if (isEmpty(input)) errors.push('nothing to propose')
   return { errors, warnings }
+}
+
+// Correcting an open draft row by row (CLAUDE.md, "Rätta ett utkast"). Rows
+// that should not be approved are left out: moved to a REJECTED changeset
+// of their own, so that every read hides them the way it hides any
+// rejected row. A value is corrected by leaving the wrong one out and
+// adding the right one in the same call; a new value alone wins only when
+// its confidence is at least the old one's (see currentValue.ts).
+export const draftEditShape = {
+  removeComponents: z
+    .array(z.uuid())
+    .default([])
+    .describe(
+      'Ids of components in the draft that should not be added, e.g. a WC registered as a full bathroom. Their subcomponents, values and work items in the draft go with them.'
+    ),
+  removeValues: z
+    .array(z.uuid())
+    .default([])
+    .describe(
+      'Ids of values in the draft that are wrong; get_house with draftId gives each draft value its id. Give the right value in the same call.'
+    ),
+  removeWorkItems: z
+    .array(z.uuid())
+    .default([])
+    .describe('Ids of work items in the draft that should not be added.'),
+}
+
+export const draftEditInput = z.object(draftEditShape)
+export type DraftEditInput = z.infer<typeof draftEditInput>
+
+// The rows of the draft being edited.
+export type DraftRows = {
+  components: { id: string; parentId: string | null }[]
+  observations: { id: string; componentId: string | null }[]
+  workItems: { id: string; componentId: string | null }[]
+}
+
+// What leaves the draft: the rows named, the subcomponents of a removed
+// component, and the values and work items on any of those.
+export type DraftRemoval = {
+  components: string[]
+  observations: string[]
+  workItems: string[]
+}
+
+export function validateDraftEdit(
+  edit: DraftEditInput,
+  changes: ChangesInput,
+  rows: DraftRows
+): { errors: string[]; remove: DraftRemoval } {
+  const errors: string[] = []
+  const inDraft = (
+    ids: string[],
+    known: { id: string }[],
+    path: string,
+    what: string
+  ) => {
+    const have = new Set(known.map((r) => r.id))
+    ids.forEach((id, i) => {
+      if (!have.has(id))
+        errors.push(`${path}[${i}]: no ${what} ${id} in this draft`)
+    })
+    return new Set(ids.filter((id) => have.has(id)))
+  }
+  const components = inDraft(
+    edit.removeComponents,
+    rows.components,
+    'removeComponents',
+    'component'
+  )
+  for (let grew = true; grew;) {
+    grew = false
+    for (const c of rows.components)
+      if (c.parentId && components.has(c.parentId) && !components.has(c.id)) {
+        components.add(c.id)
+        grew = true
+      }
+  }
+  const onRemoved = (r: { componentId: string | null }) =>
+    r.componentId !== null && components.has(r.componentId)
+  const observations = inDraft(
+    edit.removeValues,
+    rows.observations,
+    'removeValues',
+    'value'
+  )
+  for (const o of rows.observations.filter(onRemoved)) observations.add(o.id)
+  const workItems = inDraft(
+    edit.removeWorkItems,
+    rows.workItems,
+    'removeWorkItems',
+    'work item'
+  )
+  for (const w of rows.workItems.filter(onRemoved)) workItems.add(w.id)
+
+  // Additions may not build on what this call removes.
+  const removedTarget = (target: string | undefined, path: string) => {
+    if (target && components.has(target))
+      errors.push(`${path}: component ${target} is removed in this call`)
+  }
+  changes.components.forEach((c, i) => {
+    removedTarget(c.parent, `components[${i}].parent`)
+    removedTarget(c.replaces, `components[${i}].replaces`)
+  })
+  changes.componentValues.forEach((c, i) =>
+    removedTarget(c.componentId, `componentValues[${i}]`)
+  )
+  changes.workItems.forEach((w, i) =>
+    removedTarget(w.component, `workItems[${i}].component`)
+  )
+
+  const nothingRemoved =
+    !components.size && !observations.size && !workItems.size
+  if (nothingRemoved && isEmpty(changes)) errors.push('nothing to change')
+  return {
+    errors,
+    remove: {
+      components: [...components],
+      observations: [...observations],
+      workItems: [...workItems],
+    },
+  }
 }
