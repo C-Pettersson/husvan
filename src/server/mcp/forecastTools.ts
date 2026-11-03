@@ -73,7 +73,7 @@ export function registerForecastTools(
     {
       title: 'Forecast',
       description:
-        'Cost per year and item for one house over the horizon, in start-year kronor: replacements by lifespan, repainting of painted wood, work items, running costs and, if the user set an interest rate and loan, interest. ' +
+        'Cost per year and item for one house over the horizon, in start-year kronor: replacements by lifespan, repainting of painted wood, work items, running costs (including the ground rent of a site leasehold, kept after its revision year but uncertain from then on) and, if the user set an interest rate and loan, interest. ' +
         'Every figure has a range: low uses the longest lifespans and lowest costs, high the shortest and highest; it widens for missing or uncertain inputs, which each item lists under flags. ' +
         'Flags also carry what the rest of the house says about an item: a part priced by the house’s foundation type (drainage costs more at a basement, and is not assumed on a plinth or stone foundation), quantities from the footprint over the floors, and a part the house has several of, such as a second bathroom, which is less urgent while another works. Weigh these when you say what is urgent; the totals do not change for them. ' +
         'Each scenario is a whole path with its own replacement years, so in a single year low or high can fall on either side of typical; the totals are ordered. ' +
