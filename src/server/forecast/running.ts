@@ -11,6 +11,9 @@ import { CONFIDENT, type ByScenario } from './plan'
 export type RunningLine = {
   key: string
   base: ByScenario // per year in the start year
+  // From this year on the line is `later.base` instead: the ground rent after
+  // its revision year, the same amount but uncertain.
+  later?: { fromYear: number; base: ByScenario }
   trend: TariffCategory | null
   flags: Flag[]
 }
@@ -34,6 +37,9 @@ const PARTS: { key: string; trend: TariffCategory | null }[] = [
 // BBR 29 weighting factors (viktningsfaktorer) for the primary energy number.
 const WEIGHT_ELECTRICITY = 1.8
 const WEIGHT_DISTRICT_HEATING = 0.7
+
+// How far low and high lie from an uncertain stated amount.
+const UNCERTAIN_SHARE = 0.2
 
 const spread = (sek: number, share: number): ByScenario => ({
   low: sek * (1 - share),
@@ -88,6 +94,44 @@ export function runningCosts(
     })
   }
   stated('property_fee_sek_per_year', null)
+  groundRent()
+
+  // Ground rent (tomträttsavgäld, CLAUDE.md, "Regler för beräkningen"): the
+  // stated rent up to its revision year; after it the same amount, since the
+  // new rent cannot be worked out in advance, but uncertain. Without a
+  // revision year the whole line is uncertain.
+  function groundRent() {
+    const rent = read('ground_rent_sek_per_year')
+    if (!rent) return
+    const revision = read('ground_rent_revision_year')
+    const flags: Flag[] = rent.uncertain
+      ? [
+          flag('uncertain', {
+            key: 'ground_rent_sek_per_year',
+            confidence: rent.confidence!,
+          }),
+        ]
+      : []
+    const uncertain = spread(rent.sek, UNCERTAIN_SHARE)
+    if (revision) {
+      flags.push(flag('ground_rent_revised', { year: revision.sek }))
+      lines.push({
+        key: 'ground_rent_sek_per_year',
+        base: spread(rent.sek, rent.uncertain ? UNCERTAIN_SHARE : 0),
+        later: { fromYear: revision.sek, base: uncertain },
+        trend: null,
+        flags,
+      })
+    } else {
+      flags.push(flag('ground_rent_no_revision_year'))
+      lines.push({
+        key: 'ground_rent_sek_per_year',
+        base: uncertain,
+        trend: null,
+        flags,
+      })
+    }
+  }
 
   // Heating from energy when the listing gives no cost for it, and no total
   // that would already include it.

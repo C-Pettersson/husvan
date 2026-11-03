@@ -904,6 +904,227 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
       },
     ],
   },
+  // Gutters and downpipes per metre of gutter, downpipes and removal
+  // included pro rata (researched 2026-11-03). The default is painted or
+  // coated steel: sources cluster at 25-40 years (the SABO/M84:10 appendix
+  // and Villaägarna say 25), typical 30 and max 40 are researcher midpoints.
+  // Costs: Takpriser's itemised table gives 510-690 kr/m before ROT for
+  // steel; Brabyggfirmor's 400-900 after ROT is about 460-1 040 before;
+  // LeadHive's two-storey example with scaffolding is 1 155 kr/m. The
+  // per-house figures of 8 000-14 000 kr trace back to one 2022 page and are
+  // not used as the low bound.
+  {
+    type: 'roof_drainage',
+    match: {},
+    lifespanMinYears: 20,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 40,
+    costLowSek: 500,
+    costHighSek: 1000,
+    costUnit: 'LINEAR_M',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Takpriser, Byte av hängrännor, pris 2026',
+        url: 'https://takpriser.se/byte-av-hangrannor/',
+        lifespanYears: null,
+        lifespanYearsRange: [15, 20],
+        costSek: null,
+        costSekRange: [350, 600],
+        note: 'Incl. VAT before ROT; steel gutter 350-450 kr/m fitted, downpipes +120-180 kr/m, removal 40-60 kr/m; steel 15-20 år with repaint every 10, aluminium ca 30, copper 60+',
+      },
+      {
+        name: 'Brabyggfirmor, Byta hängrännor 2026 (2026-03)',
+        url: 'https://www.brabyggfirmor.se/guider/byta-hangrannor',
+        lifespanYears: null,
+        lifespanYearsRange: [25, 35],
+        costSek: null,
+        costSekRange: [400, 900],
+        note: 'Per metre installed AFTER ROT; 150 m2 villa about 40 m 15 000-40 000 after ROT; steel 25-35 år, aluminium över 40, PVC 15-25',
+      },
+      {
+        name: 'LeadHive, Vad kostar hängrännor? Pris & kalkylator',
+        url: 'https://www.leadhive.se/kalkylator/hangrannor',
+        lifespanYears: null,
+        costSek: 46200,
+        note: '40 m two-storey villa with 4 downpipes in coated steel: 46 200 before ROT, 38 100 after; about 1 155 kr/m (researcher arithmetic)',
+      },
+      {
+        name: 'Teknisk medellivslängd för byggnadsdelar (M84:10, SABO), municipal appendix',
+        url: 'https://insynsverige.se/documentHandler.ashx?did=2018592',
+        lifespanYears: 25,
+        costSek: null,
+        note: 'Hängrännor/stuprör 25 år; PDF columns are offset by one row, 25 is the consistent reading',
+      },
+      {
+        name: 'Stormvägens samfällighet, Underhålls- och förnyelseplan 2024 (Villaägarnas bedömning)',
+        url: 'https://samfalligheterna.villaagarna.se/contentassets/4bc4c1b218424d33ba4a43de001197b3/underhallsplan-arsmotet-2024.pdf',
+        lifespanYears: 25,
+        costSek: null,
+        note: "'Stuprör, hängrännor 25', marked as Villaägarna's assessment",
+      },
+      {
+        name: 'BraByggare, Byta stuprör och hängrännor (2026-08-25)',
+        url: 'https://www.brabyggare.se/info/byta-stupror-hangrannor-kostnad/',
+        lifespanYears: null,
+        lifespanYearsRange: [20, 40],
+        costSek: null,
+        costSekRange: [8000, 14000],
+        note: 'Per normal villa roof with installation, ROT not stated; the same figure as Byggeriet 2022',
+      },
+    ],
+  },
+  // Galvanized, unpainted steel rusts sooner than coated steel.
+  {
+    type: 'roof_drainage',
+    match: { material: 'galvanized_steel' },
+    lifespanMinYears: 15,
+    lifespanTypicalYears: 25,
+    lifespanMaxYears: 35,
+    costLowSek: 500,
+    costHighSek: 1000,
+    costUnit: 'LINEAR_M',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Husbasen, Hängrännor och stuprör: val av material, hållbarhet och utseende',
+        url: 'https://husbasen.se/hangrannor-och-stupror-val-av-material-hallbarhet-och-utseende/',
+        lifespanYears: null,
+        lifespanYearsRange: [15, 25],
+        costSek: null,
+        note: "Galvanized steel 'kortare livslängd, vanligtvis 15-25 år'; plastic 10-20; zinc 30-40; copper över 50",
+      },
+      {
+        name: 'Takpriser, Byte av hängrännor, pris 2026',
+        url: 'https://takpriser.se/byte-av-hangrannor/',
+        lifespanYears: null,
+        lifespanYearsRange: [15, 20],
+        costSek: null,
+        costSekRange: [350, 600],
+        note: 'Steel 15-20 år; same installed price as coated steel',
+      },
+      {
+        name: 'CC Plåt & Tak, Stuprör och hängrännor för villa & radhus',
+        url: 'https://ccplat.se/privat/stupror-och-hangrannor/',
+        lifespanYears: null,
+        lifespanYearsRange: [25, 40],
+        costSek: null,
+        note: "'Normalt håller de 25-40 år'; 'planera för byte efter cirka 25-30 år'",
+      },
+    ],
+  },
+  // PVC: cheapest material, shortest life.
+  {
+    type: 'roof_drainage',
+    match: { material: 'plastic' },
+    lifespanMinYears: 10,
+    lifespanTypicalYears: 18,
+    lifespanMaxYears: 25,
+    costLowSek: 450,
+    costHighSek: 900,
+    costUnit: 'LINEAR_M',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Brabyggfirmor, Byta hängrännor 2026 (2026-03)',
+        url: 'https://www.brabyggfirmor.se/guider/byta-hangrannor',
+        lifespanYears: null,
+        lifespanYearsRange: [15, 25],
+        costSek: null,
+        costSekRange: [100, 200],
+        note: 'PVC 15-25 år; material only 100-200 kr/m against 150-250 for painted steel; installed 400-900 kr/m after ROT for all materials',
+      },
+      {
+        name: 'Nytt tak i Sthlm, Byta hängrännor 2026 (2026-09-21)',
+        url: 'https://www.nytttakisthlm.se/tips/byta-hangrannor-guide/',
+        lifespanYears: null,
+        lifespanYearsRange: [10, 20],
+        costSek: null,
+        costSekRange: [6000, 20000],
+        note: 'Plasthängrännor 10-20 år, metall 25-40; 6 000-20 000 per average villa incl. downpipes, ROT not stated',
+      },
+      {
+        name: 'Husbasen, Hängrännor och stuprör: val av material, hållbarhet och utseende',
+        url: 'https://husbasen.se/hangrannor-och-stupror-val-av-material-hallbarhet-och-utseende/',
+        lifespanYears: null,
+        lifespanYearsRange: [10, 20],
+        costSek: null,
+        note: 'Plastic 10-20 år',
+      },
+    ],
+  },
+  {
+    type: 'roof_drainage',
+    match: { material: 'aluminium' },
+    lifespanMinYears: 30,
+    lifespanTypicalYears: 35,
+    lifespanMaxYears: 45,
+    costLowSek: 600,
+    costHighSek: 1100,
+    costUnit: 'LINEAR_M',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Takpriser, Byte av hängrännor, pris 2026',
+        url: 'https://takpriser.se/byte-av-hangrannor/',
+        lifespanYears: 30,
+        costSek: null,
+        costSekRange: [450, 550],
+        note: 'Aluminium gutter fitted 450-550 kr/m before ROT plus downpipes and removal; ca 30 år',
+      },
+      {
+        name: 'Brabyggfirmor, Byta hängrännor 2026 (2026-03)',
+        url: 'https://www.brabyggfirmor.se/guider/byta-hangrannor',
+        lifespanYears: 40,
+        costSek: null,
+        costSekRange: [200, 350],
+        note: "Aluminium 'över 40 år'; material 200-350 kr/m",
+      },
+      {
+        name: 'BKJ, Hängrännor (2026-05-15)',
+        url: 'https://bkj.se/hangrannor/',
+        lifespanYears: null,
+        lifespanYearsRange: [30, 50],
+        costSek: null,
+        note: 'Plåt (steel and aluminium) 30-50 år with maintenance',
+      },
+    ],
+  },
+  {
+    type: 'roof_drainage',
+    match: { material: 'copper' },
+    lifespanMinYears: 50,
+    lifespanTypicalYears: 60,
+    lifespanMaxYears: 80,
+    costLowSek: 900,
+    costHighSek: 1600,
+    costUnit: 'LINEAR_M',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Takpriser, Byte av hängrännor, pris 2026',
+        url: 'https://takpriser.se/byte-av-hangrannor/',
+        lifespanYears: 60,
+        costSek: null,
+        costSekRange: [700, 900],
+        note: 'Copper gutter fitted 700-900 kr/m before ROT plus downpipes and removal; 60+ år',
+      },
+      {
+        name: 'Husbasen, Hängrännor och stuprör: val av material, hållbarhet och utseende',
+        url: 'https://husbasen.se/hangrannor-och-stupror-val-av-material-hallbarhet-och-utseende/',
+        lifespanYears: 50,
+        costSek: null,
+        note: "Copper 'ofta över 50 år'",
+      },
+      {
+        name: 'Brabyggfirmor, Byta hängrännor 2026 (2026-03)',
+        url: 'https://www.brabyggfirmor.se/guider/byta-hangrannor',
+        lifespanYears: null,
+        costSek: null,
+        note: "Copper and zinc material '3-5 gånger högre' than steel",
+      },
+    ],
+  },
   // Only one fetched lifespan source. Motor and springs often need replacing
   // earlier (not modelled).
   {
@@ -936,6 +1157,75 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
       },
     ],
   },
+  // Simple timber outbuildings per m2 of building area, built or assembled
+  // by a contractor with piers and roofing (researched 2026-11-03). ROT does
+  // not apply to a new building. Lifespan is the time to rebuild: 25 for
+  // sills and frame (Villaägarna's assessment), 40 for replacing timber
+  // panel (M84:10 appendix), 50+ for a well-kept facade; typical 40 is a
+  // researcher midpoint. Guest houses, attefall houses, barns and workshops
+  // have no profile: they are priced through their own roof, facade, windows
+  // and doors as subcomponents (sources put an insulated annex, delivered
+  // and assembled without kitchen or bath, at 12 000-20 000 kr/m2).
+  ...(['storage_shed', 'woodshed', 'friggebod'] as const).map(
+    (kind): LifespanProfileDefinition => ({
+      type: 'outbuilding',
+      match: { building_kind: kind },
+      lifespanMinYears: 25,
+      lifespanTypicalYears: 40,
+      lifespanMaxYears: 50,
+      costLowSek: 3000,
+      costHighSek: 7000,
+      costUnit: 'M2',
+      priceYear: 2026,
+      sources: [
+        {
+          name: 'BraByggare, Vad kostar det att bygga ett förråd? Pris per kvm 2026 (2026-10-06)',
+          url: 'https://www.brabyggare.se/info/bygga-forrad-kostnad-pris-per-kvm/',
+          lifespanYears: null,
+          costSek: null,
+          costSekRange: [3000, 4500],
+          note: 'Simple uninsulated shed with contractor 3 000-4 500 kr/m2; insulated with electricity 7 500-9 500; material only 1 500-2 500',
+        },
+        {
+          name: 'Son och Far, Bygga förråd och friggebod: kostnad för 15 kvm 2026 (2026-11-01)',
+          url: 'https://sonochfar.se/blog/bygga-forrad-pris-per-kvm/',
+          lifespanYears: null,
+          costSek: 97000,
+          note: '15 m2 uninsulated kit 46 700 incl. VAT; assembled with roof, foundation and labour 97 000, about 6 467 kr/m2',
+        },
+        {
+          name: 'Glenn Olsens Bygg, Bygga friggebod i lösvirke kostnad (2025-05-23)',
+          url: 'https://glennolsensbygg.se/artiklar/bygga-friggebod-i-losvirke-kostnad',
+          lifespanYears: null,
+          costSek: null,
+          costSekRange: [3000, 8000],
+          note: 'With contractor 3 000-8 000 kr/m2; 15 m2 turnkey 100 000-200 000',
+        },
+        {
+          name: 'Stormvägens samfällighet, Underhålls- och förnyelseplan 2024 (Villaägarnas bedömning)',
+          url: 'https://samfalligheterna.villaagarna.se/contentassets/4bc4c1b218424d33ba4a43de001197b3/underhallsplan-arsmotet-2024.pdf',
+          lifespanYears: 25,
+          costSek: null,
+          note: "Garage buildings with storage: 'Syllar, stommar, bjälklag 25', 'Målning 10'",
+        },
+        {
+          name: 'Teknisk medellivslängd för byggnadsdelar (M84:10, SABO), municipal appendix',
+          url: 'https://insynsverige.se/documentHandler.ashx?did=2018592',
+          lifespanYears: 40,
+          costSek: null,
+          note: 'Träpanel byte 40 år, målning 10 år',
+        },
+        {
+          name: 'Byggaklart, Underhåll garage förråd (2025-07-03)',
+          url: 'https://byggaklart.se/underhall-garage-forrad/',
+          lifespanYears: null,
+          lifespanYearsRange: [20, 30],
+          costSek: null,
+          note: "A maintained shed 'ska hålla i 20-30 år framåt'; repaint every 5-10 years",
+        },
+      ],
+    })
+  ),
   // Per linear metre of foundation perimeter. Strongly soil-dependent
   // (Konsumenternas 15-40). Cost excludes exterior insulation/waterproofing;
   // with it, Byggstart reports 5 000-10 500 kr/lm (see
@@ -1422,6 +1712,135 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
         lifespanYears: null,
         costSek: 1800,
         note: 'From 1 800 kr after ROT incl. 2 hours, element not included',
+      },
+    ],
+  },
+  // The central air heater of a 1975-1990 villa (Bahco ACJ and its
+  // successors FläktGroup ACJB and Swegon CombiWin), replaced like for like
+  // on the existing ducts (researched 2026-11-03). Guide sites give 15-25 or
+  // 25-35 years for FTX-class units; original Bahco units are documented
+  // running 30-37 years with bearing changes. 20/30/40 is a researcher
+  // synthesis. Low is the unit alone; high adds a day of installer and
+  // electrician (researcher arithmetic). The ACF/Minimaster half of such a
+  // system is a ventilation_ftx component of its own.
+  {
+    type: 'electric_air_heating',
+    match: {},
+    lifespanMinYears: 20,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 40,
+    costLowSek: 32000,
+    costHighSek: 55000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Ventilationsshopen, ACJB Luftvärmeaggregat Elbatteri 6 kW',
+        url: 'https://www.ventilationsshopen.se/se/acjb-luftvarmeaggregat-elbatteri-6kw',
+        lifespanYears: null,
+        costSek: 31950,
+        note: "Unit incl. 25 % VAT; 'ersättningsaggregat till gamla Bahco ACJ eller ACJA', same connections",
+      },
+      {
+        name: 'Ventilation.se, Swegon CASA CombiWin Genius EL',
+        url: 'https://ventilation.se/sv/products/swegon-casa-combiwin',
+        lifespanYears: null,
+        costSek: 33875,
+        note: "Unit incl. VAT for private customers; '100 % utbytbart mot Bahco ACJ / ACJB', 6 kW coil, 'kan normalt installeras på en arbetsdag'",
+      },
+      {
+        name: 'Ventilationsshopen, Luftvärmeaggregat CombiWin El värmare',
+        url: 'https://www.ventilationsshopen.se/se/luftvarmeaggregat-combiwin-el-varmare',
+        lifespanYears: null,
+        costSek: 39990,
+        note: 'Unit incl. 25 % VAT; replaces Bahco ACJ',
+      },
+      {
+        name: 'Byggahus, Byta ut gammalt Bahco Minimaster/Minivent-system (2016-2020)',
+        url: 'https://www.byggahus.se/forum/threads/byta-ut-gammalt-bahco-minimaster-minivent-system-mot-vada.282034/',
+        lifespanYears: 30,
+        costSek: 40000,
+        note: "'Att byta ut acj skulle kosta ca 40 000 kr till ett liknande' (2016 kronor); 1983 and 1989 systems still running in 2020, 'snurrat på i över 30 år'",
+      },
+      {
+        name: 'Ventilationsshopen, Hur lång livslängd har ett FTX aggregat? (2026-10-31)',
+        url: 'https://www.ventilationsshopen.se/se/vanliga-fragor/hur-lang-livslangd-har-ett-ftx-aggregat',
+        lifespanYears: null,
+        lifespanYearsRange: [25, 35],
+        costSek: null,
+        note: "'ca 25-35 år'; spare parts hard to find for units over 25-30 years",
+      },
+      {
+        name: 'Hemkomfort, Hur länge håller ett FTX-aggregat? (2026-02-04)',
+        url: 'https://hemkomfort.se/allt-om-radon-ventilation/hur-lange-haller-ett-ftx-aggregat/',
+        lifespanYears: null,
+        lifespanYearsRange: [15, 25],
+        costSek: null,
+        note: 'Fans 10-20 år, electronics 10-15, heat exchanger 20-30',
+      },
+    ],
+  },
+  // An electric duct heater or reheater (elbatteri, eftervärmare) in a
+  // ventilation unit (researched 2026-11-03). Swedish guides replace it on
+  // failure, with the electronics at 10-15 years as the usual failure point
+  // and the SBR/SABO table at 15-20 for electric heaters and controls; bare
+  // coils are documented running 30-44 years. Low is a 1.2 kW heater without
+  // controls plus 1.5 h electrician, high one with built-in controller and
+  // flow switch plus 3 h and a call-out fee (researcher arithmetic).
+  {
+    type: 'electric_duct_heater',
+    match: {},
+    lifespanMinYears: 10,
+    lifespanTypicalYears: 15,
+    lifespanMaxYears: 25,
+    costLowSek: 3500,
+    costHighSek: 9000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Ventilation.se, VEAB Kanalvärmare CV 125-1,2',
+        url: 'https://ventilation.se/sv/products/kanalvarmare-cv-125-12',
+        lifespanYears: null,
+        costSek: 2397,
+        note: '1 200 W without controls, incl. VAT for private customers; CV-ViCi-QO 125-1,2 with built-in controller and flow switch 5 260',
+      },
+      {
+        name: 'FTX-Online, Kanalvärmare 1200 W Ø160 mm',
+        url: 'https://www.ftx-online.se/produkt/kanalvarmare-1200w-o160mm/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [1995, 3995],
+        note: 'Incl. VAT: without control 1 995, with thermostat 2 495, with thermostat and flow switch 3 995',
+      },
+      {
+        name: 'Byggahus, Kostnad anlita elektriker, timpriser (2026-05-13)',
+        url: 'https://www.byggahus.se/timpris-elektriker-kostnad-anlita-elektriker-stockholm-goteborg-malmo-10-stader',
+        lifespanYears: null,
+        costSek: 835,
+        note: 'Average electrician 835 kr/h incl. VAT, call-out fees 1 400-3 100',
+      },
+      {
+        name: 'Akono, Så är ett FTX-aggregat uppbyggt (2026-10-19)',
+        url: 'https://akono.se/guider/sa-ar-ett-ftx-aggregat-uppbyggt-flaktar-vaxlare-och-filter/',
+        lifespanYears: null,
+        costSek: null,
+        note: "'Eftervärmare: Byts vid fel', no planned interval; whole FTX swap 40 000-60 000 after ROT",
+      },
+      {
+        name: 'Dolda fel-försäkring, Teknisk livslängd (SBR/SABO table after M84:10)',
+        url: 'https://doldafelforsakring.se/teknisk-livslangd/',
+        lifespanYears: 20,
+        costSek: null,
+        note: "'elradiator ... 20 år', 'Styr- och reglerutrustning 20 år', 'Byte av fläktmotor 15 år'",
+      },
+      {
+        name: 'Hemkomfort, Hur länge håller ett FTX-aggregat? (2026-02-04)',
+        url: 'https://hemkomfort.se/allt-om-radon-ventilation/hur-lange-haller-ett-ftx-aggregat/',
+        lifespanYears: null,
+        lifespanYearsRange: [10, 15],
+        costSek: null,
+        note: 'Styrkort/elektronik 10-15 år, givare 10-15 år',
       },
     ],
   },
@@ -2492,6 +2911,131 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
         costSek: null,
         costSekRange: [130000, 300000],
         note: 'Incl. VAT, excl. ROT: 5 m2 budget 130k, standard 180k, mid-range 230k, premium 300k+; system should work 25+ år',
+      },
+    ],
+  },
+  // A toilet room without a shower (researched 2026-11-03). No source gives
+  // a lifespan for the room itself: 15 is the fixture-level figure from
+  // plumbing retailers and Villaägarna's bathroom, 30 is 2 Snickare's
+  // porcelain figure, and max 40 is a researcher choice since the wet-room
+  // failure driver (tätskikt under a shower) is absent. Costs are a full
+  // renovation of a 1.5-3 m2 room before ROT; a fixtures-only swap
+  // (Hantverkskollen 12 000-28 000) is below the band.
+  {
+    type: 'wc',
+    match: {},
+    lifespanMinYears: 15,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 40,
+    costLowSek: 60000,
+    costHighSek: 140000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: '2 Snickare, Underhållsplan och livslängd (2022-11-23)',
+        url: 'https://2snickare.se/artiklar-guider/underhallsplan-och-livslangd/',
+        lifespanYears: 30,
+        costSek: null,
+        note: "'30 år: Toalettstol, handfat och badkar (slitage och estetik)'; plastmatta 15-20 år",
+      },
+      {
+        name: 'Vi i Villa, Allt du behöver veta om toalettstolar (2025-06-27)',
+        url: 'https://viivilla.se/bad/toalettstolar/allt-du-behover-veta-om-toalettstolar/',
+        lifespanYears: null,
+        lifespanYearsRange: [10, 15],
+        costSek: null,
+        note: "Gustavsberg: 'byter man ut porslinet var 10-15 år'; the fixture, not the room",
+      },
+      {
+        name: 'Clas Fixare, Vad kostar en renovering?',
+        url: 'https://www.clasfixare.se/vad-kostar-en-renovering/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [70000, 90000],
+        note: 'Totalrenovera toalett utan dusch eller badkar 70 000-90 000; ROT 30 % described separately',
+      },
+      {
+        name: 'Boio, Badrumsrenovering pris 2026',
+        url: 'https://boio.se/guide/badrumsrenovering-pris-2026',
+        lifespanYears: 25,
+        costSek: null,
+        costSekRange: [80000, 150000],
+        note: 'Mindre toaletter 1,5-3 kvm 80 000-150 000 incl. VAT, excl. ROT; system should work 25+ år',
+      },
+      {
+        name: 'Qicon, Vad kostar det att renovera en gästtoalett? (Prisguide 2026)',
+        url: 'https://qicon.se/pris/renovera-gasttoalett',
+        lifespanYears: null,
+        costSek: 110000,
+        costSekRange: [70000, 150000],
+        note: 'Average 110 000; 3 m2 example 140 000 before ROT, 110 000 after',
+      },
+      {
+        name: 'Hantverkskollen, Vad kostar en badrumsrenovering? Prisguide 2026 (2026-07-17)',
+        url: 'https://www.hantverkskollen.se/artiklar/rormokare/rormokare-vad-kostar-en-badrumsrenovering-prisguide-2026',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [12000, 28000],
+        note: 'Byta toalett + handfat + blandare without tiling, incl. VAT before ROT; lower bound only',
+      },
+    ],
+  },
+  // A laundry or utility room with a floor drain and a membrane on the floor
+  // (researched 2026-11-03). Lifespans follow the wet-room membrane: 20 for a
+  // vinyl mat, 25 GVK/Handelsbanken, 30 for a membrane under tiles. Costs
+  // are a full renovation of 4-8 m2 with drain, membrane, tiles or vinyl and
+  // cabinets, before ROT; cosmetic jobs (Clas Fixare's 60 000 average) are a
+  // different scope.
+  {
+    type: 'laundry_room',
+    match: {},
+    lifespanMinYears: 20,
+    lifespanTypicalYears: 25,
+    lifespanMaxYears: 30,
+    costLowSek: 80000,
+    costHighSek: 160000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'GVK via Mynewsdesk, Renovera badrummet i tid (2016-10-20)',
+        url: 'https://www.mynewsdesk.com/se/gvk/news/renovera-badrummet-i-tid-192755',
+        lifespanYears: 25,
+        costSek: null,
+        note: "'den tekniska livslängden på ett badrum är omkring 25 år' (older than 5 years)",
+      },
+      {
+        name: '2 Snickare, Underhållsplan och livslängd (2022-11-23)',
+        url: 'https://2snickare.se/artiklar-guider/underhallsplan-och-livslangd/',
+        lifespanYears: null,
+        lifespanYearsRange: [20, 30],
+        costSek: null,
+        note: 'Plastmatta i våtrum 20 år; tätskikt under klinker 30 år; rollat tätskikt 15 år',
+      },
+      {
+        name: 'Son och Far, Renovera tvättstuga: kostnad, källare och budget 2026 (2026-11-01)',
+        url: 'https://sonochfar.se/blog/vad-kostar-det-att-bygga-tvattstuga/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [125000, 160000],
+        note: '6 m2 full renovation incl. VAT before ROT, without appliances; 20 800-26 700 kr/m2; rivning, brunn, tätskikt, klinker, el och VVS',
+      },
+      {
+        name: 'Qicon, Vad kostar det att renovera tvättstuga? (Prisguide 2026)',
+        url: 'https://qicon.se/pris/renovera-tvattstuga/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [50000, 150000],
+        note: 'After ROT; total renovation 16 000-40 000 kr/m2, average 22 000; 10 m2 example 162 000 before ROT',
+      },
+      {
+        name: 'Rörfixarna, Renovera tvättstuga',
+        url: 'https://rorfixarna.se/renovera-tvattstuga',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [50000, 150000],
+        note: 'Enklare 30 000-50 000; mer omfattande 50 000-150 000 och uppåt',
       },
     ],
   },

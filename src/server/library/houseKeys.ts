@@ -67,6 +67,20 @@ export const HOUSE_KEYS: Record<string, HouseKey> = {
     datatype: 'number',
     unit: 'SEK',
   },
+  // Site leasehold (tomträtt): the yearly ground rent (tomträttsavgäld) and
+  // the year it is next revised (omreglering). The forecast keeps the rent
+  // after that year but marks it uncertain.
+  ground_rent_sek_per_year: {
+    description:
+      'Ground rent per year (tomträttsavgäld) when the house stands on a site leasehold',
+    datatype: 'number',
+    unit: 'SEK',
+  },
+  ground_rent_revision_year: {
+    description:
+      'Year the ground rent is next revised (omreglering); the rent after it is unknown',
+    datatype: 'year',
+  },
 
   // The building
   house_type: {
