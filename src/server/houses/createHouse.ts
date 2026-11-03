@@ -3,6 +3,7 @@
 // go into a draft.
 import type { PrismaClient } from '@prisma/client'
 import { validateChanges, type ValueInput } from './changes'
+import { externalIdsOf, loadExternalIds, matchesExternalId } from './externalId'
 import { insertChanges, loadLibrary, type Written } from './proposeChanges'
 
 export type CreateHouseResult =
@@ -23,12 +24,18 @@ type HouseCore = {
   address: string
   municipalityCode?: string | null
   propertyDesignation?: string | null
+  // booli_id and listing_id values (externalId.ts), when known.
+  externalIds?: readonly string[]
 }
 
-// The same property designation, or the same street in the same (or an
-// unknown) municipality. Shared with corrections on the web.
+// The same external listing id, the same property designation, or the same
+// street in the same (or an unknown) municipality. Shared with corrections
+// on the web.
 export const isSameHouse = (h: HouseCore, other: HouseCore) =>
   Boolean(
+    (other.externalIds ?? []).some((id) =>
+      matchesExternalId(h.externalIds ?? [], id)
+    ) ||
     (other.propertyDesignation &&
       normalize(h.propertyDesignation ?? '') ===
         normalize(other.propertyDesignation)) ||
@@ -56,23 +63,34 @@ export async function createHouse(
     comment?: string
   }
 ): Promise<CreateHouseResult> {
-  const houses = await prisma.house.findMany({
-    where: { ownerId },
-    select: {
-      id: true,
-      address: true,
-      municipalityCode: true,
-      propertyDesignation: true,
-    },
-  })
+  const [houses, externalIds] = await Promise.all([
+    prisma.house.findMany({
+      where: { ownerId },
+      select: {
+        id: true,
+        address: true,
+        municipalityCode: true,
+        propertyDesignation: true,
+      },
+    }),
+    loadExternalIds(prisma, ownerId),
+  ])
   const duplicate = houses.find((h) =>
-    isSameHouse(h, { address, municipalityCode, propertyDesignation })
+    isSameHouse(
+      { ...h, externalIds: externalIds.get(h.id) },
+      {
+        address,
+        municipalityCode,
+        propertyDesignation,
+        externalIds: externalIdsOf(houseValues),
+      }
+    )
   )
   if (duplicate)
     return {
       ok: false,
       errors: [
-        `The house already exists as ${duplicate.id}; use get_house and propose_changes.`,
+        `The house already exists as ${duplicate.id}; use get_house and propose_changes, or update_listing for price, bid and sale status.`,
       ],
       existingHouseId: duplicate.id,
     }

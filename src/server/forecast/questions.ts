@@ -444,6 +444,13 @@ export function openQuestions(input: QuestionInput): OpenQuestions {
   for (const item of running) {
     const width = item.total.high - item.total.low
     if (width < 1) continue
+    // A ground rent that is only uncertain because it will be revised cannot
+    // be settled by any answer.
+    if (
+      item.key === 'ground_rent_sek_per_year' &&
+      !item.flags.some((f) => f.code === 'uncertain')
+    )
+      continue
     const estimated = HEATING_ESTIMATES.includes(item.key)
     questions.push({
       ...house,

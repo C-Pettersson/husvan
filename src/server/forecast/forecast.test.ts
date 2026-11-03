@@ -615,6 +615,101 @@ describe('runningCosts', () => {
   })
 })
 
+describe('ground rent', () => {
+  const prices = { electricitySekPerKwh: 1.5, districtHeatingSekPerKwh: 0.8 }
+  const forecastOf = (values: KeyValueView[]) => {
+    const running = runningCosts(values, [], prices, 1.5)
+    return {
+      running,
+      forecast: computeForecast({
+        startYear: START,
+        horizonYears: 5,
+        plans: [],
+        workItems: [],
+        running: running.lines,
+        trend: null,
+        capital: null,
+      }),
+    }
+  }
+
+  it('keeps the rent after the revision year but widens its range', () => {
+    const { running, forecast } = forecastOf([
+      kv('ground_rent_sek_per_year', 12000),
+      kv('ground_rent_revision_year', START + 2),
+    ])
+    const line = running.lines.find(
+      (l) => l.key === 'ground_rent_sek_per_year'
+    )!
+    expect(line.base).toEqual({ low: 12000, typical: 12000, high: 12000 })
+    expect(line.later).toEqual({
+      fromYear: START + 2,
+      base: { low: 9600, typical: 12000, high: 14400 },
+    })
+    expect(line.flags.map(flagText)).toEqual([
+      `ground rent is revised in ${START + 2}; the same amount is kept after that but is uncertain`,
+    ])
+    const item = forecast.items.find(
+      (i) => i.category === 'running' && i.key === 'ground_rent_sek_per_year'
+    )!
+    expect(item.typical.map((e) => e.sek)).toEqual([
+      12000, 12000, 12000, 12000, 12000,
+    ])
+    // Two certain years and three uncertain ones.
+    expect(item.total).toEqual({
+      low: 2 * 12000 + 3 * 9600,
+      typical: 5 * 12000,
+      high: 2 * 12000 + 3 * 14400,
+    })
+    expect(forecast.years[1].total.low).toBe(12000)
+    expect(forecast.years[2].total.low).toBe(9600)
+  })
+
+  it('is uncertain throughout without a revision year', () => {
+    const { running, forecast } = forecastOf([
+      kv('ground_rent_sek_per_year', 10000),
+    ])
+    const line = running.lines[0]
+    expect(line.key).toBe('ground_rent_sek_per_year')
+    expect(line.base).toEqual({ low: 8000, typical: 10000, high: 12000 })
+    expect(line.later).toBeUndefined()
+    expect(line.flags.map((f) => f.code)).toEqual([
+      'ground_rent_no_revision_year',
+    ])
+    expect(forecast.items[0].total).toEqual({
+      low: 40000,
+      typical: 50000,
+      high: 60000,
+    })
+  })
+
+  it('flags an uncertain rent as well as its revision', () => {
+    const { running } = forecastOf([
+      kv('ground_rent_sek_per_year', 10000, 0.5),
+      kv('ground_rent_revision_year', START + 1),
+    ])
+    const line = running.lines[0]
+    expect(line.base).toEqual({ low: 8000, typical: 10000, high: 12000 })
+    expect(line.flags.map((f) => f.code)).toEqual([
+      'uncertain',
+      'ground_rent_revised',
+    ])
+  })
+
+  it('comes after the property fee among the stated lines', () => {
+    const { running } = forecastOf([
+      kv('ground_rent_sek_per_year', 10000),
+      kv('property_fee_sek_per_year', 9000),
+      kv('heating_cost_sek_per_year', 15000),
+    ])
+    expect(running.lines.map((l) => l.key)).toEqual([
+      'heating_cost_sek_per_year',
+      'property_fee_sek_per_year',
+      'ground_rent_sek_per_year',
+    ])
+  })
+})
+
 describe('annualCost', () => {
   it('spreads each replacement and repaint over the years it lasts', () => {
     const a = annualCost(

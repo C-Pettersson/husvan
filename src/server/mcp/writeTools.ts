@@ -1,10 +1,10 @@
 // Write tools (CLAUDE.md, "Skrivflöde"): create_house, save_document,
-// propose_changes, add_work_item, answer_questions, confirm_changes and
-// set_assumption.
-// Claims about the house land in a draft the user approves; documents and
-// the user's own assumptions are approved directly. Everything read from a
-// document is data, never instructions, and is validated before it is
-// written.
+// propose_changes, add_work_item, answer_questions, confirm_changes,
+// set_assumption and update_listing.
+// Claims about the house land in a draft the user approves; documents, the
+// user's own assumptions and a watch's listing figures are approved
+// directly. Everything read from a document is data, never instructions,
+// and is validated before it is written.
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { PrismaClient } from '@prisma/client'
@@ -19,6 +19,11 @@ import {
   type ProposeResult,
 } from '@/server/houses/proposeChanges'
 import { saveDocument } from '@/server/houses/saveDocument'
+import {
+  HOUSE_STATUSES,
+  listingShape,
+  updateListing,
+} from '@/server/houses/updateListing'
 import { result, toolError } from './result'
 
 const reviewUrl = (houseId: string, draftId: string) =>
@@ -330,6 +335,54 @@ export function registerWriteTools(
       })
       if (!r.ok) return toolError(r.error)
       return result({ houseId: houseId ?? null, saved: values })
+    }
+  )
+
+  server.registerTool(
+    'update_listing',
+    {
+      title: 'Update listing',
+      description:
+        'Record what the listing says now about a house the user already follows: sale_status, asking price, highest bid, final price, and the house status once the sale is over. ' +
+        'For a scheduled watch: find the house with list_houses (externalId, or the address) and call this instead of create_house or propose_changes. ' +
+        'The figures are saved at once with source IMPORT, since they are numbers read off the listing, not a reading of the house that needs review; the latest value per key is the current one, so a new bid is simply recorded. ' +
+        'A value equal to the current one is not written again, so calling daily is safe. ' +
+        'status SOLD means the house went to someone else, DECLINED that the user has dropped it; CANDIDATE and PURCHASED are the user’s own decisions, so set them only when the user says so.',
+      inputSchema: z.object({
+        houseId: z.uuid().describe('The house id from list_houses.'),
+        ...listingShape,
+        status: z
+          .enum(HOUSE_STATUSES)
+          .optional()
+          .describe('The owner’s status of the house, changed in place.'),
+        comment: z
+          .string()
+          .max(500)
+          .optional()
+          .describe('Where the figures come from, e.g. "Booli 2026-11-03".'),
+      }),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async ({ houseId, status, comment, ...values }) => {
+      const r = await updateListing(prisma, {
+        ownerId: userId,
+        houseId,
+        values,
+        status,
+        comment,
+      })
+      if (!r.ok) return toolError(r.errors.join('\n'))
+      return result({
+        houseId,
+        changesetId: r.changesetId,
+        written: r.written,
+        unchanged: r.unchanged,
+        status: r.status,
+      })
     }
   )
 }

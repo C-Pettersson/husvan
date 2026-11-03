@@ -68,6 +68,22 @@ export default function Comparison({ ids }: { ids: string[] }) {
       '–'
     )
   const unknownRunning = houses.filter((h) => !h.runningCostsKnown)
+  // The typical figure per square metre of living area, under the row's
+  // own figure; nothing when the living area is unknown. Small amounts, such
+  // as per month, keep one decimal.
+  const perM2 = (v: number | Range | null) => {
+    if (v === null) return null
+    const n = typeof v === 'number' ? v : v.typical
+    return (
+      <Typography variant="caption" color="text.secondary" component="div">
+        {t('compare.perM2', {
+          value: new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'sv-SE', {
+            maximumFractionDigits: Math.abs(n) >= 100 ? 0 : 1,
+          }).format(n),
+        })}
+      </Typography>
+    )
+  }
 
   const itemLabel = (item: string) => {
     const [category, key] = item.split(':')
@@ -154,28 +170,34 @@ export default function Comparison({ ids }: { ids: string[] }) {
                   >
                     {keyLabel(h.price.kind, { locale, t })}
                   </Typography>
+                  {perM2(h.perLivingM2.price)}
                 </>
               ) : (
                 t('cost.noPrice')
               )
             )}
             {row(t('cost.debt'), (h) => range(h.maintenanceDebt))}
-            {row(t('cost.adjusted'), (h) => range(h.maintenanceAdjustedPrice))}
-            {row(t('cost.perMonth'), (h) =>
-              h.runningCostsKnown ? (
-                range(h.forecastPerMonth, true)
-              ) : (
-                <>
-                  {range(h.forecastPerMonth, true)}
+            {row(t('cost.adjusted'), (h) => (
+              <>
+                {range(h.maintenanceAdjustedPrice)}
+                {perM2(h.perLivingM2.maintenanceAdjustedPrice)}
+              </>
+            ))}
+            {row(t('cost.perMonth'), (h) => (
+              <>
+                {range(h.forecastPerMonth, true)}
+                {perM2(h.perLivingM2.forecastPerMonth)}
+                {!h.runningCostsKnown && (
                   <Typography variant="caption" color="warning.dark">
                     {t('cost.gap.runningUnknown')}
                   </Typography>
-                </>
-              )
-            )}
+                )}
+              </>
+            ))}
             {row(t('compare.annualPerMonth'), (h) => (
               <>
                 {range(h.annualCost.perMonth, true)}
+                {perM2(h.perLivingM2.annualPerMonth)}
                 {!h.runningCostsKnown && (
                   <Typography variant="caption" color="warning.dark">
                     {t('cost.gap.runningUnknown')}
