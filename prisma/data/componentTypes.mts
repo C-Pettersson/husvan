@@ -1078,6 +1078,23 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...orientation,
     },
   },
+  // A balcony on an upper floor, as the deck is on the ground: a glazed one
+  // is a common search criterion. No profile in version 1.
+  {
+    type: 'balcony',
+    label: { sv: 'Balkong', en: 'Balcony' },
+    category: 'feature',
+    attributeSchema: {
+      glazing: choice('Inglasning', 'Glazing', {
+        open: ['Öppen', 'Open'],
+        glazed: ['Inglasad', 'Glazed'],
+      }),
+      ...area,
+      ...installationYear,
+      ...condition,
+      ...orientation,
+    },
+  },
   {
     type: 'sunroom',
     label: { sv: 'Uterum', en: 'Sunroom' },
@@ -1101,6 +1118,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
         min: 1,
       },
       attached: yesNo('Sammanbyggt med huset', 'Attached to the house'),
+      ...area,
       ...installationYear,
       ...condition,
     },
@@ -1204,6 +1222,9 @@ export const componentTypes: ComponentTypeDefinition[] = [
         guest_house: ['Gäststuga', 'Guest house'],
         attefall_house: ['Attefallshus', 'Attefall house'],
         workshop: ['Verkstad', 'Workshop'],
+        greenhouse: ['Växthus', 'Greenhouse'],
+        playhouse: ['Lekstuga', 'Playhouse'],
+        gazebo: ['Lusthus', 'Gazebo'],
       }),
       insulated: yesNo('Isolerad', 'Insulated'),
       electricity: yesNo('Indragen el', 'Electricity'),
@@ -1244,7 +1265,8 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...condition,
       last_painted_year: paint.last_painted_year,
     },
-    allowedSubcomponents: ['roof_covering'],
+    // A carport with storage has walls and a door as well as the roof.
+    allowedSubcomponents: ['roof_covering', 'facade', 'exterior_door'],
     forecastDefaults: { separateBuilding: true },
   },
 ]

@@ -37,6 +37,7 @@ export const FEATURES = [
   'pool',
   'sauna',
   'deck',
+  'balcony',
   'sunroom',
   'garage',
   'wood_stove',

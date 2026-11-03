@@ -18,8 +18,35 @@ export type StoredType = {
   forecastDefaults: Json
 }
 
+// Two versions of one attribute definition: the winner's fields, and the
+// choices of both, so that a new option in the repository (a greenhouse
+// among the outbuildings) reaches a database whose attribute already
+// exists, and an option added in operation survives a full seed.
+function mergeAttribute(winner: unknown, loser: unknown): unknown {
+  if (!isRecord(winner) || !isRecord(loser)) return winner ?? loser
+  const options =
+    isRecord(winner.options) || isRecord(loser.options)
+      ? {
+          ...(isRecord(loser.options) ? loser.options : {}),
+          ...(isRecord(winner.options) ? winner.options : {}),
+        }
+      : undefined
+  return { ...loser, ...winner, ...(options && { options }) }
+}
+
+const isRecord = (v: unknown): v is Json =>
+  !!v && typeof v === 'object' && !Array.isArray(v)
+
+function mergeAttributes(winner: Json, loser: Json): Json {
+  const out: Json = { ...loser }
+  for (const [key, def] of Object.entries(winner))
+    out[key] = mergeAttribute(def, loser[key])
+  return out
+}
+
 // A component type merged with what is stored: attribute keys and forecast
-// defaults are merged key by key, allowed subcomponents are the union.
+// defaults are merged key by key, the choices of an attribute too, and
+// allowed subcomponents are the union.
 export function mergeType(
   seed: StoredType,
   existing: StoredType | null,
@@ -31,8 +58,8 @@ export function mergeType(
     label: keep ? existing.label : seed.label,
     category: keep ? existing.category : seed.category,
     attributeSchema: keep
-      ? { ...seed.attributeSchema, ...existing.attributeSchema }
-      : { ...existing.attributeSchema, ...seed.attributeSchema },
+      ? mergeAttributes(existing.attributeSchema, seed.attributeSchema)
+      : mergeAttributes(seed.attributeSchema, existing.attributeSchema),
     allowedSubcomponents: [
       ...new Set([
         ...existing.allowedSubcomponents,
