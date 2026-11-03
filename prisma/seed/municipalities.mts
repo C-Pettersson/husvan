@@ -1,9 +1,15 @@
 import type { PrismaClient } from '@prisma/client'
+import type { SeedMode } from '../../src/server/library/seedMerge.ts'
 import { municipalities, tariffChanges } from '../data/municipalities.mts'
 
 // Upserts the municipalities and their tariff changes. Values the data file
-// leaves null do not overwrite what is already stored.
-export async function seedMunicipalities(prisma: PrismaClient) {
+// leaves null do not overwrite what is already stored. In add-only mode
+// existing municipalities and tariff changes are left as they are.
+export async function seedMunicipalities(
+  prisma: PrismaClient,
+  mode: SeedMode = 'full'
+) {
+  const addOnly = mode === 'add_only'
   for (const m of municipalities) {
     const values = Object.fromEntries(
       Object.entries({
@@ -15,7 +21,7 @@ export async function seedMunicipalities(prisma: PrismaClient) {
     )
     await prisma.municipality.upsert({
       where: { code: m.code },
-      update: { name: m.name, ...values },
+      update: addOnly ? {} : { name: m.name, ...values },
       create: { code: m.code, name: m.name, ...values },
     })
   }
@@ -28,7 +34,9 @@ export async function seedMunicipalities(prisma: PrismaClient) {
     }
     await prisma.municipalTariffChange.upsert({
       where: { municipalityCode_year_category: key },
-      update: { changeFraction: t.changeFraction, sourceUrl: t.sourceUrl },
+      update: addOnly
+        ? {}
+        : { changeFraction: t.changeFraction, sourceUrl: t.sourceUrl },
       create: {
         ...key,
         changeFraction: t.changeFraction,
