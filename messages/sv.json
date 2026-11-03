@@ -372,7 +372,9 @@
       "house": "Huset",
       "documents": "Dokument",
       "area": "Området"
-    }
+    },
+    "libraryUpdates": "{count, plural, one {# typ har} other {# typer har}} tillkommit i typbiblioteket sedan huset lästes in ({date}): {types}.",
+    "libraryUpdatesHint": "Be Claude läsa om dokumenten och föreslå det de säger om sådana delar."
   },
   "source": {
     "user": "Du",
