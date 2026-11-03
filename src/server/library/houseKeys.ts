@@ -116,9 +116,12 @@ export const HOUSE_KEYS: Record<string, HouseKey> = {
   room_count: { description: 'Number of rooms', datatype: 'number' },
   bedroom_count: { description: 'Number of bedrooms', datatype: 'number' },
   floor_count: { description: 'Number of floors', datatype: 'number' },
+  // Only natural draught is a house key: FTX (heat-recovery) and mechanical
+  // exhaust ventilation are components, ventilation_ftx and
+  // ventilation_exhaust, since they wear out and are replaced.
   ventilation_type: {
     description:
-      'Ventilation without a component of its own, such as natural draught',
+      'Ventilation without a component of its own: natural_draft (självdrag). Mechanical ventilation is a component instead: ventilation_ftx for FTX (heat recovery) and ventilation_exhaust for mechanical exhaust (frånluft, F/FT), so do not set this key for those',
     datatype: 'choice',
     options: ['natural_draft'],
   },

@@ -52,6 +52,53 @@ describe('mergeType', () => {
     })
   })
 
+  it('merges the choices of an attribute in both modes', () => {
+    const seedKinds: StoredType = {
+      ...seed,
+      attributeSchema: {
+        kind: {
+          datatype: 'choice',
+          label: { sv: 'Sort' },
+          options: { shed: { sv: 'Förråd' }, greenhouse: { sv: 'Växthus' } },
+        },
+      },
+    }
+    const storedKinds: StoredType = {
+      ...existing,
+      attributeSchema: {
+        kind: {
+          datatype: 'choice',
+          label: { sv: 'Typ' },
+          options: { shed: { sv: 'Bod' }, sauna_hut: { sv: 'Bastustuga' } },
+        },
+      },
+    }
+    expect(
+      mergeType(seedKinds, storedKinds, 'add_only').attributeSchema
+    ).toEqual({
+      kind: {
+        datatype: 'choice',
+        label: { sv: 'Typ' },
+        options: {
+          shed: { sv: 'Bod' },
+          greenhouse: { sv: 'Växthus' },
+          sauna_hut: { sv: 'Bastustuga' },
+        },
+      },
+    })
+    expect(mergeType(seedKinds, storedKinds, 'full').attributeSchema).toEqual({
+      kind: {
+        datatype: 'choice',
+        label: { sv: 'Sort' },
+        options: {
+          shed: { sv: 'Förråd' },
+          greenhouse: { sv: 'Växthus' },
+          sauna_hut: { sv: 'Bastustuga' },
+        },
+      },
+    })
+  })
+
   it('creates a missing type as the seed has it in both modes', () => {
     expect(mergeType(seed, null, 'add_only')).toBe(seed)
   })

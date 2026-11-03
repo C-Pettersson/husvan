@@ -52,7 +52,8 @@ export async function seedLibrary(
     }
     const data = mergeType(seed, stored, mode)
     if (!existing) newTypes++
-    if (addOnly && stored && differs(mergeType(seed, stored, 'full'), stored))
+    // What a full seed would still change after this run.
+    if (addOnly && stored && differs(mergeType(seed, stored, 'full'), data))
       wouldChange.push(`type ${t.type}`)
     // A row the merge leaves as it is is not written at all.
     if (stored && !differs(data, stored)) continue

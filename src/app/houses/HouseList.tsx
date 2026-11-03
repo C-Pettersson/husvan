@@ -28,6 +28,7 @@ const FEATURES = [
   'pool',
   'sauna',
   'deck',
+  'balcony',
   'sunroom',
   'garage',
   'wood_stove',
@@ -74,9 +75,7 @@ function HouseList({ houses }: { houses: House[] }) {
   // apart (CLAUDE.md, "Okänt är inte nej").
   const answer = (h: House, f: string) =>
     (h.features as Record<string, string>)[f]
-  const hidden = houses.filter((h) =>
-    wanted.some((f) => answer(h, f) === 'no')
-  )
+  const hidden = houses.filter((h) => wanted.some((f) => answer(h, f) === 'no'))
   const shown = houses.filter((h) => !hidden.includes(h))
   const unknownOf = (h: House) =>
     wanted.filter((f) => answer(h, f) === 'unknown')
