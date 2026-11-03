@@ -98,6 +98,22 @@ export const HOUSE_KEYS: Record<string, HouseKey> = {
     datatype: 'choice',
     options: ['natural_draft'],
   },
+  // Water and sewage: kommunalt vatten och avlopp is municipal. A private or
+  // shared well or sewage system is also a component (water_well,
+  // private_sewage), so that its parts can be forecast; the answer decides
+  // whether that whole part of the house is forecast at all.
+  water_supply: {
+    description:
+      'Water source. municipal is kommunalt vatten; a private or shared well also gets a water_well component',
+    datatype: 'choice',
+    options: ['municipal', 'private_well', 'shared_well'],
+  },
+  sewage_system: {
+    description:
+      'Sewage. municipal is kommunalt avlopp; a private or shared system also gets a private_sewage component',
+    datatype: 'choice',
+    options: ['municipal', 'private', 'shared'],
+  },
   // Radon in indoor air. The reference level for homes is 200 Bq/m3
   // (Strålsäkerhetsmyndigheten); a measured level above it is flagged.
   radon_bq_m3: {
@@ -178,6 +194,18 @@ export const HOUSE_KEYS: Record<string, HouseKey> = {
   },
   chimney_sweeping_cost_sek_per_year: {
     description: 'Chimney sweeping and fire safety inspection per year',
+    datatype: 'number',
+    unit: 'SEK',
+  },
+  sludge_emptying_cost_sek_per_year: {
+    description:
+      'Sludge emptying (slamtömning) of a private sewage system per year',
+    datatype: 'number',
+    unit: 'SEK',
+  },
+  community_association_fee_sek_per_year: {
+    description:
+      'Fee to a joint property or road association or a joint facility (samfällighetsförening, vägförening, gemensamhetsanläggning) per year',
     datatype: 'number',
     unit: 'SEK',
   },

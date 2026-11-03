@@ -219,7 +219,11 @@
       "radon_measurement_year": "Radon measurement year",
       "radon_measured": "Radon measured",
       "deso_code": "DeSO area",
-      "police_area_code": "Local police area"
+      "police_area_code": "Local police area",
+      "water_supply": "Water supply",
+      "sewage_system": "Sewage",
+      "sludge_emptying_cost_sek_per_year": "Sludge emptying per year",
+      "community_association_fee_sek_per_year": "Community association fee per year"
     },
     "value": {
       "sale_status": {
@@ -235,6 +239,16 @@
       },
       "ventilation_type": {
         "natural_draft": "Natural draught"
+      },
+      "water_supply": {
+        "municipal": "Municipal",
+        "private_well": "Private well",
+        "shared_well": "Shared well"
+      },
+      "sewage_system": {
+        "municipal": "Municipal",
+        "private": "Private system",
+        "shared": "Shared system"
       }
     }
   },
@@ -306,7 +320,8 @@
     "plumbing": "Water and sewage",
     "electrical": "Electrical",
     "interior": "Interior",
-    "feature": "Features"
+    "feature": "Features",
+    "site": "Plot and grounds"
   },
   "value": {
     "yes": "Yes",
@@ -415,7 +430,11 @@
         "rcd": "Is there a residual current device?",
         "panel_type": "Fuses or circuit breakers?"
       },
-      "other": "{label}?"
+      "other": "{label}?",
+      "water_supply": "Municipal water or a well?",
+      "sewage_system": "Municipal or private sewage?",
+      "sludge_emptying_cost_sek_per_year": "What does sludge emptying cost per year?",
+      "community_association_fee_sek_per_year": "What is the community association fee per year?"
     },
     "intro": "Answer what you can at the viewing. Each answer counts at once. The amount is how much the answer can change the estimate; largest first.",
     "notInspected": "The house has no inspection protocol, so its defects are unknown. No question here replaces an inspection.",
@@ -462,11 +481,11 @@
     "impactForecast": "The cost over the next {years} years can change by up to {sek}.",
     "decides": "Decides: {risk}",
     "condition": {
-      "5": "As new",
-      "4": "Good",
-      "3": "Normal wear",
+      "1": "Needs replacing",
       "2": "Worn",
-      "1": "Needs replacing"
+      "3": "Normal wear",
+      "4": "Good",
+      "5": "As new"
     },
     "original": "Original ({year})",
     "notSince": "Not since {year}",
@@ -544,7 +563,9 @@
     "note": "Risks are flagged but not turned into kronor.",
     "risk_construction": "Risk construction",
     "older_electrical": "Older electrical system",
-    "radon": "Radon above the reference level of 200 Bq/m³"
+    "radon": "Radon above the reference level of 200 Bq/m³",
+    "private_sewage": "Private sewage system that must be renewed",
+    "well_water": "Well water unfit for drinking"
   },
   "facts": {
     "title": "Features",

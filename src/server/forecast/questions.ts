@@ -8,6 +8,7 @@
 // the house and the library.
 import {
   RISK_FOUNDATIONS,
+  RISK_SEWAGE,
   flatten,
   valueOf,
   type Risk,
@@ -141,6 +142,17 @@ const HEATING_ESTIMATES = ['heating_from_energy_use', 'heating_estimated']
 // House keys that every part depends on; no single answer can be tried.
 const CORE_HOUSE_KEYS = ['construction_year', 'living_area']
 
+// House choices that decide whether a whole group of parts is forecast at
+// all: a well with its pump and treatment, a private sewage system. Asked
+// when the key is missing and no component already answers it, and sorted
+// with the questions that decide a risk, before the rest without an amount.
+const GATES = [
+  { key: 'water_supply', component: 'water_well' },
+  { key: 'sewage_system', component: 'private_sewage' },
+]
+const isGate = (q: Bare) =>
+  q.componentId === null && GATES.some((g) => g.key === q.key)
+
 const answered = (key: string, value: Answer): KeyValueView => ({
   key,
   current: {
@@ -215,6 +227,11 @@ function riskKeys(
   }
   if (type === 'electrical_installation') return { wiring: 'older_electrical' }
   if (type === 'electrical_panel') return { rcd: 'older_electrical' }
+  if (type === 'private_sewage')
+    return Object.fromEntries(
+      Object.keys(RISK_SEWAGE).map((key) => [key, 'private_sewage' as const])
+    )
+  if (type === 'water_well') return { water_test_result: 'well_water' }
   return {}
 }
 
@@ -385,6 +402,18 @@ export function openQuestions(input: QuestionInput): OpenQuestions {
     documented: true,
   }
   ask(house, houseValues, 'floor_count', FLOOR_ANSWERS)
+  for (const gate of GATES)
+    if (
+      valueOf(houseValues, gate.key) === undefined &&
+      !documented.some((c) => c.type === gate.component)
+    )
+      questions.push({
+        ...house,
+        key: gate.key,
+        why: 'missing',
+        answers: [],
+        swing: null,
+      })
   for (const key of CORE_HOUSE_KEYS)
     if (valueOf(houseValues, key) === undefined)
       questions.push({
@@ -453,11 +482,12 @@ export function openQuestions(input: QuestionInput): OpenQuestions {
     }
 
   // Largest effect first, by the larger of the two totals; then the ones
-  // that decide a risk, then the rest.
+  // that decide a risk or whether a group of parts is forecast at all, then
+  // the rest.
   const weight = (q: Bare) =>
     q.swing
       ? Math.max(q.swing.maintenanceDebtSek, q.swing.forecastSek)
-      : q.decides
+      : q.decides || isGate(q)
         ? -1
         : -2
   questions.sort((a, b) => weight(b) - weight(a))
@@ -516,6 +546,8 @@ const ASKED = new Set([
   'radon_bq_m3',
   'construction_year',
   'living_area',
+  'water_supply',
+  'sewage_system',
   'area',
   'length',
   'cost',
@@ -641,6 +673,16 @@ function formOf({
         )
     }
     const houseKey = q.componentId === null ? HOUSE_KEYS[q.key] : undefined
+    if (houseKey?.datatype === 'choice' && houseKey.options)
+      return form(
+        houseKey.options.map((value) => ({
+          value,
+          confidence: SEEN,
+          label: value.replace(/_/g, ' '),
+          meaning: { kind: 'choice' },
+        })),
+        null
+      )
     if (houseKey?.datatype === 'year') return form([], year)
     return form([], { datatype: 'number', unit: houseKey?.unit, min: 0 })
   }

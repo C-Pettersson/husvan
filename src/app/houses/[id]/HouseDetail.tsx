@@ -50,6 +50,7 @@ const CATEGORY_ORDER = [
   'electrical',
   'interior',
   'feature',
+  'site',
 ]
 
 type Types = Record<

@@ -115,6 +115,21 @@ describe('risks', () => {
     expect(risks([], [kv('radon_measured', false)])).toEqual([])
   })
 
+  it('flags a failed private sewage system and unfit well water', () => {
+    const house = [
+      comp('private_sewage', { municipal_assessment: 'needs_action' }),
+      comp('private_sewage', { municipal_assessment: 'discharge_ban' }),
+      comp('private_sewage', { system_type: 'sludge_separator_only' }),
+      comp('water_well', { water_test_result: 'unfit' }, [comp('well_pump')]),
+    ]
+    expect(risks(house).map((r) => [r.kind, r.key, r.value])).toEqual([
+      ['private_sewage', 'municipal_assessment', 'needs_action'],
+      ['private_sewage', 'municipal_assessment', 'discharge_ban'],
+      ['private_sewage', 'system_type', 'sludge_separator_only'],
+      ['well_water', 'water_test_result', 'unfit'],
+    ])
+  })
+
   it('leaves safe variants alone', () => {
     const house = [
       comp('foundation', {
@@ -122,6 +137,11 @@ describe('risks', () => {
         slab_insulation: 'below',
       }),
       comp('electrical_panel', { rcd: true }),
+      comp('private_sewage', {
+        system_type: 'infiltration',
+        municipal_assessment: 'approved',
+      }),
+      comp('water_well', { water_test_result: 'fit_with_remarks' }),
     ]
     expect(risks(house)).toEqual([])
   })

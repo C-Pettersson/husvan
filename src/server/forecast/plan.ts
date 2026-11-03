@@ -137,13 +137,25 @@ export function planComponents(
   startYear: number
 ): ComponentPlan[] {
   const documented = flatten(components)
+  // Parts under a building of its own, such as a garage's roof
+  // (forecastDefaults.separateBuilding): they state their own quantities,
+  // take no share of the house's estimate and do not stand in for a part of
+  // the house.
+  const inBuilding = new Set(
+    components.flatMap(function under(c): string[] {
+      return library.defaults.get(c.type)?.separateBuilding
+        ? flatten(c.children).map((x) => x.id)
+        : c.children.flatMap(under)
+    })
+  )
+  const houseParts = documented.filter((c) => !inBuilding.has(c.id))
   const absent = valueOf(houseValues, 'absent_features')
   // Attributes a type reads from another part of the house, such as the
   // foundation type that prices drainage (forecastDefaults.context).
   const contextOf = (d: ForecastDefaults): Record<string, string> =>
     Object.fromEntries(
       Object.entries(d.context ?? {}).flatMap(([key, type]) => {
-        const value = documented
+        const value = houseParts
           .filter((c) => c.type === type)
           .map((c) => valueOf(c.values, key))
           .find((v) => typeof v === 'string')
@@ -162,7 +174,7 @@ export function planComponents(
       ([type, d]) =>
         d.assumeUndocumented &&
         !ruledOut(d) &&
-        !documented.some((c) => c.type === type) &&
+        !houseParts.some((c) => c.type === type) &&
         !(Array.isArray(absent) && absent.includes(type))
     )
     .map(([type]) => ({
@@ -200,10 +212,10 @@ export function planComponents(
       return { total: d.quantityPerLivingM2 * livingArea, fromFootprint: false }
     return null
   }
-  // Components of a type and the quantity they state, for sharing a
-  // per-area estimate among those that state none.
+  // The house's components of a type and the quantity they state, for
+  // sharing a per-area estimate among those that state none.
   const quantities = (type: string, key: string) => {
-    const of = all.filter((c) => c.type === type)
+    const of = all.filter((c) => c.type === type && !inBuilding.has(c.id))
     const stated = of
       .map((c) => c.values.find((v) => v.key === key)?.current.value)
       .filter((v): v is number => typeof v === 'number')
@@ -288,8 +300,8 @@ export function planComponents(
       // A per-area estimate stands for the whole house: what the other
       // components of the type do not state is shared among those that
       // state nothing, so listing parts without numbers does not make a
-      // house cheaper.
-      const whole = estimate(defaults)
+      // house cheaper. A part of another building on the plot gets none.
+      const whole = inBuilding.has(c.id) ? null : estimate(defaults)
       if (whole) {
         const { unstated, stated } = quantities(c.type, key)
         const share = (whole.total - stated) / unstated

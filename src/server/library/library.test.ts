@@ -37,6 +37,7 @@ describe('seeded type library', () => {
       ['facade', { material: 'wood_panel' }],
       ['window', { frame_material: 'wood' }],
       ['exterior_door', { material: 'wood' }],
+      ['fence', { material: 'wood' }],
     ])
     const facade = componentTypes.find((t) => t.type === 'facade')!
     const paintType = facade.attributeSchema.paint_type
@@ -84,6 +85,20 @@ describe('seeded type library', () => {
       'deck',
       'sunroom',
       'garage',
+      'water_well',
+      'well_pump',
+      'water_treatment',
+      'private_sewage',
+      'solar_panels',
+      'solar_inverter',
+      'battery_storage',
+      'ev_charger',
+      'hydronic_radiators',
+      'attic',
+      'roof_safety',
+      'driveway',
+      'fence',
+      'retaining_wall',
     ]
     const types = new Set(componentTypes.map((t) => t.type))
     expect(listed.filter((t) => !types.has(t))).toEqual([])

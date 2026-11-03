@@ -87,7 +87,7 @@ export function registerReadTools(
     {
       title: 'List houses',
       description:
-        'All of the user’s houses with status, sale status, price, key figures, open drafts and flaggedRisks: the number of risk constructions, older electrical systems and radon above 200 Bq/m3 together (get_house lists them). ' +
+        'All of the user’s houses with status, sale status, price, key figures, open drafts and flaggedRisks: the number of risk constructions, older electrical systems, radon above 200 Bq/m3, failed private sewage systems and wells with unfit water together (get_house lists them). ' +
         'Price is final_price_sek, else highest_bid_sek, else asking_price_sek, and price.kind says which. ' +
         'Optionally filter on features (pool, sauna, deck, sunroom, garage, wood_stove, heat_pump_air_air, basement, or any component type): ' +
         'a house is left out only when a feature is known to be absent; houses where a feature is unknown come back separately under "unknown". ' +
@@ -161,7 +161,7 @@ export function registerReadTools(
       title: 'Get house',
       description:
         'Everything approved about one house: current values with source, confidence, document and quote, and alternative values reported for the same key; ' +
-        'the component tree; features (yes, no or unknown; unknown is not no); heating; bathroom count; flagged risk constructions, older electrical systems and radon above 200 Bq/m3; ' +
+        'the component tree; features (yes, no or unknown; unknown is not no); heating; bathroom count; flagged risk constructions, older electrical systems, radon above 200 Bq/m3, a private sewage system the municipality has failed or that is a sludge separator alone, and well water unfit for drinking; ' +
         'area statistics with level and year (a municipal figure is not the neighbourhood’s); actions from inspections; documents, whose text get_document returns; and open drafts awaiting approval, whose rows are not included. ' +
         'With draftId, the open draft is shown together with the approved data and its rows carry draft: true, so you can tell the user what approving it would add. ' +
         'With asOf, the house as it stood at the end of that day, e.g. before an inspection.',
@@ -361,7 +361,7 @@ export function registerReadTools(
           .string()
           .optional()
           .describe(
-            'Only this category: envelope, heating, ventilation, plumbing, electrical, interior or feature.'
+            'Only this category: envelope, heating, ventilation, plumbing, electrical, interior, feature or site (the plot apart from the buildings).'
           ),
       }),
       annotations: { readOnlyHint: true },
@@ -387,7 +387,10 @@ export function registerReadTools(
           'A replaced part is a new component with replacesId pointing at the old one; the old row is never changed.',
           'Windows one by one when the documents allow it, otherwise one window component with quantity.',
           'One sewer_pipes component per section (indoor, under_slab, ground).',
-          'A listing that says "2 badrum" becomes two bathroom components.',
+          'A listing that says "2 badrum" becomes two bathroom components. A bathroom has a shower or a bath; a toilet without one is a wc, and WC/dusch is a bathroom.',
+          'Kommunalt vatten och avlopp sets water_supply and sewage_system to municipal. A private or shared well or sewage system also gets a water_well or private_sewage component; one water_treatment component per filter or unit.',
+          'The inverter and the battery are subcomponents of solar_panels; a battery without panels is a top-level component.',
+          'A detached garage carries its roof, facade, windows and doors as subcomponents, each with its own area or count; they take no share of the house’s estimated areas.',
           'Only a document that says something is missing makes it absent (absent_features); not mentioned is unknown.',
         ],
         houseKeys: HOUSE_KEYS,

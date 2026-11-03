@@ -382,6 +382,57 @@ export const componentTypes: ComponentTypeDefinition[] = [
       repaintByPaintType: joineryRepaintByPaintType,
     },
   },
+  {
+    type: 'attic',
+    label: { sv: 'Vind', en: 'Attic' },
+    category: 'envelope',
+    // No lifespan profile, like the foundation: context for the forecast.
+    // Thin insulation explains a high heating cost, and the attic is where
+    // the inspector most often finds moisture and mould. Additional
+    // insulation is a work item.
+    attributeSchema: {
+      attic_type: choice('Typ', 'Type', {
+        cold: ['Kallvind', 'Cold attic'],
+        partly_finished: ['Delvis inredd', 'Partly finished'],
+        finished: ['Inredd vind', 'Finished'],
+      }),
+      insulation_material: choice('Isolering', 'Insulation', {
+        mineral_wool: ['Mineralull, skivor', 'Mineral wool batts'],
+        loose_fill_mineral: ['Lösull, mineral', 'Loose-fill mineral wool'],
+        cellulose: ['Cellulosa', 'Cellulose'],
+        wood_shavings: ['Kutterspån eller sågspån', 'Wood shavings or sawdust'],
+      }),
+      insulation_thickness_mm: {
+        label: { sv: 'Isolertjocklek', en: 'Insulation thickness' },
+        datatype: 'number',
+        unit: 'mm',
+        min: 0,
+      },
+      additional_insulation_year: {
+        label: { sv: 'Tilläggsisolerad år', en: 'Additional insulation' },
+        datatype: 'year',
+      },
+      ...condition,
+      ...inspectedYear,
+      ...provenance,
+    },
+  },
+  {
+    type: 'roof_safety',
+    label: { sv: 'Taksäkerhet', en: 'Roof safety' },
+    category: 'envelope',
+    // Required for chimney sweeping and the fire safety inspection, and a
+    // common remark from the sweep. Snow guards over entrances matter where
+    // the snow is heavy.
+    attributeSchema: {
+      wall_ladder: yesNo('Väggstege', 'Wall ladder'),
+      roof_ladder: yesNo('Takstege', 'Roof ladder'),
+      roof_walkway: yesNo('Gångbrygga', 'Roof walkway'),
+      snow_guard: yesNo('Snörasskydd', 'Snow guard'),
+      ...replaceable,
+      ...inspectedYear,
+    },
+  },
 
   // Heating -------------------------------------------------------------------
   {
@@ -460,6 +511,36 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...replaceable,
       ...inspectedYear,
     },
+  },
+  {
+    type: 'hydronic_radiators',
+    label: { sv: 'Vattenburna radiatorer', en: 'Hydronic radiators' },
+    category: 'heating',
+    // The system that distributes the heat, apart from the source: it
+    // decides whether an air-to-water or ground source heat pump can be
+    // installed. An open expansion vessel in the attic is a common remark;
+    // changing to a closed one is a work item.
+    attributeSchema: {
+      pipe_system: choice('Rörsystem', 'Pipe system', {
+        two_pipe: ['Tvårörssystem', 'Two-pipe'],
+        one_pipe: ['Enrörssystem', 'One-pipe'],
+      }),
+      pipe_material: choice('Rörmaterial', 'Pipe material', {
+        copper: ['Koppar', 'Copper'],
+        steel: ['Stål', 'Steel'],
+        pex: ['PEX', 'PEX'],
+        composite: ['Komposit', 'Composite'],
+      }),
+      expansion_vessel: choice('Expansionskärl', 'Expansion vessel', {
+        open: ['Öppet', 'Open'],
+        closed: ['Slutet', 'Closed'],
+      }),
+      ...quantity,
+      ...replaceable,
+    },
+    // Radiators per m2 living area: the price guides count 10 to 12 in a
+    // villa of 120 to 150 m2 (Rörfiness, Brabyggfirmor 2026).
+    forecastDefaults: { quantityPerLivingM2: 0.08 },
   },
   {
     type: 'underfloor_heating',
@@ -545,8 +626,8 @@ export const componentTypes: ComponentTypeDefinition[] = [
         indoor: ['Inomhus', 'Indoor'],
         under_slab: ['Under grundplattan', 'Under the slab'],
         ground: [
-          'I mark till förbindelsepunkten',
-          'In the ground to the connection point',
+          'I mark till förbindelsepunkten eller det enskilda avloppet',
+          'In the ground to the connection point or the private sewage system',
         ],
       }),
       renovation_method: choice('Renoveringsmetod', 'Renovation method', {
@@ -593,6 +674,131 @@ export const componentTypes: ComponentTypeDefinition[] = [
     },
   },
 
+  // Water and sewage outside the municipal network. The house says which it
+  // has (water_supply and sewage_system in houseKeys.ts); a private or
+  // shared well or sewage system is also a component, so that the pump, the
+  // treatment and the system itself can be forecast.
+  {
+    type: 'water_well',
+    label: { sv: 'Brunn', en: 'Water well' },
+    category: 'plumbing',
+    // No lifespan profile, like the foundation: a well is not a wearing
+    // part. What is replaced is the pump and the treatment under it. Water
+    // unfit for drinking is flagged at read time (derive.ts, risks).
+    attributeSchema: {
+      well_type: choice('Typ', 'Type', {
+        drilled: ['Borrad', 'Drilled'],
+        dug: ['Grävd', 'Dug'],
+      }),
+      depth_m: {
+        label: { sv: 'Djup', en: 'Depth' },
+        datatype: 'number',
+        unit: 'm',
+        min: 0,
+      },
+      capacity_l_per_hour: {
+        label: { sv: 'Kapacitet', en: 'Capacity' },
+        datatype: 'number',
+        unit: 'l/h',
+        min: 0,
+      },
+      shared: yesNo('Gemensam med grannar', 'Shared with neighbours'),
+      water_test_year: {
+        label: { sv: 'Senaste vattenprov', en: 'Last water test' },
+        datatype: 'year',
+      },
+      water_test_result: choice('Resultat av vattenprov', 'Water test result', {
+        fit: ['Tjänligt', 'Fit for drinking'],
+        fit_with_remarks: ['Tjänligt med anmärkning', 'Fit with remarks'],
+        unfit: ['Otjänligt', 'Unfit for drinking'],
+      }),
+      radon_in_water_bq_l: {
+        label: { sv: 'Radon i vattnet', en: 'Radon in water' },
+        datatype: 'number',
+        unit: 'Bq/l',
+        min: 0,
+      },
+      ...replaceable,
+    },
+    allowedSubcomponents: ['well_pump', 'water_treatment'],
+  },
+  {
+    type: 'well_pump',
+    label: { sv: 'Brunnspump', en: 'Well pump' },
+    category: 'plumbing',
+    attributeSchema: {
+      pump_type: choice('Typ', 'Type', {
+        submersible: ['Dränkbar pump', 'Submersible'],
+        surface: ['Ytpump', 'Surface pump'],
+      }),
+      pressure_tank: yesNo('Hydrofor eller tryckkärl', 'Pressure tank'),
+      ...replaceable,
+      ...modelName,
+    },
+  },
+  {
+    type: 'water_treatment',
+    label: { sv: 'Vattenrening', en: 'Water treatment' },
+    category: 'plumbing',
+    // One component per filter or unit: they have different lifespans and
+    // different checks (UV lamp, regeneration, filter mass).
+    attributeSchema: {
+      treatment_type: choice('Typ', 'Type', {
+        softener: ['Avhärdningsfilter', 'Water softener'],
+        iron_manganese: ['Järn- och manganfilter', 'Iron and manganese filter'],
+        ph_adjustment: ['Alkaliseringsfilter', 'pH adjustment'],
+        uv: ['UV-aggregat', 'UV unit'],
+        radon_removal: ['Radonavskiljare', 'Radon removal'],
+        activated_carbon: ['Kolfilter', 'Activated carbon'],
+        reverse_osmosis: ['Omvänd osmos', 'Reverse osmosis'],
+      }),
+      ...replaceable,
+      ...modelName,
+    },
+  },
+  {
+    type: 'private_sewage',
+    label: { sv: 'Enskilt avlopp', en: 'Private sewage system' },
+    category: 'plumbing',
+    // A system the municipality has failed, or a sludge separator alone, is
+    // flagged at read time (derive.ts, risks): it can be the largest single
+    // cost of a house in the countryside.
+    attributeSchema: {
+      system_type: choice('Anläggning', 'System', {
+        infiltration: ['Infiltration', 'Soil infiltration'],
+        soil_filter: ['Markbädd', 'Soil filter bed'],
+        package_plant: ['Minireningsverk', 'Package treatment plant'],
+        closed_tank: ['Sluten tank', 'Closed tank'],
+        sludge_separator_only: [
+          'Endast slamavskiljare',
+          'Sludge separator only',
+        ],
+      }),
+      sludge_separator: choice('Slamavskiljare', 'Sludge separator', {
+        three_chamber: ['Trekammarbrunn', 'Three-chamber'],
+        two_chamber: ['Tvåkammarbrunn', 'Two-chamber'],
+        single_chamber: ['Enkammarbrunn', 'Single-chamber'],
+        none: ['Ingen', 'None'],
+      }),
+      permit_year: {
+        label: { sv: 'Tillstånd från år', en: 'Permit year' },
+        datatype: 'year',
+      },
+      municipal_assessment: choice(
+        'Kommunens bedömning',
+        'Municipal assessment',
+        {
+          approved: ['Godkänt', 'Approved'],
+          needs_action: ['Åtgärd krävs', 'Action required'],
+          discharge_ban: ['Utsläppsförbud', 'Discharge ban'],
+        }
+      ),
+      shared: yesNo('Gemensamt med grannar', 'Shared with neighbours'),
+      ...replaceable,
+      ...inspectedYear,
+    },
+  },
+
   // Electrical ----------------------------------------------------------------
   {
     type: 'electrical_installation',
@@ -634,6 +840,93 @@ export const componentTypes: ComponentTypeDefinition[] = [
     },
     forecastDefaults: { assumeUndocumented: true },
   },
+  {
+    type: 'solar_panels',
+    label: { sv: 'Solceller', en: 'Solar panels' },
+    category: 'electrical',
+    // Panels on the roof must be lifted off when the roof covering is
+    // replaced; the inverter is replaced more than once in their lifetime,
+    // so it is a component of its own. A battery without panels is a
+    // top-level component.
+    attributeSchema: {
+      peak_power_kw: {
+        label: { sv: 'Toppeffekt', en: 'Peak power' },
+        description: { sv: 'Toppeffekt i kWp', en: 'Peak power in kWp' },
+        datatype: 'number',
+        unit: 'kW',
+        min: 0,
+      },
+      mounting: choice('Montering', 'Mounting', {
+        roof: ['På taket', 'On the roof'],
+        integrated: ['Integrerade i taket', 'Integrated in the roof'],
+        ground: ['På mark', 'On the ground'],
+      }),
+      production_kwh_per_year: {
+        label: { sv: 'Produktion per år', en: 'Production per year' },
+        datatype: 'number',
+        unit: 'kWh',
+        min: 0,
+      },
+      ...replaceable,
+      area: {
+        label: { sv: 'Yta', en: 'Area' },
+        description: {
+          sv: 'Panelernas yta; ungefär 5,5 m2 per kWp om bara effekten är känd',
+          en: 'Panel area; about 5.5 m2 per kWp when only the peak power is known',
+        },
+        datatype: 'number',
+        unit: 'm2',
+        min: 0,
+      },
+      ...modelName,
+      ...orientation,
+    },
+    allowedSubcomponents: ['solar_inverter', 'battery_storage'],
+  },
+  {
+    type: 'solar_inverter',
+    label: { sv: 'Växelriktare', en: 'Inverter' },
+    category: 'electrical',
+    attributeSchema: { ...replaceable, ...modelName, ...capacityKw },
+  },
+  {
+    type: 'battery_storage',
+    label: { sv: 'Batterilager', en: 'Battery storage' },
+    category: 'electrical',
+    attributeSchema: {
+      capacity_kwh: {
+        label: { sv: 'Kapacitet', en: 'Capacity' },
+        datatype: 'number',
+        unit: 'kWh',
+        min: 0,
+      },
+      ...replaceable,
+      ...modelName,
+    },
+  },
+  {
+    type: 'ev_charger',
+    label: { sv: 'Laddbox', en: 'EV charger' },
+    category: 'electrical',
+    // Without load balancing a charger may need a larger main fuse
+    // (electrical_panel, main_fuse_a).
+    attributeSchema: {
+      power_kw: {
+        label: { sv: 'Laddeffekt', en: 'Charging power' },
+        datatype: 'number',
+        unit: 'kW',
+        min: 0,
+      },
+      phases: choice('Faser', 'Phases', {
+        single_phase: ['Enfas', 'Single-phase'],
+        three_phase: ['Trefas', 'Three-phase'],
+      }),
+      load_balancing: yesNo('Lastbalansering', 'Load balancing'),
+      ...quantity,
+      ...replaceable,
+      ...modelName,
+    },
+  },
 
   // Interior ------------------------------------------------------------------
   {
@@ -648,6 +941,9 @@ export const componentTypes: ComponentTypeDefinition[] = [
     label: { sv: 'Badrum', en: 'Bathroom' },
     category: 'interior',
     // Bathrooms are counted, not stored: "2 badrum" becomes two components.
+    // A room with a shower or a bath; a toilet without one is a wc, so that
+    // it does not get the bathroom's lifespan and renovation cost
+    // (type_library conventions).
     attributeSchema: {
       ...replaceable,
       ...area,
@@ -734,6 +1030,85 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...installationYear,
       ...condition,
     },
-    allowedSubcomponents: ['garage_door'],
+    // Priced through its parts: a detached garage's roof and facade are
+    // components under it, each with its own area. A building of its own,
+    // so its parts neither take from nor count toward the house's estimated
+    // roof and wall area (forecastDefaults.separateBuilding).
+    allowedSubcomponents: [
+      'garage_door',
+      'roof_covering',
+      'facade',
+      'window',
+      'exterior_door',
+    ],
+    forecastDefaults: { separateBuilding: true },
+  },
+
+  // The plot, apart from the buildings -----------------------------------------
+  {
+    type: 'driveway',
+    label: { sv: 'Uppfart och markbeläggning', en: 'Driveway and paving' },
+    category: 'site',
+    attributeSchema: {
+      surface: choice('Beläggning', 'Surface', {
+        asphalt: ['Asfalt', 'Asphalt'],
+        paving_stones: ['Marksten', 'Paving stones'],
+        concrete_slabs: ['Betongplattor', 'Concrete slabs'],
+        natural_stone: ['Natursten', 'Natural stone'],
+        gravel: ['Grus', 'Gravel'],
+      }),
+      ground_heating: yesNo('Markvärme', 'Ground heating'),
+      ...replaceable,
+      ...area,
+    },
+  },
+  {
+    type: 'fence',
+    label: { sv: 'Staket och plank', en: 'Fence' },
+    category: 'site',
+    // A long wooden fence is a recurring painting cost the listing seldom
+    // mentions: the wood profile repaints from last_painted_year like a
+    // facade.
+    attributeSchema: {
+      material: choice('Material', 'Material', {
+        wood: ['Trä', 'Wood'],
+        metal: ['Metall', 'Metal'],
+        mesh: ['Nät', 'Wire mesh'],
+        composite: ['Komposit', 'Composite'],
+      }),
+      height: {
+        label: { sv: 'Höjd', en: 'Height' },
+        datatype: 'number',
+        unit: 'm',
+        min: 0,
+      },
+      ...replaceable,
+      ...length,
+      ...paint,
+    },
+  },
+  {
+    type: 'retaining_wall',
+    label: { sv: 'Stödmur', en: 'Retaining wall' },
+    category: 'site',
+    attributeSchema: {
+      material: choice('Material', 'Material', {
+        concrete: ['Gjuten betong', 'Cast concrete'],
+        concrete_blocks: [
+          'Betongblock eller L-stöd',
+          'Concrete blocks or L-elements',
+        ],
+        natural_stone: ['Natursten', 'Natural stone'],
+        wood: ['Trä eller sliprar', 'Wood or sleepers'],
+      }),
+      height: {
+        label: { sv: 'Höjd', en: 'Height' },
+        datatype: 'number',
+        unit: 'm',
+        min: 0,
+      },
+      ...replaceable,
+      ...length,
+    },
   },
 ]
