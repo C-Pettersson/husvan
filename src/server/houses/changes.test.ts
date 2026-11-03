@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { checkValue, isIsoDate } from '@/server/library/checkValue'
 import {
   changesInput,
+  corrections,
   draftEditInput,
   emptyChanges,
   validateChanges,
@@ -254,6 +255,7 @@ describe('validateDraftEdit', () => {
       components: [BATHROOM, BATHROOM_FLOOR],
       observations: [AREA, YEAR],
       workItems: [REGROUT],
+      retractions: [],
     })
   })
 
@@ -269,6 +271,7 @@ describe('validateDraftEdit', () => {
       components: [],
       observations: [HOUSE_YEAR],
       workItems: [PAINT],
+      retractions: [],
     })
   })
 
@@ -300,5 +303,173 @@ describe('validateDraftEdit', () => {
       `workItems[0].component: component ${WC} is removed in this call`,
     ])
     expect(edit({}).errors).toEqual(['nothing to change'])
+  })
+})
+
+// Corrections of approved rows (CLAUDE.md, "Rättningar").
+const GARAGE = '01a19755-0000-7000-8000-000000000011'
+const GARAGE_ROOF = '01a19755-0000-7000-8000-000000000012'
+const BATH = '01a19755-0000-7000-8000-000000000013'
+const FLOOR_HEAT = '01a19755-0000-7000-8000-000000000014'
+const DRAFT_ROW = '01a19755-0000-7000-8000-000000000015'
+const AREA_VALUE = '01a19755-0000-7000-8000-000000000016'
+const YEAR_VALUE = '01a19755-0000-7000-8000-000000000017'
+
+const corrCtx: ChangeContext = {
+  ...ctx,
+  types: new Map<string, LibraryType>([
+    ...ctx.types,
+    [
+      'garage',
+      {
+        attributeSchema: {},
+        allowedSubcomponents: ['roof_covering', 'garage_door'],
+      },
+    ],
+    [
+      'bathroom',
+      {
+        attributeSchema: {
+          area: { label: { sv: 'Yta' }, datatype: 'number', unit: 'm2' },
+          wet_room_certified: { label: { sv: 'Intyg' }, datatype: 'boolean' },
+        },
+        allowedSubcomponents: ['underfloor_heating'],
+      },
+    ],
+    [
+      'wc',
+      {
+        attributeSchema: {
+          area: { label: { sv: 'Yta' }, datatype: 'number', unit: 'm2' },
+        },
+        allowedSubcomponents: [],
+      },
+    ],
+    ['underfloor_heating', { attributeSchema: {}, allowedSubcomponents: [] }],
+  ]),
+  components: new Map([
+    [ROOF, 'roof_covering'],
+    [GARAGE, 'garage'],
+    [GARAGE_ROOF, 'roof_covering'],
+    [BATH, 'bathroom'],
+    [FLOOR_HEAT, 'underfloor_heating'],
+    [DRAFT_ROW, 'pool'],
+  ]),
+  parents: new Map([
+    [ROOF, null],
+    [GARAGE, null],
+    [GARAGE_ROOF, null],
+    [BATH, null],
+    [FLOOR_HEAT, BATH],
+    [DRAFT_ROW, null],
+  ]),
+  draftComponents: new Set([DRAFT_ROW]),
+  pendingCorrections: new Map(),
+  values: new Map([
+    [AREA_VALUE, { componentId: BATH, key: 'area' }],
+    [YEAR_VALUE, { componentId: BATH, key: 'wet_room_certified' }],
+  ]),
+  pendingRetirements: new Map(),
+}
+const checkCorr = (input: unknown, c = corrCtx) =>
+  validateChanges(changesInput.parse(input), c)
+
+describe('corrections', () => {
+  it('moves a garage roof under the garage and renames a facade', () => {
+    const r = checkCorr({
+      moveComponents: [{ componentId: GARAGE_ROOF, newParent: GARAGE }],
+      renameComponents: [{ componentId: ROOF, name: 'Tegeltak, bostadshus' }],
+    })
+    expect(r.errors).toEqual([])
+  })
+
+  it('refuses a parent that does not take the type, a cycle and a draft row', () => {
+    const r = checkCorr({
+      moveComponents: [
+        { componentId: GARAGE_ROOF, newParent: BATH },
+        { componentId: BATH, newParent: FLOOR_HEAT },
+        { componentId: DRAFT_ROW, newParent: null },
+        { componentId: OLD_PANEL, newParent: null },
+      ],
+    })
+    expect(r.errors).toEqual([
+      `corrections ${GARAGE_ROOF}.newParent: bathroom does not take roof_covering as a subcomponent (allowed: underfloor_heating)`,
+      `corrections ${BATH}.newParent: ${FLOOR_HEAT} is below ${BATH}`,
+      `corrections ${BATH}.newParent: underfloor_heating does not take bathroom as a subcomponent (allowed: none)`,
+      `corrections ${DRAFT_ROW}: component ${DRAFT_ROW} is a row of this draft; correct it with edit_draft`,
+      `corrections ${OLD_PANEL}: component ${OLD_PANEL} has been replaced`,
+    ])
+  })
+
+  it('retypes a bathroom to a wc, warns about values outside the new type and refuses kept subcomponents', () => {
+    const r = checkCorr({
+      retypeComponents: [
+        { componentId: BATH, newType: 'wc', reason: 'Ingen dusch' },
+      ],
+    })
+    expect(r.errors).toEqual([
+      `corrections ${BATH}.newType: wc does not take the subcomponents ${FLOOR_HEAT}; move them first`,
+    ])
+    expect(r.warnings).toEqual([
+      `corrections ${BATH}: values wet_room_certified are outside wc’s attributes and stay with the part; retire them if they no longer apply`,
+    ])
+    // Moving the floor heating out in the same call makes it valid.
+    const ok = checkCorr({
+      retypeComponents: [{ componentId: BATH, newType: 'wc' }],
+      moveComponents: [{ componentId: FLOOR_HEAT, newParent: null }],
+    })
+    expect(ok.errors).toEqual([])
+  })
+
+  it('retires approved values once each and refuses unknown or pending ones', () => {
+    const r = checkCorr(
+      {
+        retireValues: [
+          { valueId: AREA_VALUE, reason: 'Fel rum' },
+          { valueId: AREA_VALUE, reason: 'Igen' },
+          { valueId: DOC, reason: 'Inget värde' },
+          { valueId: YEAR_VALUE, reason: 'x' },
+        ],
+      },
+      {
+        ...corrCtx,
+        pendingRetirements: new Map([[YEAR_VALUE, 'draft-1']]),
+      }
+    )
+    expect(r.errors).toEqual([
+      `retireValues[1]: ${AREA_VALUE} is retired twice`,
+      `retireValues[2]: no approved value ${DOC} in this house; get_house gives each value its id`,
+      `retireValues[3]: ${YEAR_VALUE} is already retired in open draft draft-1`,
+    ])
+  })
+
+  it('refuses a component another draft already corrects', () => {
+    const r = checkCorr(
+      { renameComponents: [{ componentId: ROOF, name: 'x' }] },
+      { ...corrCtx, pendingCorrections: new Map([[ROOF, 'draft-2']]) }
+    )
+    expect(r.errors).toEqual([
+      `corrections ${ROOF}: component ${ROOF} is already corrected in open draft draft-2; add to that draft with draftId, or let the user decide it first`,
+    ])
+  })
+
+  it('adds up moves, renames and retypes of one component to one correction', () => {
+    expect(
+      corrections(
+        changesInput.parse({
+          moveComponents: [{ componentId: BATH, newParent: null }],
+          renameComponents: [{ componentId: BATH, name: 'Gäst-wc' }],
+          retypeComponents: [{ componentId: BATH, newType: 'wc', reason: 'r' }],
+        })
+      )
+    ).toEqual([
+      {
+        componentId: BATH,
+        newParent: null,
+        name: 'Gäst-wc',
+        newType: 'wc',
+        reason: 'r',
+      },
+    ])
   })
 })

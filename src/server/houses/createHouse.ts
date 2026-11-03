@@ -2,7 +2,7 @@
 // directly, as the anchor documents and drafts hang on; values given with it
 // go into a draft.
 import type { PrismaClient } from '@prisma/client'
-import { validateChanges, type ValueInput } from './changes'
+import { validateChanges, type ValueInput, emptyChanges } from './changes'
 import { externalIdsOf, loadExternalIds, matchesExternalId } from './externalId'
 import { insertChanges, loadLibrary, type Written } from './proposeChanges'
 
@@ -112,6 +112,7 @@ export async function createHouse(
   // cannot cite one; save_document and propose_changes come after.
   const types = await loadLibrary(prisma)
   const input = {
+    ...emptyChanges,
     houseValues,
     components: [],
     componentValues: [],

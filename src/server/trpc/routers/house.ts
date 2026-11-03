@@ -238,6 +238,7 @@ export const houseRouter = createTRPCRouter({
         ownerId: ctx.user.id,
         houseId: input.houseId,
         input: {
+          ...emptyChanges,
           houseValues: input.componentId ? [] : [input.value],
           components: [],
           componentValues: input.componentId
@@ -263,6 +264,7 @@ export const houseRouter = createTRPCRouter({
         ownerId: ctx.user.id,
         houseId: input.houseId,
         input: {
+          ...emptyChanges,
           houseValues: [],
           components: [],
           componentValues: [],

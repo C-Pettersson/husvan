@@ -125,6 +125,7 @@ export async function compareHouses(
     houseIds,
     overrides,
     whatIf,
+    draftIds,
   }: {
     ownerId: string
     houseIds: string[]
@@ -132,6 +133,8 @@ export async function compareHouses(
     overrides?: AssumptionValues
     // A scenario per house id, tried without writing.
     whatIf?: Record<string, WhatIf>
+    // An open draft per house id, counted as if it were approved.
+    draftIds?: Record<string, string>
   }
 ) {
   const analyses = await Promise.all(
@@ -141,6 +144,7 @@ export async function compareHouses(
         houseId,
         overrides,
         whatIf: whatIf?.[houseId],
+        draftId: draftIds?.[houseId],
       })
     )
   )
@@ -178,6 +182,7 @@ export async function compareHouses(
         status: h.view.status,
         ...costSummary(h),
         whatIf: h.whatIf?.tried ?? null,
+        draftId: h.draftId,
         perLivingM2: perLivingM2(h),
         runningCostsKnown: h.runningCostsKnown,
         horizon: {

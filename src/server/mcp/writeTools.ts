@@ -15,6 +15,7 @@ import {
   changesShape,
   draftEditShape,
   workItemInput,
+  emptyChanges,
 } from '@/server/houses/changes'
 import { confirmChangeset } from '@/server/houses/confirmChangeset'
 import { createHouse } from '@/server/houses/createHouse'
@@ -194,6 +195,7 @@ export function registerWriteTools(
         'Types, keys and values are checked against type_library; on any error nothing is written and every problem is listed. Keys outside the library are stored with a warning. ' +
         'Never invent values: what a document does not say is left out, and a better reading is a new value, not an edit. ' +
         'A replaced part is a new component with replaces set to the old id. ' +
+        'Approved rows are corrected in the same draft: moveComponents (a garage roof registered at the top level goes under the garage), renameComponents, retypeComponents (a bathroom that is a WC; a misregistered type, never a part that was physically replaced) and retireValues (by the value ids get_house shows, e.g. a key the library no longer has, or an alternative value read wrongly). Each becomes a row in the draft; the old rows stay as history, the user sees before and after, and nothing changes until the draft is approved. A component may also carry documentId and quote for the passage that mentions the part itself, and a work item a confidence when its severity is your interpretation. ' +
         'To correct an open draft before the user approves it, use edit_draft.',
       inputSchema: z.object({
         houseId: z.uuid(),
@@ -251,6 +253,7 @@ export function registerWriteTools(
           comment,
           source: 'CLAUDE',
           input: {
+            ...emptyChanges,
             houseValues: [],
             components: [],
             componentValues: [],
@@ -296,7 +299,7 @@ export function registerWriteTools(
       description:
         'Correct an open draft row by row instead of rejecting it, when the user wants most of it but not all: leave out components, values or work items by the ids get_house with draftId shows, and add rows in the same call as with propose_changes. ' +
         'A removed component takes its subcomponents, values and work items in the draft with it. Removed rows are set aside at once and never approved, whatever the user decides about the rest. ' +
-        'To correct a value, put the wrong one in removeValues and give the right one; a new value alone wins only when its confidence is at least the old one’s. ' +
+        'To correct a value, put the wrong one in removeValues and give the right one; a new value alone wins only when its confidence is at least the old one’s. removeRetirements takes back a retirement the draft would make. The additions take the same corrections of approved rows as propose_changes (moveComponents, renameComponents, retypeComponents, retireValues). ' +
         'Additions are checked like propose_changes; on any error nothing changes. Only open drafts; approved data is corrected by the user on the web.',
       inputSchema: z.object({
         houseId: z.uuid(),
@@ -312,6 +315,7 @@ export function registerWriteTools(
       removeComponents,
       removeValues,
       removeWorkItems,
+      removeRetirements,
       ...changes
     }) => {
       const r = await editDraft(prisma, {
@@ -319,7 +323,12 @@ export function registerWriteTools(
         houseId,
         draftId,
         source: 'CLAUDE',
-        edit: { removeComponents, removeValues, removeWorkItems },
+        edit: {
+          removeComponents,
+          removeValues,
+          removeWorkItems,
+          removeRetirements,
+        },
         changes,
       })
       if (!r.ok)

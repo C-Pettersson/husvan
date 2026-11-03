@@ -9,7 +9,7 @@
 import { z } from 'zod'
 import type { HouseStatus, PrismaClient } from '@prisma/client'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
-import { validateChanges, type ValueInput } from './changes'
+import { validateChanges, type ValueInput, emptyChanges } from './changes'
 import { currentValues } from './currentValue'
 import { insertChanges, loadLibrary } from './proposeChanges'
 
@@ -120,6 +120,7 @@ export async function updateListing(
 
   const types = await loadLibrary(prisma)
   const input = {
+    ...emptyChanges,
     houseValues: rows,
     components: [],
     componentValues: [],

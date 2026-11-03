@@ -10,7 +10,7 @@ import type { PrismaClient } from '@prisma/client'
 import type { WorkItemInput } from '@/server/forecast/forecast'
 import type { Question } from '@/server/forecast/questions'
 import { analyseHouse } from '@/server/forecast/run'
-import type { ChangesInput, ValueInput } from './changes'
+import { emptyChanges, type ChangesInput, type ValueInput } from './changes'
 import { correct, type CorrectResult } from './correct'
 import { proposeChanges, type ProposeResult } from './proposeChanges'
 
@@ -58,6 +58,7 @@ export function answersToChanges(
   const open = new Map(questions.map((q) => [q.id, q]))
   const errors: string[] = []
   const input: ChangesInput = {
+    ...emptyChanges,
     houseValues: [],
     components: [],
     componentValues: [],

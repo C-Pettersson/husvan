@@ -487,6 +487,7 @@ model Changeset {
   documents    Document[]
   workItems    WorkItem[]
   assumptions  Assumption[]
+  retractions  Retraction[]
 
   @@index([houseId, status])
 }
@@ -524,6 +525,7 @@ model House {
   observations Observation[]
   documents    Document[]
   workItems    WorkItem[]
+  retractions  Retraction[]
   assumptions  Assumption[]
   forecasts    Forecast[]
 
@@ -568,6 +570,7 @@ model Document {
   changeset    Changeset     @relation(fields: [changesetId], references: [id])
   observations Observation[]
   workItems    WorkItem[]
+  components   Component[]
 
   @@index([houseId])
 }
@@ -605,7 +608,15 @@ model Component {
   type        String
   parentId    String?  @db.Uuid
   replacesId  String?  @db.Uuid // this component replaced that one
+  // This row corrects that one: a misregistered type, name or parent. The
+  // old row is untouched and read as history; values and subcomponents of
+  // the whole chain belong to the newest row (CLAUDE.md, "Rättningar").
+  correctsId  String?  @db.Uuid
   name        String? // e.g. 'W-3, kitchen, south'
+  // Where the part itself is documented, for a part without values of its
+  // own.
+  documentId  String?  @db.Uuid
+  quote       String?
   changesetId String   @db.Uuid
   createdAt   DateTime @default(now())
 
@@ -615,6 +626,9 @@ model Component {
   children      Component[]   @relation("ComponentTree")
   replaces      Component?    @relation("ComponentReplacement", fields: [replacesId], references: [id])
   replacedBy    Component[]   @relation("ComponentReplacement")
+  corrects      Component?    @relation("ComponentCorrection", fields: [correctsId], references: [id])
+  correctedBy   Component[]   @relation("ComponentCorrection")
+  document      Document?     @relation(fields: [documentId], references: [id])
   changeset     Changeset     @relation(fields: [changesetId], references: [id])
   observations  Observation[]
   workItems     WorkItem[]
@@ -622,6 +636,28 @@ model Component {
   @@index([houseId])
   @@index([parentId])
   @@index([replacesId])
+  @@index([correctsId])
+}
+
+// A value retired through a draft (CLAUDE.md, "Rättningar"): the
+// observation is untouched; once the changeset is approved the value is
+// hidden like one with retractedAt. The web's own retraction still sets
+// retractedAt directly.
+model Retraction {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  houseId       String   @db.Uuid
+  observationId String   @db.Uuid
+  reason        String?
+  changesetId   String   @db.Uuid
+  createdAt     DateTime @default(now())
+
+  house       House       @relation(fields: [houseId], references: [id])
+  observation Observation @relation(fields: [observationId], references: [id])
+  changeset   Changeset   @relation(fields: [changesetId], references: [id])
+
+  @@index([houseId])
+  @@index([observationId])
+  @@index([changesetId])
 }
 
 // Observations: every fact about a house or component -------------------------
@@ -645,10 +681,11 @@ model Observation {
   changesetId String      @db.Uuid
   recordedAt  DateTime    @default(now())
 
-  house     House      @relation(fields: [houseId], references: [id])
-  component Component? @relation(fields: [componentId], references: [id])
-  document  Document?  @relation(fields: [documentId], references: [id])
-  changeset Changeset  @relation(fields: [changesetId], references: [id])
+  house       House        @relation(fields: [houseId], references: [id])
+  component   Component?   @relation(fields: [componentId], references: [id])
+  document    Document?    @relation(fields: [documentId], references: [id])
+  changeset   Changeset    @relation(fields: [changesetId], references: [id])
+  retractions Retraction[]
 
   @@index([houseId, componentId, key])
   @@index([changesetId])
@@ -682,6 +719,9 @@ model WorkItem {
   costLowSek  Decimal?          @db.Decimal(12, 0)
   costHighSek Decimal?          @db.Decimal(12, 0)
   source      ValueSource
+  // How sure the reading of the finding is, as for a value: an interpreted
+  // severity can be marked uncertain.
+  confidence  Decimal?          @db.Decimal(3, 2)
   documentId  String?           @db.Uuid
   quote       String?
   retractedAt DateTime?
