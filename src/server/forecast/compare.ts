@@ -11,9 +11,12 @@ import {
   risks,
   valueOf,
 } from '@/server/houses/derive'
+import { EXTERNAL_ID_KEYS } from '@/server/houses/externalId'
 import { explainDifference } from './debt'
 import { findingsByType } from './findings'
 import { analyseHouse, type Analysis } from './run'
+
+type Range = { low: number; typical: number; high: number }
 
 const KEY_FIGURES = [
   'living_area',
@@ -35,6 +38,10 @@ export function listSummary({ view, debt, adjustedPrice }: Analysis) {
     price: pickPrice(view.values),
     keyFigures: Object.fromEntries(
       KEY_FIGURES.map((k) => [k, valueOf(view.values, k) ?? null])
+    ),
+    // booli_id and listing_id, for a watch to recognise the house by.
+    externalIds: Object.fromEntries(
+      EXTERNAL_ID_KEYS.map((k) => [k, valueOf(view.values, k) ?? null])
     ),
     // Risk constructions, older electrical systems and radon together.
     flaggedRisks: risks(view.components, view.values).length,
@@ -63,6 +70,27 @@ export function costSummary(a: Analysis) {
       perMonth: a.annual.perMonth,
     },
     gaps: a.gaps,
+  }
+}
+
+// The cost figures per square metre of living area, so that houses of
+// different size compare (132 against 121 m2). null without living_area.
+export function perLivingM2(
+  a: Pick<Analysis, 'view' | 'price' | 'adjustedPrice' | 'forecast' | 'annual'>
+) {
+  const area = valueOf(a.view.values, 'living_area')
+  const m2 = typeof area === 'number' && area > 0 ? area : null
+  const range = (r: Range | null) =>
+    m2 && r
+      ? { low: r.low / m2, typical: r.typical / m2, high: r.high / m2 }
+      : null
+  return {
+    livingAreaM2: m2,
+    price: m2 && a.price ? a.price.sek / m2 : null,
+    maintenanceAdjustedPrice: range(a.adjustedPrice),
+    forecastTotal: range(a.forecast.total),
+    forecastPerMonth: range(a.forecast.perMonth),
+    annualPerMonth: range(a.annual.perMonth),
   }
 }
 
@@ -138,6 +166,7 @@ export async function compareHouses(
         address: h.view.address,
         status: h.view.status,
         ...costSummary(h),
+        perLivingM2: perLivingM2(h),
         runningCostsKnown: h.runningCostsKnown,
         horizon: {
           startYear: h.forecast.startYear,

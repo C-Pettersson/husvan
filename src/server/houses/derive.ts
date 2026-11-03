@@ -76,6 +76,8 @@ export const MAIN_HEATING = [
   'district_heating_substation',
   'electric_boiler',
   'electric_radiators',
+  'electric_air_heating',
+  'electric_duct_heater',
   'pellet_boiler',
 ]
 export const COMPLEMENTARY_HEATING = ['wood_stove', 'heat_pump_air_air']

@@ -398,10 +398,16 @@ export function computeForecast(input: ForecastInput): Forecast {
           : line.flags,
       },
       byScenario((s) =>
-        years.map((year) => ({
-          year,
-          sek: line.base[s] * (1 + (change ?? 0)) ** (year - startYear),
-        }))
+        years.map((year) => {
+          const base =
+            line.later && year >= line.later.fromYear
+              ? line.later.base
+              : line.base
+          return {
+            year,
+            sek: base[s] * (1 + (change ?? 0)) ** (year - startYear),
+          }
+        })
       )
     )
   }

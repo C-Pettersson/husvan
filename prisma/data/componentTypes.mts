@@ -362,6 +362,33 @@ export const componentTypes: ComponentTypeDefinition[] = [
     },
   },
   {
+    type: 'roof_drainage',
+    label: { sv: 'Takavvattning', en: 'Roof drainage' },
+    category: 'envelope',
+    // Gutters and downpipes (hängrännor och stuprör), replaced more often
+    // than the roof. A heating cable in them is common in the north.
+    attributeSchema: {
+      material: choice('Material', 'Material', {
+        galvanized_steel: ['Galvaniserad plåt', 'Galvanized steel'],
+        coated_steel: ['Lackerad plåt', 'Coated steel'],
+        aluminium: ['Aluminium', 'Aluminium'],
+        copper: ['Koppar', 'Copper'],
+        plastic: ['Plast', 'Plastic'],
+      }),
+      heating_cable: yesNo('Värmekabel', 'Heating cable'),
+      ...replaceable,
+      ...length,
+    },
+    // Metres of gutter and downpipe: the two eaves of a gable roof are half
+    // the perimeter, and four downpipes of about 2.7 m add a quarter more.
+    // For 120 m2 living area on one floor that is about 38 m.
+    forecastDefaults: {
+      assumeUndocumented: true,
+      quantityPerLivingM2: 0.3,
+      quantityFromFootprint: { basis: 'perimeter', factor: 0.85 },
+    },
+  },
+  {
     type: 'exterior_door',
     label: { sv: 'Ytterdörr', en: 'Exterior door' },
     category: 'envelope',
@@ -430,6 +457,27 @@ export const componentTypes: ComponentTypeDefinition[] = [
     category: 'heating',
     attributeSchema: { ...replaceable, ...quantity },
   },
+  // A central air-handling unit with an electric coil that heats the house
+  // through ducts, common in villas from about 1975 to 1990. Replaced like
+  // for like; converting to water-borne heating is a work item.
+  {
+    type: 'electric_air_heating',
+    label: { sv: 'Luftburen elvärme', en: 'Air-borne electric heating' },
+    category: 'heating',
+    attributeSchema: { ...replaceable, ...modelName, ...capacityKw },
+  },
+  // The electric heating coil (elbatteri, eftervärmare) in a ventilation
+  // unit. When it is the house's heat source, it is the part that costs to
+  // replace; registered under the ventilation unit it sits in.
+  {
+    type: 'electric_duct_heater',
+    label: {
+      sv: 'Elbatteri i ventilationen',
+      en: 'Electric duct heater',
+    },
+    category: 'heating',
+    attributeSchema: { ...replaceable, ...modelName, ...capacityKw },
+  },
   {
     type: 'pellet_boiler',
     label: { sv: 'Pelletspanna', en: 'Pellet boiler' },
@@ -485,6 +533,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
     },
     category: 'ventilation',
     attributeSchema: { ...replaceable, ...modelName },
+    allowedSubcomponents: ['electric_duct_heater'],
   },
   {
     type: 'ventilation_exhaust',
@@ -657,6 +706,31 @@ export const componentTypes: ComponentTypeDefinition[] = [
     // With two, the second in need is less urgent while the first works.
     forecastDefaults: { assumeUndocumented: true, oneOfSeveral: true },
   },
+  // A toilet room without a shower or bath (a WC with a shower is a
+  // bathroom): new fixtures and surfaces, often without a wet-room membrane,
+  // at a fraction of a bathroom's cost.
+  {
+    type: 'wc',
+    label: { sv: 'Toalett (WC)', en: 'Toilet room' },
+    category: 'interior',
+    attributeSchema: {
+      ...replaceable,
+      ...area,
+      floor_drain: yesNo('Golvbrunn', 'Floor drain'),
+    },
+  },
+  // A smaller wet room: laundry room or utility room with a floor drain.
+  {
+    type: 'laundry_room',
+    label: { sv: 'Tvättstuga', en: 'Laundry room' },
+    category: 'interior',
+    attributeSchema: {
+      ...replaceable,
+      ...area,
+      wet_room_certified: yesNo('Våtrumsintyg', 'Wet room certificate'),
+    },
+    allowedSubcomponents: ['underfloor_heating'],
+  },
   {
     type: 'garage_door',
     label: { sv: 'Garageport', en: 'Garage door' },
@@ -735,5 +809,64 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...condition,
     },
     allowedSubcomponents: ['garage_door'],
+  },
+  // Sheds, woodsheds, guest houses and the like (komplementbyggnader). A
+  // simple timber shed is rebuilt when worn out and has a lifespan profile
+  // per building_kind; a guest house or workshop is priced through its own
+  // roof, facade, windows and doors as subcomponents and has no lifespan of
+  // its own. Repainting is not modelled yet.
+  {
+    type: 'outbuilding',
+    label: { sv: 'Komplementbyggnad', en: 'Outbuilding' },
+    category: 'feature',
+    attributeSchema: {
+      building_kind: choice('Sort', 'Kind', {
+        storage_shed: ['Förråd', 'Storage shed'],
+        woodshed: ['Vedbod', 'Woodshed'],
+        friggebod: ['Friggebod', 'Friggebod'],
+        barn: ['Uthus eller ladugård', 'Barn or outhouse'],
+        guest_house: ['Gäststuga', 'Guest house'],
+        attefall_house: ['Attefallshus', 'Attefall house'],
+        workshop: ['Verkstad', 'Workshop'],
+      }),
+      insulated: yesNo('Isolerad', 'Insulated'),
+      electricity: yesNo('Indragen el', 'Electricity'),
+      water: yesNo('Indraget vatten', 'Water'),
+      ...area,
+      ...installationYear,
+      ...condition,
+    },
+    allowedSubcomponents: [
+      'roof_covering',
+      'facade',
+      'window',
+      'exterior_door',
+      'foundation',
+    ],
+  },
+  // No lifespan of its own: the roof through roof_covering, the paint
+  // through last_painted_year.
+  {
+    type: 'carport',
+    label: { sv: 'Carport', en: 'Carport' },
+    category: 'feature',
+    attributeSchema: {
+      capacity: {
+        label: { sv: 'Bilplatser', en: 'Parking spaces' },
+        datatype: 'number',
+        min: 1,
+      },
+      attached: yesNo('Sammanbyggd med huset', 'Attached to the house'),
+      storage: yesNo('Med förråd', 'With storage'),
+      material: choice('Material', 'Material', {
+        wood: ['Trä', 'Wood'],
+        steel: ['Stål', 'Steel'],
+        aluminium: ['Aluminium', 'Aluminium'],
+      }),
+      ...installationYear,
+      ...condition,
+      last_painted_year: paint.last_painted_year,
+    },
+    allowedSubcomponents: ['roof_covering'],
   },
 ]

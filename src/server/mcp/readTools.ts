@@ -29,6 +29,7 @@ import {
   textPage,
 } from '@/server/houses/getDocument'
 import { fileBlock, loadDocumentFile } from '@/server/houses/documentFile'
+import { loadExternalIds, matchesExternalId } from '@/server/houses/externalId'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
 import { StorageNotConfigured } from '@/server/storage/s3'
 import { result, toolError } from './result'
@@ -91,6 +92,7 @@ export function registerReadTools(
       description:
         'All of the user’s houses with status, sale status, price, key figures, open drafts and flaggedRisks: the number of risk constructions, older electrical systems and radon above 200 Bq/m3 together (get_house lists them). ' +
         'Price is final_price_sek, else highest_bid_sek, else asking_price_sek, and price.kind says which. ' +
+        'With externalId, only the house whose booli_id or listing_id matches it (open drafts count), so a watch finds a house it saw before instead of creating it again; an empty list means it is not there yet. ' +
         'Optionally filter on features (pool, sauna, deck, sunroom, garage, wood_stove, heat_pump_air_air, basement, or any component type): ' +
         'a house is left out only when a feature is known to be absent; houses where a feature is unknown come back separately under "unknown". ' +
         'maintenanceDebt and maintenanceAdjustedPrice (price + debt) are the typical figures; forecast and compare give their ranges.',
@@ -99,6 +101,15 @@ export function registerReadTools(
           .array(z.enum(['CANDIDATE', 'DECLINED', 'PURCHASED', 'SOLD']))
           .optional()
           .describe('Only houses with these statuses. Default: all.'),
+        externalId: z
+          .string()
+          .trim()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe(
+            'A booli_id or listing_id; only the house that has it is returned.'
+          ),
         features: z
           .array(z.string())
           .optional()
@@ -106,7 +117,7 @@ export function registerReadTools(
       }),
       annotations: { readOnlyHint: true },
     },
-    async ({ status, features }) => {
+    async ({ status, externalId, features }) => {
       if (features?.length) {
         const known = new Set([
           ...FEATURES,
@@ -121,11 +132,22 @@ export function registerReadTools(
           )
       }
 
-      const houses = await prisma.house.findMany({
-        where: { ownerId: userId, ...(status && { status: { in: status } }) },
-        select: { id: true },
-        orderBy: { createdAt: 'asc' },
-      })
+      const [all, externalIds] = await Promise.all([
+        prisma.house.findMany({
+          where: {
+            ownerId: userId,
+            ...(status && { status: { in: status } }),
+          },
+          select: { id: true },
+          orderBy: { createdAt: 'asc' },
+        }),
+        externalId ? loadExternalIds(prisma, userId) : null,
+      ])
+      const houses = externalId
+        ? all.filter((h) =>
+            matchesExternalId(externalIds?.get(h.id) ?? [], externalId)
+          )
+        : all
       const analyses = (
         await Promise.all(
           houses.map((h) =>
