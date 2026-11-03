@@ -62,6 +62,8 @@ const ENGLISH = {
   heating_unknown: () =>
     'heating cost unknown: no cost, energy use or energy class',
   running_costs_unknown: () => 'running costs unknown',
+  scenarios_cross: () =>
+    'low, typical and high are whole paths with their own replacement years, and a replacement resets the repainting, so this item’s range is not ordered; the house totals are',
 } satisfies Record<string, (p: Params) => string>
 
 export type FlagCode = keyof typeof ENGLISH

@@ -53,10 +53,17 @@ export type Library = {
 // less (forecastDefaults.assumeUndocumented).
 export const ASSUMED_PREFIX = 'assumed:'
 
+// What a part's age rests on: its own installation year, the house's
+// construction year, nothing (anywhere in the lifespan), or the part is
+// assumed, since the documents do not mention it.
+export type PlanBasis =
+  'documented' | 'construction_year' | 'unknown_year' | 'assumed'
+
 export type ComponentPlan = {
   componentId: string
   // Not documented; stands in for a part every house has.
   assumed: boolean
+  basis: PlanBasis
   type: string
   name: string | null
   profile: Record<string, string>
@@ -263,11 +270,13 @@ export function planComponents(
 
     // Installation year, else the house's, else anywhere in the lifespan.
     let installYear: ByScenario
+    let basis: PlanBasis = isAssumed ? 'assumed' : 'documented'
     const installed = numberValue(c.values, 'installation_year', flags)
     if (installed !== undefined) {
       installYear = byScenario(() => installed)
     } else if (typeof constructionYear === 'number') {
       installYear = byScenario(() => constructionYear)
+      if (!isAssumed) basis = 'construction_year'
       flags.push(flag('construction_year_used'))
     } else {
       installYear = {
@@ -275,6 +284,7 @@ export function planComponents(
         typical: startYear - Math.round(years.typical / 2),
         high: startYear - years.min,
       }
+      if (!isAssumed) basis = 'unknown_year'
       flags.push(flag('installation_year_unknown'))
     }
 
@@ -419,6 +429,7 @@ export function planComponents(
       {
         componentId: c.id,
         assumed: isAssumed,
+        basis,
         type: c.type,
         name: c.name,
         profile: profile.match,

@@ -8,12 +8,32 @@ import type { ComponentView, KeyValueView } from '@/server/houses/getHouse'
 import { flag, type Flag } from './flags'
 import { CONFIDENT, type ByScenario } from './plan'
 
+// Stated in the listing, worked out from purchased energy, or estimated
+// from the primary energy number.
+export type RunningBasis = 'stated' | 'from_energy' | 'estimated'
+
 export type RunningLine = {
   key: string
   base: ByScenario // per year in the start year
   trend: TariffCategory | null
+  basis: RunningBasis
   flags: Flag[]
 }
+
+// The lines that together are the house's energy cost: heating however it
+// is worked out, and household electricity, which in an electrically heated
+// house often includes the heating. Compared as one.
+export const ENERGY_KEYS = [
+  'heating_cost_sek_per_year',
+  'household_electricity_cost_sek_per_year',
+  'heating_from_energy_use',
+  'heating_estimated',
+]
+// The listing's total, or what remains of it after its named parts.
+export const OPERATING_TOTAL_KEYS = [
+  'operating_cost_sek_per_year',
+  'other_operating_cost',
+]
 
 export type EnergyPrices = {
   electricitySekPerKwh: number | null
@@ -62,6 +82,7 @@ export function runningCosts(
       key,
       base: spread(r.sek, r.uncertain ? 0.2 : 0),
       trend,
+      basis: 'stated',
       flags: r.uncertain
         ? [flag('uncertain', { key, confidence: r.confidence! })]
         : [],
@@ -84,6 +105,7 @@ export function runningCosts(
       key: partsSum ? 'other_operating_cost' : 'operating_cost_sek_per_year',
       base: spread(total.sek - partsSum, total.uncertain ? 0.2 : 0),
       trend: null,
+      basis: 'stated',
       flags: partsSum ? [flag('operating_cost_less_parts')] : [],
     })
   }
@@ -107,6 +129,7 @@ export function runningCosts(
         key: 'heating_from_energy_use',
         base: spread(kwh.sek * price, kwh.uncertain ? 0.3 : 0.15),
         trend: heatingTrend,
+        basis: 'from_energy',
         flags: [flag('heating_from_energy_use', { price })],
       })
     } else if (performance && area && fgeo) {
@@ -121,6 +144,7 @@ export function runningCosts(
         key: 'heating_estimated',
         base: spread(kwhEstimate * price, 0.3),
         trend: heatingTrend,
+        basis: 'estimated',
         flags: [
           flag('heating_estimated', {
             fgeo,

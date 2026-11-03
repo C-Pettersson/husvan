@@ -11,9 +11,12 @@ import {
   risks,
   valueOf,
 } from '@/server/houses/derive'
+import type { AssumptionValues } from '@/server/houses/assumptions'
 import { explainDifference } from './debt'
+import { forecastDifferences } from './differences'
 import { findingsByType } from './findings'
 import { analyseHouse, type Analysis } from './run'
+import type { WhatIf } from './whatIf'
 
 const KEY_FIGURES = [
   'living_area',
@@ -89,13 +92,36 @@ export const features = (a: Analysis) =>
 
 export async function compareHouses(
   prisma: PrismaClient,
-  { ownerId, houseIds }: { ownerId: string; houseIds: string[] }
+  {
+    ownerId,
+    houseIds,
+    overrides,
+    whatIf,
+  }: {
+    ownerId: string
+    houseIds: string[]
+    // One-off assumptions for every house in the comparison.
+    overrides?: AssumptionValues
+    // A scenario per house id, tried without writing.
+    whatIf?: Record<string, WhatIf>
+  }
 ) {
   const analyses = await Promise.all(
-    houseIds.map((houseId) => analyseHouse(prisma, { ownerId, houseId }))
+    houseIds.map((houseId) =>
+      analyseHouse(prisma, {
+        ownerId,
+        houseId,
+        overrides,
+        whatIf: whatIf?.[houseId],
+      })
+    )
   )
   const missing = houseIds.filter((_, i) => !analyses[i])
-  if (missing.length) return { ok: false as const, missing }
+  if (missing.length) return { ok: false as const, missing, problems: [] }
+  const problems = (analyses as Analysis[]).flatMap(
+    (h) => h.whatIf?.problems.map((p) => `${h.view.address}: ${p}`) ?? []
+  )
+  if (problems.length) return { ok: false as const, missing, problems }
   const houses = (analyses as Analysis[]).sort(
     (x, y) =>
       (x.adjustedPrice?.typical ?? Infinity) -
@@ -103,32 +129,17 @@ export async function compareHouses(
   )
   const [base] = houses
 
-  // Forecast items whose typical totals differ most across the houses.
-  const totals = new Map<string, number[]>()
-  houses.forEach((h, i) => {
-    for (const item of h.forecast.items) {
-      const key = `${item.category}:${item.key}`
-      const row = totals.get(key) ?? houses.map(() => 0)
-      row[i] += item.total.typical
-      totals.set(key, row)
-    }
-  })
-  // An unknown running cost is not zero: null, and left out of the spread.
-  const largestForecastDifferences = [...totals]
-    .map(([key, row]) => {
-      const sek = row.map((v, i) =>
-        key.startsWith('running:') && !houses[i].runningCostsKnown ? null : v
-      )
-      const known = sek.filter((v): v is number => v !== null)
-      return {
-        item: key,
-        sek,
-        spread: Math.max(...known) - Math.min(...known),
-      }
-    })
-    .filter((d) => Number.isFinite(d.spread))
-    .sort((x, y) => y.spread - x.spread)
-    .slice(0, 8)
+  // Forecast items whose typical totals differ most across the houses,
+  // each cell with what it rests on; unknown is null, not zero.
+  const largestForecastDifferences = forecastDifferences(
+    houses.map((h) => ({
+      items: h.forecast.items,
+      plans: h.plans,
+      absent: h.absent,
+      inspected: h.gaps.inspected,
+      runningCostsKnown: h.runningCostsKnown,
+    }))
+  )
 
   return {
     ok: true as const,
@@ -138,6 +149,7 @@ export async function compareHouses(
         address: h.view.address,
         status: h.view.status,
         ...costSummary(h),
+        whatIf: h.whatIf?.tried ?? null,
         runningCostsKnown: h.runningCostsKnown,
         horizon: {
           startYear: h.forecast.startYear,

@@ -25,8 +25,9 @@ import {
   type ComponentPlan,
   type Library,
 } from './plan'
+import { withAnswer, withValue, type Answer } from './whatIf'
 
-export type Answer = string | number | boolean
+export type { Answer } from './whatIf'
 
 // Typical scenario, start-year kronor.
 export type Effect = { maintenanceDebtSek: number; forecastSek: number }
@@ -140,58 +141,6 @@ const HEATING_ESTIMATES = ['heating_from_energy_use', 'heating_estimated']
 
 // House keys that every part depends on; no single answer can be tried.
 const CORE_HOUSE_KEYS = ['construction_year', 'living_area']
-
-const answered = (key: string, value: Answer): KeyValueView => ({
-  key,
-  current: {
-    id: 'answer',
-    key,
-    value,
-    unit: null,
-    source: 'USER',
-    confidence: 1,
-    quote: null,
-    documentId: null,
-    recordedAt: new Date(0),
-    draft: false,
-  },
-  alternatives: [],
-})
-
-const withValue = (values: KeyValueView[], key: string, value: Answer) => [
-  ...values.filter((v) => v.key !== key),
-  answered(key, value),
-]
-
-// The house with one answer given. A part the documents do not mention
-// becomes one with only that value, still marked assumed, so that nothing
-// else about it changes.
-function withAnswer(
-  components: ComponentView[],
-  target: { componentId: string; type: string },
-  key: string,
-  value: Answer
-): ComponentView[] {
-  if (target.componentId.startsWith(ASSUMED_PREFIX))
-    return [
-      ...components,
-      {
-        id: target.componentId,
-        type: target.type,
-        name: null,
-        draft: false,
-        values: [answered(key, value)],
-        children: [],
-      },
-    ]
-  const set = (list: ComponentView[]): ComponentView[] =>
-    list.map((c) =>
-      c.id === target.componentId
-        ? { ...c, values: withValue(c.values, key, value) }
-        : { ...c, children: set(c.children) }
-    )
-  return set(components)
-}
 
 // Distinct years from the oldest to the start year.
 const years = (oldest: number, ...rest: number[]) =>

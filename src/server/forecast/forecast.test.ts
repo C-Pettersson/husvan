@@ -182,6 +182,18 @@ describe('planComponents', () => {
     )
   })
 
+  it('says what each part’s age rests on', () => {
+    expect(
+      plan(comp('roof_covering', { installation_year: 2000, area: 100 })).basis
+    ).toBe('documented')
+    expect(plan(comp('roof_covering', { area: 100 })).basis).toBe(
+      'construction_year'
+    )
+    expect(
+      plan(comp('roof_covering', { area: 100 }), [kv('living_area', 120)]).basis
+    ).toBe('unknown_year')
+  })
+
   it('costs nothing without an area to multiply', () => {
     const p = plan(comp('roof_covering'), [kv('construction_year', 1990)])
     expect(p.cost).toBeNull()
@@ -222,6 +234,7 @@ describe('undocumented parts', () => {
     expect(plans[0]).toMatchObject({
       componentId: 'assumed:roof_covering',
       assumed: true,
+      basis: 'assumed',
       installYear: { typical: 1990 },
     })
   })
@@ -411,6 +424,7 @@ describe('computeForecast', () => {
           key: 'water_sewage_cost_sek_per_year',
           base: { low: 1000, typical: 1000, high: 1000 },
           trend: 'WATER_SEWAGE',
+          basis: 'stated',
           flags: [],
         },
       ],
@@ -426,9 +440,41 @@ describe('computeForecast', () => {
       1000, 1100, 1210,
     ])
     expect(f.items[2].total.typical).toBe(12000)
+    expect(f.items.map((i) => i.basis)).toEqual([
+      'documented',
+      'stated',
+      undefined,
+    ])
     expect(f.total.typical).toBeCloseTo(4500 + 3310 + 12000)
     expect(f.total.low).toBeCloseTo(3000 + 3310 + 12000)
     expect(f.perMonth.typical).toBeCloseTo(f.total.typical / 36)
+  })
+
+  it('flags a repaint whose range crosses because a replacement resets it', () => {
+    // Typical replaces the facade in 2030 and so repaints once before the
+    // horizon ends in 2039; low replaces it in 2040 and repaints twice.
+    const facade = comp('facade', {
+      installation_year: 1990,
+      last_painted_year: 2014,
+      area: 100,
+    })
+    const f = computeForecast({
+      startYear: START,
+      horizonYears: 14,
+      plans: planComponents([facade], house, library, START),
+      workItems: [],
+      running: [],
+      trend: null,
+      capital: null,
+    })
+    const repaint = f.items.find((i) => i.category === 'repaint')!
+    expect(repaint.total).toEqual({ low: 80000, typical: 40000, high: 40000 })
+    expect(repaint.flags.map((x) => x.code)).toContain('scenarios_cross')
+    expect(f.items.find((i) => i.category === 'replacement')!.basis).toBe(
+      'documented'
+    )
+    expect(f.total.low).toBeLessThanOrEqual(f.total.typical)
+    expect(f.total.typical).toBeLessThanOrEqual(f.total.high)
   })
 
   it('lets a replacement work item time the component instead of counting twice', () => {
@@ -628,6 +674,7 @@ describe('annualCost', () => {
           key: 'heating_cost_sek_per_year',
           base: { low: 10000, typical: 12000, high: 14000 },
           trend: null,
+          basis: 'stated',
           flags: [],
         },
       ],

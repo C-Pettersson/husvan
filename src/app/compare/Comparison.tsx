@@ -27,9 +27,13 @@ import {
 import { useLabels } from '@/lib/labels'
 import { trpc } from '@/lib/trpc'
 
+// A figure that rests on the documents needs no note under it.
+const PLAIN_BASIS: string[] = ['documented', 'stated', 'inspected']
+
 // Houses side by side, cheapest maintenance-adjusted price first, then why
 // they differ (CLAUDE.md, "Förklaring av prisskillnad"). Disclosure is
-// uneven, so an uninspected house shows unknown findings, not none.
+// uneven, so an uninspected house shows unknown findings, not none, and a
+// figure says what it rests on.
 export default function Comparison({ ids }: { ids: string[] }) {
   const t = useTranslations()
   const locale = useLocale()
@@ -353,10 +357,23 @@ export default function Comparison({ ids }: { ids: string[] }) {
                     {itemLabel(d.item)}
                   </TableCell>
                   {d.sek.map((sek, i) => (
-                    <TableCell key={houses[i].id}>
-                      {sek === null
-                        ? t('compare.runningUnknown')
-                        : formatSek(sek, locale)}
+                    <TableCell key={houses[i].id} sx={{ verticalAlign: 'top' }}>
+                      {sek === null ? (
+                        <Typography variant="body2" color="warning.dark">
+                          {t('compare.unknown')}
+                        </Typography>
+                      ) : (
+                        formatSek(sek, locale)
+                      )}
+                      {!PLAIN_BASIS.includes(d.basis[i]) && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          component="div"
+                        >
+                          {t(`compare.basis.${d.basis[i]}`)}
+                        </Typography>
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>

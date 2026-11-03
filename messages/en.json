@@ -497,7 +497,8 @@
   "runningKey": {
     "heating_from_energy_use": "Heating (energy × price)",
     "heating_estimated": "Heating (estimated)",
-    "other_operating_cost": "Other operating cost"
+    "other_operating_cost": "Other operating cost",
+    "energy": "Energy (heating and household electricity)"
   },
   "flag": {
     "uncertain": "{key} is uncertain ({confidence} %)",
@@ -536,7 +537,8 @@
     "quantity_from_footprint": "{key} estimated from the living area over {floors} floors",
     "quantity_from_footprint_shared": "{key} estimated from the living area over {floors} floors and shared among {count} parts",
     "priced_by_context": "Priced by the house's {key}: {value}",
-    "one_of_several": "The house has {count} of these; while another one works, this one is less urgent"
+    "one_of_several": "The house has {count} of these; while another one works, this one is less urgent",
+    "scenarios_cross": "Low, typical and high are whole paths with their own replacement years, and a replacement resets the repainting, so this item’s range is not ordered; the house totals are"
   },
   "risk": {
     "title": "Risks",
@@ -632,7 +634,7 @@
     "other": "Other",
     "base": "Baseline",
     "largest": "Largest differences in the forecast",
-    "largestNote": "Typical scenario, total over the horizon.",
+    "largestNote": "Typical scenario, total over the horizon. Unknown is not zero: an empty cell means the documents say nothing, and a note under a figure says what it rests on.",
     "findings": "Inspection findings",
     "findingsNote": "A house without an inspection protocol has unknown defects, not none. A finding in one house may well apply to an uninspected one too, and its lower figure may come from knowing less.",
     "notInspected": "Not inspected",
@@ -651,7 +653,20 @@
       "replacement": "Replacement work items",
       "investigation": "Investigations"
     },
-    "annualPerMonth": "Per month, spread"
+    "annualPerMonth": "Per month, spread",
+    "unknown": "Unknown",
+    "basis": {
+      "construction_year": "Construction year as installation year",
+      "unknown_year": "Installation year unknown",
+      "assumed": "Assumed part, not in the documents",
+      "not_documented": "Not in the documents",
+      "absent": "None, per the documents",
+      "from_energy": "From energy use × price",
+      "estimated": "Estimated from the primary energy number",
+      "in_operating_total": "Inside the listing’s operating cost",
+      "unknown": "The documents say nothing",
+      "not_inspected": "Not inspected; defects unknown"
+    }
   },
   "edit": {
     "edit": "Change",
