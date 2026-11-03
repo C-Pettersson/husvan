@@ -62,6 +62,8 @@ const ENGLISH = {
   heating_unknown: () =>
     'heating cost unknown: no cost, energy use or energy class',
   running_costs_unknown: () => 'running costs unknown',
+  scenarios_cross: () =>
+    'low, typical and high are whole paths with their own replacement years, and a replacement resets the repainting, so this item’s range is not ordered; the house totals are',
   ground_rent_revised: (p: Params) =>
     `ground rent is revised in ${p.year}; the same amount is kept after that but is uncertain`,
   ground_rent_no_revision_year: () =>

@@ -13,7 +13,8 @@ import {
   type ComponentPlan,
   type Scenario,
 } from './plan'
-import type { RunningLine } from './running'
+import type { PlanBasis } from './plan'
+import type { RunningBasis, RunningLine } from './running'
 import { flag, type Flag } from './flags'
 
 export type WorkItemInput = {
@@ -31,6 +32,10 @@ export type WorkItemInput = {
 export type Category =
   'replacement' | 'repaint' | 'inspection' | 'work_item' | 'running' | 'capital'
 
+// What a line rests on, so that a reader can tell a documented figure from
+// one assumed from the construction year or worked out from energy.
+export type ItemBasis = PlanBasis | RunningBasis
+
 export type ForecastItem = {
   category: Category
   key: string // component type, running cost key or 'interest'
@@ -39,6 +44,7 @@ export type ForecastItem = {
   name?: string
   // Not in the documents; a part every house has, assumed by Husvan.
   assumed?: true
+  basis?: ItemBasis
   // How low and typical renew the part instead of replacing it.
   renewedAs?: Record<string, string>
   // Cost per year in the typical scenario; years without cost are left out.
@@ -273,6 +279,7 @@ export function computeForecast(input: ForecastInput): Forecast {
       componentId: plan.componentId,
       name: plan.name ?? undefined,
       assumed: plan.assumed ? (true as const) : undefined,
+      basis: plan.basis,
     }
     const flags = [...plan.flags]
     if (runs.typical.overdueReplacement && !w)
@@ -373,6 +380,7 @@ export function computeForecast(input: ForecastInput): Forecast {
         workItemId: w.id,
         componentId: w.componentId ?? undefined,
         name: w.description,
+        basis: 'documented',
         flags,
       },
       byScenario((s) =>
@@ -390,6 +398,7 @@ export function computeForecast(input: ForecastInput): Forecast {
       {
         category: 'running',
         key: line.key,
+        basis: line.basis,
         flags: change
           ? [
               ...line.flags,
@@ -424,13 +433,20 @@ export function computeForecast(input: ForecastInput): Forecast {
     events
       .filter((e) => year === undefined || e.year === year)
       .reduce((t, e) => t + e.sek, 0)
-  const items: ForecastItem[] = entries.map(({ item, events }) => ({
-    ...item,
-    typical: years
-      .map((year) => ({ year, sek: sum(events.typical, year) }))
-      .filter((e) => e.sek),
-    total: byScenario((s) => sum(events[s])),
-  }))
+  const items: ForecastItem[] = entries.map(({ item, events }) => {
+    const total = byScenario((s) => sum(events[s]))
+    // A replacement in one scenario pre-empts that scenario's repaints, so
+    // an item's range can come out of order while the totals are not.
+    const crossed = total.low > total.typical || total.typical > total.high
+    return {
+      ...item,
+      flags: crossed ? [...item.flags, flag('scenarios_cross')] : item.flags,
+      typical: years
+        .map((year) => ({ year, sek: sum(events.typical, year) }))
+        .filter((e) => e.sek),
+      total,
+    }
+  })
   const perYear = years.map((year) => {
     const typicalByCategory: Partial<Record<Category, number>> = {}
     for (const { item, events } of entries) {

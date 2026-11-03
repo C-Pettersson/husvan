@@ -601,7 +601,8 @@
   "runningKey": {
     "heating_from_energy_use": "Uppvärmning (energi × pris)",
     "heating_estimated": "Uppvärmning (uppskattad)",
-    "other_operating_cost": "Övrig driftkostnad"
+    "other_operating_cost": "Övrig driftkostnad",
+    "energy": "Energi (värme och hushållsel)"
   },
   "flag": {
     "uncertain": "{key} är osäker ({confidence} %)",
@@ -641,6 +642,7 @@
     "quantity_from_footprint_shared": "{key} uppskattad ur boytan fördelad på {floors} våningar och delad på {count} delar",
     "priced_by_context": "Prissatt efter husets {key}: {value}",
     "one_of_several": "Huset har {count} sådana; medan en annan fungerar är den här mindre brådskande",
+    "scenarios_cross": "Låg, typisk och hög är var sin väg med egna bytesår, och ett byte nollställer ommålningen, så den här postens spann är inte i ordning; husets summor är det",
     "ground_rent_revised": "Avgälden omregleras {year}; samma belopp ligger kvar därefter men är osäkert",
     "ground_rent_no_revision_year": "Omregleringsår saknas; avgälden kan omregleras inom horisonten och är därför osäker hela vägen"
   },
@@ -740,7 +742,7 @@
     "other": "Övrigt",
     "base": "Utgångspunkt",
     "largest": "Största skillnaderna i prognosen",
-    "largestNote": "Typiskt scenario, summa över horisonten.",
+    "largestNote": "Typiskt scenario, summa över horisonten. Okänt är inte noll: en tom ruta betyder att underlaget inte säger något, och en not under siffran säger vad den bygger på.",
     "findings": "Fel från besiktningen",
     "findingsNote": "Ett hus utan besiktningsprotokoll har okända fel, inte inga. Ett fel i ett hus kan mycket väl finnas också i ett obesiktigat, och dess lägre siffra kan komma av att man vet mindre.",
     "notInspected": "Inte besiktigat",
@@ -760,6 +762,19 @@
       "investigation": "Undersökningar"
     },
     "annualPerMonth": "Per månad, fördelat",
+    "unknown": "Okänt",
+    "basis": {
+      "construction_year": "Byggåret som installationsår",
+      "unknown_year": "Installationsår okänt",
+      "assumed": "Antagen del, nämns inte i underlaget",
+      "not_documented": "Nämns inte i underlaget",
+      "absent": "Finns inte enligt underlaget",
+      "from_energy": "Ur energianvändning × pris",
+      "estimated": "Uppskattad ur primärenergitalet",
+      "in_operating_total": "Ingår i prospektets driftkostnad",
+      "unknown": "Underlaget säger inget",
+      "not_inspected": "Inte besiktigat; felen är okända"
+    },
     "perM2": "{value} kr/m² boarea"
   },
   "edit": {

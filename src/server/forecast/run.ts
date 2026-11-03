@@ -21,6 +21,7 @@ import { computeForecast, workItemCost } from './forecast'
 import { planComponents, type Library, type ProfileRow } from './plan'
 import { openQuestions } from './questions'
 import { runningCosts } from './running'
+import { applyWhatIf, type WhatIf } from './whatIf'
 
 const BKI = 'bki_small_houses'
 
@@ -153,10 +154,23 @@ export async function analyseHouse(
     ownerId,
     houseId,
     overrides,
-  }: { ownerId: string; houseId: string; overrides?: AssumptionValues }
+    whatIf,
+  }: {
+    ownerId: string
+    houseId: string
+    overrides?: AssumptionValues
+    // A scenario tried on the house as read; nothing is written.
+    whatIf?: WhatIf
+  }
 ) {
-  const view = await getHouse(prisma, { ownerId, houseId })
-  if (!view) return null
+  const stored = await getHouse(prisma, { ownerId, houseId })
+  if (!stored) return null
+  const tried = applyWhatIf(stored.components, stored.values, whatIf)
+  const view = {
+    ...stored,
+    components: tried.components,
+    values: tried.houseValues,
+  }
   const resolved = await resolveAssumptions(prisma, houseId)
   const a = { ...resolved.values, ...overrides }
   for (const k of Object.keys(overrides ?? {}))
@@ -244,9 +258,23 @@ export async function analyseHouse(
   const debt = maintenanceDebt(plans, workItems, startYear)
   const price = pickPrice(view.values)
   const assessed = valueOf(view.values, 'assessed_value_sek')
+  const absent = valueOf(view.values, 'absent_features')
 
   return {
     view,
+    // The scenario tried, or null when the house is analysed as it is. With
+    // problems nothing was applied.
+    whatIf: whatIf
+      ? {
+          tried: whatIf,
+          applied: !tried.problems.length,
+          problems: tried.problems,
+        }
+      : null,
+    plans,
+    absent: Array.isArray(absent)
+      ? absent.filter((t) => typeof t === 'string')
+      : [],
     assumptions: { values: a, source: resolved.source, energyPrices: prices },
     price,
     forecast,
@@ -273,6 +301,10 @@ export async function analyseHouse(
     gaps: {
       // Without an inspection protocol, defects are unknown, not none.
       inspected,
+      // Parts with a lifespan profile, so that the counts below can be read
+      // as a share: documented ones and those assumed from the construction year.
+      parts: plans.length,
+      documentedParts: plans.filter((p) => !p.assumed).length,
       workItemsWithoutCost: workItems.filter((w) => !workItemCost(w)).length,
       assumedParts: plans
         .filter((p) => p.assumed)
