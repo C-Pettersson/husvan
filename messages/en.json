@@ -193,6 +193,8 @@
       "assessed_building_value_sek": "Assessed building value",
       "assessment_year": "Assessment year",
       "property_fee_sek_per_year": "Property fee per year",
+      "ground_rent_sek_per_year": "Ground rent per year",
+      "ground_rent_revision_year": "Ground rent revised",
       "house_type": "House type",
       "tenure": "Tenure",
       "room_count": "Rooms",
@@ -538,7 +540,9 @@
     "quantity_from_footprint_shared": "{key} estimated from the living area over {floors} floors and shared among {count} parts",
     "priced_by_context": "Priced by the house's {key}: {value}",
     "one_of_several": "The house has {count} of these; while another one works, this one is less urgent",
-    "scenarios_cross": "Low, typical and high are whole paths with their own replacement years, and a replacement resets the repainting, so this item’s range is not ordered; the house totals are"
+    "scenarios_cross": "Low, typical and high are whole paths with their own replacement years, and a replacement resets the repainting, so this item’s range is not ordered; the house totals are",
+    "ground_rent_revised": "The ground rent is revised in {year}; the same amount is kept after that but is uncertain",
+    "ground_rent_no_revision_year": "Revision year missing; the rent may be revised within the horizon, so it is uncertain throughout"
   },
   "risk": {
     "title": "Risks",
@@ -666,7 +670,8 @@
       "in_operating_total": "Inside the listing’s operating cost",
       "unknown": "The documents say nothing",
       "not_inspected": "Not inspected; defects unknown"
-    }
+    },
+    "perM2": "SEK {value}/m² living area"
   },
   "edit": {
     "edit": "Change",

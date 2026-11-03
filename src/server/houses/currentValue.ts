@@ -18,14 +18,30 @@ export type Candidate = {
 
 export type KeyValue<T> = { current: T; alternatives: T[] }
 
+// Facts about the sale change over time by nature: a new bid supersedes the
+// old one rather than disputing it. For these keys the latest observation
+// wins whatever its source, so that a watch's import of today's bid shows
+// over Claude's reading of last week's listing (update_listing).
+export const LATEST_WINS_KEYS = new Set([
+  'sale_status',
+  'asking_price_sek',
+  'highest_bid_sek',
+  'highest_bid_date',
+  'final_price_sek',
+  'sale_date',
+])
+
 // USER before CLAUDE before IMPORT, then highest confidence (missing counts
-// as lowest), then the latest. The caller has already left out retracted
-// observations and those in changesets the reader may not see.
+// as lowest), then the latest. For LATEST_WINS_KEYS the latest comes first.
+// The caller has already left out retracted observations and those in
+// changesets the reader may not see.
 export function compareCandidates(a: Candidate, b: Candidate): number {
+  const latest = b.recordedAt.getTime() - a.recordedAt.getTime()
+  if (LATEST_WINS_KEYS.has(a.key) && latest) return latest
   return (
     SOURCE_RANK[a.source] - SOURCE_RANK[b.source] ||
     (b.confidence ?? -1) - (a.confidence ?? -1) ||
-    b.recordedAt.getTime() - a.recordedAt.getTime()
+    latest
   )
 }
 

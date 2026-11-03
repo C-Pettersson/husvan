@@ -193,6 +193,8 @@
       "assessed_building_value_sek": "Byggnadsvärde",
       "assessment_year": "Taxeringsår",
       "property_fee_sek_per_year": "Fastighetsavgift per år",
+      "ground_rent_sek_per_year": "Tomträttsavgäld per år",
+      "ground_rent_revision_year": "Avgälden omregleras",
       "house_type": "Hustyp",
       "tenure": "Upplåtelseform",
       "room_count": "Antal rum",
@@ -538,7 +540,9 @@
     "quantity_from_footprint_shared": "{key} uppskattad ur boytan fördelad på {floors} våningar och delad på {count} delar",
     "priced_by_context": "Prissatt efter husets {key}: {value}",
     "one_of_several": "Huset har {count} sådana; medan en annan fungerar är den här mindre brådskande",
-    "scenarios_cross": "Låg, typisk och hög är var sin väg med egna bytesår, och ett byte nollställer ommålningen, så den här postens spann är inte i ordning; husets summor är det"
+    "scenarios_cross": "Låg, typisk och hög är var sin väg med egna bytesår, och ett byte nollställer ommålningen, så den här postens spann är inte i ordning; husets summor är det",
+    "ground_rent_revised": "Avgälden omregleras {year}; samma belopp ligger kvar därefter men är osäkert",
+    "ground_rent_no_revision_year": "Omregleringsår saknas; avgälden kan omregleras inom horisonten och är därför osäker hela vägen"
   },
   "risk": {
     "title": "Risker",
@@ -666,7 +670,8 @@
       "in_operating_total": "Ingår i prospektets driftkostnad",
       "unknown": "Underlaget säger inget",
       "not_inspected": "Inte besiktigat; felen är okända"
-    }
+    },
+    "perM2": "{value} kr/m² boarea"
   },
   "edit": {
     "edit": "Ändra",

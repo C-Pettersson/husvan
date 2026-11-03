@@ -38,6 +38,16 @@ export const HOUSE_KEYS: Record<string, HouseKey> = {
     options: ['upcoming', 'bidding', 'closed'],
   },
   sale_date: { description: 'Date the house was sold', datatype: 'date' },
+  // External ids let a scheduled watch find the house again without
+  // creating a duplicate (list_houses with externalId, create_house).
+  booli_id: {
+    description: 'Booli listing id, the number in the Booli URL',
+    datatype: 'text',
+  },
+  listing_id: {
+    description: 'Hemnet or agent listing id, as text',
+    datatype: 'text',
+  },
   assessed_value_sek: {
     description: 'Tax assessment value (taxeringsvärde)',
     datatype: 'number',
@@ -56,6 +66,20 @@ export const HOUSE_KEYS: Record<string, HouseKey> = {
     description: 'Municipal property fee (fastighetsavgift)',
     datatype: 'number',
     unit: 'SEK',
+  },
+  // Site leasehold (tomträtt): the yearly ground rent (tomträttsavgäld) and
+  // the year it is next revised (omreglering). The forecast keeps the rent
+  // after that year but marks it uncertain.
+  ground_rent_sek_per_year: {
+    description:
+      'Ground rent per year (tomträttsavgäld) when the house stands on a site leasehold',
+    datatype: 'number',
+    unit: 'SEK',
+  },
+  ground_rent_revision_year: {
+    description:
+      'Year the ground rent is next revised (omreglering); the rent after it is unknown',
+    datatype: 'year',
   },
 
   // The building

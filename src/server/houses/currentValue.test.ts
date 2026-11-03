@@ -41,6 +41,23 @@ describe('currentValues', () => {
     ).toBe('new')
   })
 
+  it('lets the latest win for sale figures, whatever the source', () => {
+    const v = currentValues([
+      obs('claude', 'CLAUDE', 0.9, 1, 'highest_bid_sek'),
+      obs('user', 'USER', 1, 2, 'highest_bid_sek'),
+      obs('import', 'IMPORT', 1, 3, 'highest_bid_sek'),
+    ]).get('highest_bid_sek')!
+    expect(v.current.id).toBe('import')
+    expect(v.alternatives.map((o) => o.id)).toEqual(['user', 'claude'])
+    // Two on the same day fall back on the source.
+    expect(
+      currentValues([
+        obs('import', 'IMPORT', 1, 3, 'sale_status'),
+        obs('user', 'USER', 1, 3, 'sale_status'),
+      ]).get('sale_status')!.current.id
+    ).toBe('user')
+  })
+
   it('keeps keys apart', () => {
     const values = currentValues([
       obs('a', 'CLAUDE', 0.9, 1, 'area'),

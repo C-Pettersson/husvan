@@ -78,7 +78,7 @@ export function registerForecastTools(
     {
       title: 'Forecast',
       description:
-        'Cost per year and item for one house over the horizon, in start-year kronor: replacements by lifespan, repainting of painted wood, work items, running costs and, if the user set an interest rate and loan, interest. ' +
+        'Cost per year and item for one house over the horizon, in start-year kronor: replacements by lifespan, repainting of painted wood, work items, running costs (including the ground rent of a site leasehold, kept after its revision year but uncertain from then on) and, if the user set an interest rate and loan, interest. ' +
         'Every figure has a range: low uses the longest lifespans and lowest costs, high the shortest and highest; it widens for missing or uncertain inputs, which each item lists under flags. ' +
         'Flags also carry what the rest of the house says about an item: a part priced by the house’s foundation type (drainage costs more at a basement, and is not assumed on a plinth or stone foundation), quantities from the footprint over the floors, and a part the house has several of, such as a second bathroom, which is less urgent while another works. Weigh these when you say what is urgent; the totals do not change for them. ' +
         'Each scenario is a whole path with its own replacement years, so in a single year low or high can fall on either side of typical, and a replacement resets the repainting, so a repaint item alone can have low above typical (flag scenarios_cross); the house totals are ordered. ' +
@@ -202,6 +202,7 @@ export function registerForecastTools(
       title: 'Compare houses',
       description:
         'Several houses side by side, cheapest maintenance-adjusted price first: price, maintenance debt and maintenance-adjusted price with ranges, price to assessed value, the forecast total and per month, and annualCost.perMonth: running costs plus every replacement and repaint spread over the years it lasts, which does not depend on when things fall due. ' +
+        'perLivingM2 gives price, maintenance-adjusted price, the forecast total and per month, and annualCost.perMonth per square metre of living area (null without living_area), so that houses of different size compare. ' +
         'A house without known running costs has a lower forecast for that reason only: runningCostsKnown says so. ' +
         'Then, against the first house, the price difference explained per component type (debt differences under 20 000 kr pooled as "other"); the forecast items that differ most; features (unknown is not no); flagged risks, which are never turned into kronor; and area statistics with their level and year. ' +
         'In largestForecastDifferences every cell has sek and basis. Unknown is null, not zero, and left out of the spread: a part type the documents do not mention (not_documented), a running cost that is inside the listing’s total (in_operating_total) or not known at all (unknown), and work items of a house without an inspection protocol (not_inspected). A known figure says what it rests on: documented, construction_year, unknown_year or assumed for parts, absent when the documents say the house has none, stated, from_energy or estimated for running costs, inspected for work items. Say the basis whenever you quote a difference. ' +

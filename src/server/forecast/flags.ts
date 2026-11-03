@@ -64,6 +64,10 @@ const ENGLISH = {
   running_costs_unknown: () => 'running costs unknown',
   scenarios_cross: () =>
     'low, typical and high are whole paths with their own replacement years, and a replacement resets the repainting, so this item’s range is not ordered; the house totals are',
+  ground_rent_revised: (p: Params) =>
+    `ground rent is revised in ${p.year}; the same amount is kept after that but is uncertain`,
+  ground_rent_no_revision_year: () =>
+    'ground_rent_revision_year missing; the rent may be revised within the horizon, so it is uncertain throughout',
 } satisfies Record<string, (p: Params) => string>
 
 export type FlagCode = keyof typeof ENGLISH
