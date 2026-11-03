@@ -566,7 +566,7 @@ Tabellerna läggs till med en migration när milstolpe 8 börjar, inte förr (se
 3. Delar som `risks()` flaggar får `riskIntervalMonths` och raden `whyRisk`.
 4. En ersatt komponent för inte sina kontroller vidare; den nya får sina egna. Loggen på den gamla finns kvar i historiken.
 5. Senast gjord är den senaste `CheckLog`-raden med `OK` eller `REMARK`, annars observationen i `anchorKey`, annars okänt. Nästa datum är senast gjord plus intervallet, lagt i första säsongsfönstret efter det. Utan senast gjord: nästa fönster räknat från i dag.
-6. `WheelSetting` per kontroll går före: `paused`, `interval_months` (till exempel kommunens sotningsfrist som användaren bekräftar vid första loggen) och `month`.
+6. `WheelSetting` per kontroll går före: `paused`, `interval_months` (till exempel kommunens sotningsfrist som användaren bekräftar vid första loggen) och `month`. `planned_on` gäller bara nästa gång: kontrollen ligger på den dagen tills den loggas.
 
 ### Logg och återkoppling
 
@@ -602,7 +602,7 @@ Krav:
 4. Gjort, ska göras och försenat, ur loggen och nästa datum.
 5. **Kalenderprenumeration (iCal).** `GET /api/calendar/<token>` är en route handler, ett undantag från "inga REST-endpoints för appdata" på samma grund som dokumentfilerna: läsaren är en kalenderklient. `CalendarToken` har hus, hash av token, `createdAt` och `revokedAt`; en återkallad länk ger 404 och en ny skapas på hjulets sida. Posterna innehåller titel, månad och en länk till kontrollsidan, ingen adress. Routen måste vara öppen för kalenderservrar: inte bakom Access och inte i WAF-regeln för Anthropics intervall.
 6. En utskriftsversion på en A4-sida med utskrifts-CSS på hjulets flik.
-7. **Påminnelser** går via kalenderprenumerationen och via en schemalagd uppgift i användarens egen Claude som hämtar månadens poster med `get_year_wheel` och skriver dem i chatten. Husvan skickar inget självt, ingen egen mejl- eller pushinfrastruktur. Hjälpsidan beskriver hur man sätter upp båda.
+7. **Påminnelser** är i första hand en schemalagd uppgift i användarens egen Claude, ungefär en gång om dagen. Den hämtar dagens och månadens poster med `get_year_wheel`, säger till när något är aktuellt och frågar om användaren vill planera in det. Ett ja blir en `WheelSetting` `planned_on` via `adjust_wheel_item`; vill användaren ha det i kalendern lägger Claude in det med sin egen kalenderkoppling. En inplanerad post tas upp igen samma dag, så att Claude kan fråga hur det gick och logga resultatet. Kalenderprenumerationen är alternativet för den som inte vill ha en schemalagd uppgift. Husvan skickar inget självt och skriver inte i någon kalender, ingen egen mejl- eller pushinfrastruktur. Hjälpsidan beskriver hur man sätter upp båda.
 
 **Egna poster.** En egen återkommande post är en `CheckTemplate` med `houseId` och `changesetId` (skapad på webben, källa `USER`, godkänd direkt) och behandlas som biblioteksmallar vid genereringen. En engångspost är en `WorkItem` med källa `USER`, som i dag.
 
@@ -670,7 +670,7 @@ I jämförelsen av kandidathus läggs en rad till: antal kontroller och åtgärd
 | `list_checks` | Husets kontroller med nästa datum, säsongsfönster, varför den finns (riskraden), senaste logg och vad som är försenat | Läser |
 | `get_year_wheel` | Årshjulet för ett hus och ett år, månad för månad, med källa, svårighetsgrad och utförare per post. Underlaget för påminnelser i användarens Claude | Läser |
 | `log_check` | Loggar ett resultat med mätvärden och dokument, till exempel från ett foto användaren skickar. Vid anmärkning följer åtgärden och skicket med i samma utkast | Skriver utkast |
-| `adjust_wheel_item` | Flyttar en post till en annan månad eller ett annat år, pausar den eller sätter eget intervall | Skriver |
+| `adjust_wheel_item` | Flyttar en post till en annan månad eller ett annat år, planerar in den en viss dag (`planned_on`), pausar den eller sätter eget intervall | Skriver |
 | `type_library` | Visar även kontrollmallarna per typ | Läser |
 | `open_questions`, `answer_questions` | Frågor om okända delar som styr kontroller (`decides: "check"`) | Som i dag |
 | `add_work_item`, `propose_changes` | Åtgärder får `seasonAnchor` | Som i dag |
@@ -706,7 +706,7 @@ Underhållsläget (se "Underhållsläge: kontroller och årshjul") kommer däref
 
 8. **Kontroller.** Migration för `CheckTemplate`, `SeasonWindow`, `Municipality.climateZone`, `CheckLog`, `CheckLogDocument`, `WheelSetting`, `CalendarToken`, `WorkItem.seasonAnchor` och `WorkItem.checkLogId`; komponenttyperna `private_sewage` och `water_well`. Mallar med källa per mall, klimatzoner och säsongsfönster som data, seedade. `planChecks` med tester, `list_checks`, frågorna med `decides: "check"`, fliken Årshjul i listform och kontrollsidan. **Klart när** Yxgränd 6 får ett kontrollschema utan kontroller för delar huset saknar, med tätare fuktkontroll av syllen och besiktningens anmärkningar inlagda.
 9. **Logg.** `log_check` från MCP och loggning på webben i mobilen, med foto, mätvärden, anmärkning som ger åtgärd och skick, och texten om att egenkontroll inte ersätter besiktning. **Klart när** en loggad anmärkning syns som åtgärd och som sänkt skick i prognosen.
-10. **Årshjul.** `planWheel` med lastfördelning och tester, rutnätet med flytt, `get_year_wheel`, `adjust_wheel_item`, kalenderprenumerationen med återkallbar token, utskriften och hjälpsidan om påminnelser via kalender och schemalagd uppgift i Claude. Raden i jämförelsen. **Klart när** hjulet för ett år syns i en kalenderapp och en schemalagd uppgift i Claude skriver ut månadens poster.
+10. **Årshjul.** `planWheel` med lastfördelning och tester, rutnätet med flytt, `get_year_wheel`, `adjust_wheel_item`, kalenderprenumerationen med återkallbar token, utskriften och hjälpsidan om påminnelser via kalender och schemalagd uppgift i Claude. Raden i jämförelsen. **Klart när** hjulet för ett år syns i en kalenderapp och en daglig schemalagd uppgift i Claude tar upp en aktuell post, planerar in den på användarens ja och frågar om resultatet den dagen.
 11. **Ekonomiskt lager.** Pengar i hjulet, ROT med arbetsandel per profil och `diy_level` i prognosens timpris. **Klart när** hjulet visar månadens kostnad och ett hantverkarbyte visas med och utan ROT.
 
 ## Utanför version 1
