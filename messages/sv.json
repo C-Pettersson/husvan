@@ -136,14 +136,18 @@
       "notInspection": "Egenkontroll ersätter inte en besiktning."
     },
     "reminder": {
-      "label": "Påminnelse i Claude",
+      "label": "Claude, schemalagd varje morgon",
       "messages": {
-        "ask": {
-          "text": "Vad ska göras med huset i maj?"
+        "due": {
+          "text": "God morgon. Fuktkontrollen i krypgrunden ska göras i maj, och i november låg syllen på 15 % vid norra hörnet. Den tar en halvtimme. Vill du planera in den? Lördag förmiddag är ledig i din kalender.",
+          "note": "dagens och månadens poster ur årshjulet, med senaste loggen"
         },
-        "month": {
-          "text": "En sak: fuktkontrollen i krypgrunden. Mät syllen på tre ställen, i november låg den på 15 % vid norra hörnet. Skicka en bild på mätaren när du är klar så loggar jag det.",
-          "note": "månadens poster ur årshjulet, med senaste loggen"
+        "yes": {
+          "text": "Ja, lördag."
+        },
+        "planned": {
+          "text": "Inlagt lördag kl. 10, med vad du ska titta efter. Ta med fuktmätaren och skicka en bild på den när du är klar, så loggar jag det.",
+          "note": "posten planerad till lördag; kalendern är din egen koppling i Claude"
         },
         "log": {
           "files": "fuktmätare.jpg",
@@ -161,15 +165,15 @@
         "body": "Kontrollerna anger säsong, inte månad. Snösmältningen kommer i april–maj i Boden och i mars i Malmö, och hjulet följer med."
       },
       "calendar": {
-        "title": "I din kalender och din Claude",
-        "body": "Prenumerera på hjulet i kalenderappen, eller låt en schemalagd uppgift i Claude skriva månadens poster i chatten. Flytta en post så gäller det kommande år."
+        "title": "Din Claude håller koll",
+        "body": "En schemalagd uppgift i Claude går igenom hjulet varje morgon, säger till när något ska göras i dag eller den här månaden och frågar om du vill planera in det. Vill du hellre ha det i kalendern går hjulet att prenumerera på."
       },
       "history": {
         "title": "Loggen blir husets historik",
         "body": "Vid försäljning är den underlag för frågelistan, och vid ett försäkringsärende visar den att underhållet är skött."
       }
     },
-    "personal": "Husvan är ett personligt verktyg. Nya användare bjuds in av ägaren."
+    "invite": "Inbjudan krävs"
   },
   "login": {
     "title": "Logga in",

@@ -136,14 +136,18 @@
       "notInspection": "A self-check does not replace an inspection."
     },
     "reminder": {
-      "label": "A reminder in Claude",
+      "label": "Claude, scheduled every morning",
       "messages": {
-        "ask": {
-          "text": "What needs doing on the house in May?"
+        "due": {
+          "text": "Good morning. The damp check in the crawl space is due in May, and in November the sill plate was at 15% at the north corner. It takes half an hour. Would you like to plan it in? Saturday morning is free in your calendar.",
+          "note": "today's and this month's items from the year wheel, with the latest log"
         },
-        "month": {
-          "text": "One thing: the damp check in the crawl space. Measure the sill plate in three places; in November it was 15% at the north corner. Send a photo of the meter when you are done and I will log it.",
-          "note": "the month's items from the year wheel, with the latest log"
+        "yes": {
+          "text": "Yes, Saturday."
+        },
+        "planned": {
+          "text": "Booked for Saturday at 10, with what to look for. Bring the moisture meter and send a photo of it when you are done, and I will log it.",
+          "note": "item planned for Saturday; the calendar is your own connector in Claude"
         },
         "log": {
           "files": "moisture-meter.jpg",
@@ -161,15 +165,15 @@
         "body": "Checks name a season, not a month. Snowmelt comes in April–May in Boden and in March in Malmö, and the wheel follows."
       },
       "calendar": {
-        "title": "In your calendar and your Claude",
-        "body": "Subscribe to the wheel in your calendar app, or let a scheduled task in Claude post the month's items in the chat. Move an item and it stays moved in the years ahead."
+        "title": "Your Claude keeps track",
+        "body": "A scheduled task in Claude goes through the wheel every morning, tells you when something is due today or this month and asks whether you want to plan it in. If you prefer your calendar, you can subscribe to the wheel."
       },
       "history": {
         "title": "The log becomes the house's history",
         "body": "When selling, it backs up the disclosure questionnaire, and in an insurance claim it shows the house has been maintained."
       }
     },
-    "personal": "Husvan is a personal tool. New users are invited by the owner."
+    "invite": "Invitation required"
   },
   "login": {
     "title": "Sign in",
