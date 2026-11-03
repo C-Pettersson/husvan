@@ -221,7 +221,11 @@
       "radon_measurement_year": "Radonmätning, år",
       "radon_measured": "Radon mätt",
       "deso_code": "DeSO-område",
-      "police_area_code": "Lokalpolisområde"
+      "police_area_code": "Lokalpolisområde",
+      "water_supply": "Vatten",
+      "sewage_system": "Avlopp",
+      "sludge_emptying_cost_sek_per_year": "Slamtömning per år",
+      "community_association_fee_sek_per_year": "Samfällighetsavgift per år"
     },
     "value": {
       "sale_status": {
@@ -237,6 +241,16 @@
       },
       "ventilation_type": {
         "natural_draft": "Självdrag"
+      },
+      "water_supply": {
+        "municipal": "Kommunalt",
+        "private_well": "Egen brunn",
+        "shared_well": "Gemensam brunn"
+      },
+      "sewage_system": {
+        "municipal": "Kommunalt",
+        "private": "Enskilt avlopp",
+        "shared": "Gemensamt avlopp"
       }
     }
   },
@@ -313,7 +327,8 @@
     "plumbing": "Vatten och avlopp",
     "electrical": "El",
     "interior": "Inomhus",
-    "feature": "Egenskaper"
+    "feature": "Egenskaper",
+    "site": "Tomt och mark"
   },
   "value": {
     "yes": "Ja",
@@ -422,7 +437,11 @@
         "rcd": "Finns det jordfelsbrytare?",
         "panel_type": "Proppar eller automatsäkringar?"
       },
-      "other": "{label}?"
+      "other": "{label}?",
+      "water_supply": "Kommunalt vatten eller egen brunn?",
+      "sewage_system": "Kommunalt eller enskilt avlopp?",
+      "sludge_emptying_cost_sek_per_year": "Vad kostar slamtömningen per år?",
+      "community_association_fee_sek_per_year": "Vad är avgiften till samfälligheten per år?"
     },
     "intro": "Svara på det du kan under visningen. Varje svar räknas in direkt. Beloppet är hur mycket svaret kan ändra kalkylen; störst först.",
     "notInspected": "Huset saknar besiktningsprotokoll, så felen är okända. Ingen fråga här ersätter en besiktning.",
@@ -469,11 +488,11 @@
     "impactForecast": "Kostnaden de närmaste {years} åren kan ändras med upp till {sek}.",
     "decides": "Avgör: {risk}",
     "condition": {
-      "5": "Som nytt",
-      "4": "Gott",
-      "3": "Normalt slitage",
+      "1": "Behöver bytas",
       "2": "Slitet",
-      "1": "Behöver bytas"
+      "3": "Normalt slitage",
+      "4": "Gott",
+      "5": "Som nytt"
     },
     "original": "Original ({year})",
     "notSince": "Inte sedan {year}",
@@ -553,7 +572,9 @@
     "note": "Risker flaggas men räknas inte om till kronor.",
     "risk_construction": "Riskkonstruktion",
     "older_electrical": "Äldre elsystem",
-    "radon": "Radon över referensnivån 200 Bq/m³"
+    "radon": "Radon över referensnivån 200 Bq/m³",
+    "private_sewage": "Enskilt avlopp som måste göras om",
+    "well_water": "Otjänligt dricksvatten i brunnen"
   },
   "facts": {
     "title": "Egenskaper",

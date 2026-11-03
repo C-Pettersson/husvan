@@ -114,6 +114,15 @@ const attributes = new Map<string, Record<string, AttributeDefinition>>([
       slab_insulation: choice('below', 'above'),
     },
   ],
+  [
+    'private_sewage',
+    {
+      municipal_assessment: choice('approved', 'needs_action'),
+      system_type: choice('infiltration', 'sludge_separator_only'),
+      sludge_separator: choice('three_chamber', 'none'),
+    },
+  ],
+  ['water_well', { water_test_result: choice('fit', 'unfit') }],
 ])
 
 const START = 2026
@@ -252,6 +261,67 @@ describe('openQuestions', () => {
     )!
     expect(q.decides).toBe('risk_construction')
     expect(q.swing!.maintenanceDebtSek).toBe(0)
+  })
+
+  it('asks whether the water and sewage are municipal, before the rest without an amount', () => {
+    const r = openQuestions(
+      input(
+        [roof(), foundation],
+        house.filter((v) => v.key !== 'operating_cost_sek_per_year')
+      )
+    )
+    const water = find(r, null, 'water_supply')!
+    expect(water).toMatchObject({
+      how: 'ask',
+      why: 'missing',
+      swing: null,
+      manual: null,
+    })
+    expect(water.options.map((o) => o.value)).toEqual([
+      'municipal',
+      'private_well',
+      'shared_well',
+    ])
+    expect(find(r, null, 'sewage_system')?.options.map((o) => o.value)).toEqual(
+      ['municipal', 'private', 'shared']
+    )
+    // With the risk-deciding questions, ahead of the ones nothing can be
+    // tried for.
+    const keys = r.questions.map((q) => q.key)
+    expect(keys.indexOf('water_supply')).toBeLessThan(
+      keys.indexOf('operating_cost_sek_per_year')
+    )
+    expect(keys.indexOf('water_supply')).toBeGreaterThan(
+      keys.indexOf('installation_year')
+    )
+  })
+
+  it('does not ask about water or sewage the house already answers', () => {
+    const r = openQuestions(
+      input(
+        [
+          roof(),
+          foundation,
+          comp('private_sewage', [kv('municipal_assessment', 'approved')]),
+        ],
+        [...house, kv('water_supply', 'municipal')]
+      )
+    )
+    expect(find(r, null, 'water_supply')).toBeUndefined()
+    expect(find(r, null, 'sewage_system')).toBeUndefined()
+  })
+
+  it('keeps the questions that decide a sewage or well risk', () => {
+    const sewage = comp('private_sewage', [], 'sewage')
+    const well = comp('water_well', [], 'well')
+    const r = openQuestions(input([roof(), foundation, sewage, well]))
+    expect(find(r, 'sewage', 'municipal_assessment')).toMatchObject({
+      decides: 'private_sewage',
+      how: 'look',
+    })
+    expect(find(r, 'sewage', 'system_type')?.decides).toBe('private_sewage')
+    expect(find(r, 'sewage', 'sludge_separator')).toBeUndefined()
+    expect(find(r, 'well', 'water_test_result')?.decides).toBe('well_water')
   })
 
   it('asks for a quantity only when the part has none to be costed by', () => {
