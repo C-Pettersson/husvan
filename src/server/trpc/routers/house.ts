@@ -15,9 +15,15 @@ import {
   undoAnswer,
 } from '@/server/houses/answerQuestions'
 import { assumptionShape, setAssumptions } from '@/server/houses/assumptions'
-import { valueInput, workItemInput } from '@/server/houses/changes'
+import {
+  draftEditShape,
+  emptyChanges,
+  valueInput,
+  workItemInput,
+} from '@/server/houses/changes'
 import { confirmChangeset } from '@/server/houses/confirmChangeset'
 import { correct, retract, updateCore } from '@/server/houses/correct'
+import { editDraft } from '@/server/houses/editDraft'
 import { bathroomCount, heating, valueOf } from '@/server/houses/derive'
 import { getHouse, type Label } from '@/server/houses/getHouse'
 import { listHouses } from '@/server/houses/listHouses'
@@ -175,6 +181,42 @@ export const houseRouter = createTRPCRouter({
       // Not a draft of this owner's, or already decided.
       if (!status) throw notFound()
       return { status }
+    }),
+
+  // Corrects a draft shown in place: leaves rows out of it, or puts the
+  // user's own value in it in place of a draft value. The rows added are
+  // the user's and are approved with the draft.
+  editDraft: protectedProcedure
+    .input(
+      z.object({
+        houseId: z.uuid(),
+        draftId: z.uuid(),
+        ...draftEditShape,
+        value: z
+          .object({ componentId: z.uuid().optional(), value: userValue })
+          .optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { houseId, draftId, value, ...edit } = input
+      const r = await editDraft(ctx.prisma, {
+        ownerId: ctx.user.id,
+        houseId,
+        draftId,
+        source: 'USER',
+        edit,
+        changes: value
+          ? {
+              ...emptyChanges,
+              houseValues: value.componentId ? [] : [value.value],
+              componentValues: value.componentId
+                ? [{ componentId: value.componentId, values: [value.value] }]
+                : [],
+            }
+          : emptyChanges,
+      })
+      if (!r.ok) throw refused(r.errors)
+      return { remaining: r.remaining }
     }),
 
   // A value the user sets on the house or on one of its components.
