@@ -1189,7 +1189,8 @@ export const componentTypes: ComponentTypeDefinition[] = [
   // simple timber shed is rebuilt when worn out and has a lifespan profile
   // per building_kind; a guest house or workshop is priced through its own
   // roof, facade, windows and doors as subcomponents and has no lifespan of
-  // its own. Repainting is not modelled yet.
+  // its own. A building of its own (separateBuilding), like the garage.
+  // Repainting is not modelled yet.
   {
     type: 'outbuilding',
     label: { sv: 'Komplementbyggnad', en: 'Outbuilding' },
@@ -1218,6 +1219,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
       'exterior_door',
       'foundation',
     ],
+    forecastDefaults: { separateBuilding: true },
   },
   // No lifespan of its own: the roof through roof_covering, the paint
   // through last_painted_year.
@@ -1243,5 +1245,6 @@ export const componentTypes: ComponentTypeDefinition[] = [
       last_painted_year: paint.last_painted_year,
     },
     allowedSubcomponents: ['roof_covering'],
+    forecastDefaults: { separateBuilding: true },
   },
 ]

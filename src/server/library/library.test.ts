@@ -51,6 +51,26 @@ describe('seeded type library', () => {
     )
   })
 
+  it('keeps the parts of other buildings apart from the house’s', () => {
+    // A type that carries a roof or a facade of its own is a building on the
+    // plot: its parts must not take from the house’s estimated areas.
+    const buildings = componentTypes
+      .filter((t) =>
+        (t.allowedSubcomponents ?? []).some((s) =>
+          ['roof_covering', 'facade'].includes(s)
+        )
+      )
+      .map((t) => t.type)
+      .sort()
+    expect(buildings).toEqual(['carport', 'garage', 'outbuilding'])
+    for (const type of buildings)
+      expect(
+        componentTypes.find((t) => t.type === type)!.forecastDefaults
+          ?.separateBuilding,
+        type
+      ).toBe(true)
+  })
+
   it('covers every type CLAUDE.md lists', () => {
     const listed = [
       'foundation',
