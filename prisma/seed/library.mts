@@ -4,44 +4,69 @@ import {
   lifespanProfileSchema,
   validateLibrary,
 } from '../../src/server/library/schema.ts'
+import {
+  differs,
+  mergeType,
+  pick,
+  type SeedMode,
+  type StoredType,
+} from '../../src/server/library/seedMerge.ts'
 import { componentTypes } from '../data/componentTypes.mts'
 import { lifespanProfiles } from '../data/lifespanProfiles.mts'
 
-// Upserts the type library and its lifespan profiles. Types and attributes
-// created during operation are kept: the seed only adds or overwrites the keys
-// it defines itself.
-export async function seedLibrary(prisma: PrismaClient) {
+// Upserts the type library and its lifespan profiles (seedMerge.ts). In full
+// mode the repository's keys overwrite the stored ones and what was created
+// in operation is kept; in add-only mode nothing stored changes and only
+// missing types, attribute keys and profiles are added.
+export async function seedLibrary(
+  prisma: PrismaClient,
+  mode: SeedMode = 'full'
+) {
   const errors = validateLibrary(componentTypes, lifespanProfiles)
   if (errors.length)
     throw new Error(`Type library is invalid:\n${errors.join('\n')}`)
+  const addOnly = mode === 'add_only'
+  const wouldChange: string[] = []
 
+  let newTypes = 0
   for (const input of componentTypes) {
     const t = componentTypeSchema.parse(input)
     const existing = await prisma.componentType.findUnique({
       where: { type: t.type },
     })
-    const data = {
+    const seed: StoredType = {
       label: t.label,
       category: t.category,
-      attributeSchema: {
-        ...(existing?.attributeSchema as object | undefined),
-        ...t.attributeSchema,
-      },
-      allowedSubcomponents: [
-        ...new Set([
-          ...(existing?.allowedSubcomponents ?? []),
-          ...t.allowedSubcomponents,
-        ]),
-      ],
-      forecastDefaults: {
-        ...(existing?.forecastDefaults as object | undefined),
-        ...t.forecastDefaults,
-      },
+      attributeSchema: t.attributeSchema,
+      allowedSubcomponents: t.allowedSubcomponents,
+      forecastDefaults: t.forecastDefaults ?? {},
+    }
+    const stored: StoredType | null = existing && {
+      label: existing.label as StoredType['label'],
+      category: existing.category,
+      attributeSchema:
+        existing.attributeSchema as StoredType['attributeSchema'],
+      allowedSubcomponents: existing.allowedSubcomponents,
+      forecastDefaults:
+        existing.forecastDefaults as StoredType['forecastDefaults'],
+    }
+    const data = mergeType(seed, stored, mode)
+    if (!existing) newTypes++
+    if (addOnly && stored && differs(mergeType(seed, stored, 'full'), stored))
+      wouldChange.push(`type ${t.type}`)
+    // A row the merge leaves as it is is not written at all.
+    if (stored && !differs(data, stored)) continue
+    const row = {
+      label: data.label as Prisma.InputJsonValue,
+      category: data.category,
+      attributeSchema: data.attributeSchema as Prisma.InputJsonValue,
+      allowedSubcomponents: data.allowedSubcomponents,
+      forecastDefaults: data.forecastDefaults as Prisma.InputJsonValue,
     }
     await prisma.componentType.upsert({
       where: { type: t.type },
-      update: data,
-      create: { type: t.type, ...data },
+      update: row,
+      create: { type: t.type, ...row },
     })
   }
 
@@ -55,6 +80,13 @@ export async function seedLibrary(prisma: PrismaClient) {
     })
     const data = { ...p, sources: p.sources as Prisma.InputJsonValue[] }
     if (existing) {
+      const same = !differs(p, pick(existing, Object.keys(p)))
+      if (addOnly) {
+        if (!same)
+          wouldChange.push(`profile ${p.type} ${JSON.stringify(p.match)}`)
+        continue
+      }
+      if (same) continue
       await prisma.lifespanProfile.update({ where: { id: existing.id }, data })
     } else {
       await prisma.lifespanProfile.create({ data })
@@ -63,6 +95,10 @@ export async function seedLibrary(prisma: PrismaClient) {
   }
 
   console.log(
-    `Seeded ${componentTypes.length} component types and ${lifespanProfiles.length} lifespan profiles (${created} new)`
+    `Seeded ${componentTypes.length} component types (${newTypes} new) and ${lifespanProfiles.length} lifespan profiles (${created} new)`
   )
+  if (wouldChange.length)
+    console.log(
+      `Add-only: ${wouldChange.length} stored row(s) differ from the repository and were left alone; a full seed would change them:\n  ${wouldChange.join('\n  ')}`
+    )
 }
