@@ -4306,4 +4306,463 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
       },
     ],
   },
+
+  // Profiles added 2026-11-03 for the parts that cost nothing before: deck,
+  // balcony, sauna, attic insulation, natural-stone and unknown driveway,
+  // shower room, and the sewer under a slab. Garage and carport get none,
+  // since no source gives a lifespan for the building itself; they are
+  // priced through their parts.
+
+  // A wooden deck rebuilt by a contractor, impregnated boards on piers, per
+  // m2 incl. material and labour before ROT. The boards and the frame are
+  // replaced together; no source gives the frame a lifespan of its own
+  // (NTR AB timber is declared for 25 years). Typical 22 is a researcher
+  // midpoint of 20-25 with maintenance; 15 is the neglected deck.
+  {
+    type: 'deck',
+    match: {},
+    lifespanMinYears: 15,
+    lifespanTypicalYears: 22,
+    lifespanMaxYears: 30,
+    costLowSek: 1500,
+    costHighSek: 3500,
+    costUnit: 'M2',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'BraByggare, Vad kostar det att bygga altan 2026? (2026-05-08)',
+        url: 'https://www.brabyggare.se/info/vad-kostar-bygga-altan-2026/',
+        lifespanYears: null,
+        lifespanYearsRange: [20, 30],
+        costSek: null,
+        costSekRange: [2200, 3800],
+        note: 'Tryckimpregnerat on piers 2 200-3 800 kr/m2 turnkey; 25 m2 standard deck 75 000-125 000; "20-30 år med normalt underhåll"; before ROT',
+      },
+      {
+        name: 'Hantverkskollen, Bygga altan, trall och trädäck: kostnad och pris 2026 (2026-05-13)',
+        url: 'https://www.hantverkskollen.se/artiklar/snickare/snickare-bygga-altan-trall-och-tradack-kostnad-pris-2026',
+        lifespanYears: null,
+        lifespanYearsRange: [20, 25],
+        costSek: null,
+        costSekRange: [1000, 2500],
+        note: 'Tryckimpregnerat 1 000-2 500 kr/m2 incl. material and labour before ROT; "håller 20-25 år med normalt underhåll"',
+      },
+      {
+        name: 'Offerta, Vad kostar det att bygga en altan? Pris per kvm 2026 (2026-09-28)',
+        url: 'https://offerta.se/bygg-och-renovering/altan-och-uterum/vad-kostar-det-att-bygga-en-altan',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [1750, 3750],
+        note: 'Contractor 1 750-3 750 kr/m2 before ROT; 20 m2 about 50 000 of which 20 000 labour',
+      },
+      {
+        name: 'MABO Bygg & Plåt, Underhåll altan',
+        url: 'https://mabobyggplat.se/underhall-altan/',
+        lifespanYears: null,
+        lifespanYearsRange: [20, 25],
+        costSek: null,
+        note: 'A washed and oiled impregnated deck "kan hålla i 20-25 år eller mer"',
+      },
+      {
+        name: 'Moelven, eBVD Tryckimpregnerad NTR AB Brun (2026-05-13)',
+        url: 'https://www.moelven.com/globalassets/inriver/documents/ebvd---byggvarudeklaration---moelven-tryckimpregnerat-ntr-ab-brun.pdf',
+        lifespanYears: 25,
+        costSek: null,
+        note: '"Uppskattad teknisk livslängd för varan: 25 år"; 20 years rot guarantee; not for permanent ground contact',
+      },
+    ],
+  },
+  // A villa balcony rebuilt, per balcony: wood at the low end, steel or
+  // concrete at the high end. No source gives a wooden villa balcony a
+  // lifespan; M84:10 gives 35 years for the membrane and sheet metal of
+  // balconies and terraces and 50 for the concrete, and impregnated wood
+  // lasts 20-30 (deck above), so 25/35/50 brackets both.
+  {
+    type: 'balcony',
+    match: {},
+    lifespanMinYears: 25,
+    lifespanTypicalYears: 35,
+    lifespanMaxYears: 50,
+    costLowSek: 70000,
+    costHighSek: 170000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Offerta, Vad kostar det att bygga en balkong? (2026-04-30)',
+        url: 'https://offerta.se/guider/bygg-och-renovering/vad-kostar-det-att-bygga-balkong',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [70000, 180000],
+        note: 'Villa: simple wooden balcony 70 000-120 000, steel or concrete 110 000-170 000; glazed 160 000-280 000; ROT on labour',
+      },
+      {
+        name: 'Handymans, Balkong pris 2026: kostnad på villa och i bostadsrätt',
+        url: 'https://handymans.se/guider/vad-kostar-det-att-bygga-balkong/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [70000, 180000],
+        note: 'Villa or terraced house 70 000-180 000 fully installed; wood 70 000-120 000, steel or concrete 110 000-170 000',
+      },
+      {
+        name: 'Son och Far, Bygga balkong: kostnad för villa och bostadsrätt 2026 (2026-11-01)',
+        url: 'https://sonochfar.se/blog/bygga-balkong-villa-pris-per-kvm/',
+        lifespanYears: null,
+        costSek: 111000,
+        note: 'Wooden-house balcony about 6 m2: 111 000 incl. VAT before ROT, 22 700 material and 88 300 labour incl. door and reinforcement',
+      },
+      {
+        name: 'Offerta, Vad kostar det att renovera en balkong? (2025-12-23)',
+        url: 'https://offerta.se/guider/bygg-och-renovering/vad-kostar-det-att-renovera-balkong',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [30000, 50000],
+        note: 'Total renovation or replacement (new slab, railing, reinforced structure) 30 000-50 000+ per balcony, written for apartment blocks; surfaces alone 5 000-15 000',
+      },
+      {
+        name: 'M84:10, Teknisk medellivslängd för byggnadskonstruktioner (via Gallagher)',
+        url: 'https://www.ajg.com/se/-/media/files/gallagher/se/nordic-files/lista-teknisk-medellivsl-ng-byggnadsdelar.pdf',
+        lifespanYears: null,
+        lifespanYearsRange: [35, 50],
+        costSek: null,
+        note: 'Terrasser/balkonger/altaner: tätskikt 35 år, plåt 35 år, betongbalkonger 50 år',
+      },
+    ],
+  },
+  // An indoor sauna rebuilt by a contractor, per sauna: panelling, benches,
+  // door, insulation and heater. The heater alone lasts 10-15 years
+  // (Testkollen) and is a small part of the cost; the room's 20/30/40 is an
+  // editorial judgement between bathroom interiors (25-30) and interior
+  // joinery (40), since no source gives sauna panelling a lifespan.
+  {
+    type: 'sauna',
+    match: {},
+    lifespanMinYears: 20,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 40,
+    costLowSek: 40000,
+    costHighSek: 90000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Son och Far, Bygga bastu: kostnad, byggsats och inomhusbastu (2026-11-01)',
+        url: 'https://sonochfar.se/blog/bygga-bastu-kostnad-2026/',
+        lifespanYears: null,
+        costSek: 80000,
+        note: '3.2 m2 sauna room 55 000 incl. VAT as a product; 80 000 incl. VAT before ROT with assembly, electrician and other material',
+      },
+      {
+        name: 'Villalife, Vad kostar det att bygga bastu? (2026-09-03)',
+        url: 'https://villalife.se/renovering-bygge/bygg-din-egen-bastu-komplett-guide-3/',
+        lifespanYears: null,
+        costSek: 47297,
+        note: '4.4 m2 built from timber: material 29 197 incl. panel and benches, heater 5 150, electrics 7 600, labour 18 100; before ROT',
+      },
+      {
+        name: 'BraByggare, Vad kostar det att bygga bastu? (2025-07-18)',
+        url: 'https://www.brabyggare.se/info/kostnad-bygga-bastu/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [20000, 50000],
+        note: 'Simple indoor sauna 20 000-50 000, medium 30 000-50 000, luxury 100 000+; ROT on labour',
+      },
+      {
+        name: 'Totalbyggarna, Vad kostar det att bygga bastu? (2026-10-05)',
+        url: 'https://www.totalbyggarna.se/blogg/bastu-pris/',
+        lifespanYears: null,
+        costSek: 20500,
+        note: 'Labour only: 30 h carpentry at 500 and 8 h electrician at 687.50, 20 500 incl. VAT before ROT',
+      },
+      {
+        name: 'Testkollen, Bastuaggregat bäst i test 2026 (2026-01-13)',
+        url: 'https://www.testkollen.se/bastuaggregat',
+        lifespanYears: null,
+        lifespanYearsRange: [10, 20],
+        costSek: null,
+        costSekRange: [3000, 12000],
+        note: 'Electric heaters "håller ofta 10-20 år vid normal användning", brand units 10-15; heaters 3 000-12 000, 8-12 kW 6 000-15 000',
+      },
+    ],
+  },
+  // A new layer of loose-fill insulation on the attic floor, per m2 incl.
+  // labour before ROT. Mineral wool keeps its performance for 50 years and
+  // more (Swedisol EPD study, 65-year-old wool measured); what ends an
+  // attic's insulation is trampling and moisture, not age.
+  {
+    type: 'attic',
+    match: {},
+    lifespanMinYears: 40,
+    lifespanTypicalYears: 50,
+    lifespanMaxYears: 80,
+    costLowSek: 180,
+    costHighSek: 400,
+    costUnit: 'M2',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'BraByggfirmor, Vindsisolering 2026: kostnad, material & guide (2026-03)',
+        url: 'https://www.brabyggfirmor.se/guider/vindsisolering',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [180, 280],
+        note: '"180-280 kr/kvm för 40 cm lösullsisolering, inklusive arbete före ROT-avdrag"; 100 m2 18 000-28 000',
+      },
+      {
+        name: 'Son och Far, Tilläggsisolering: pris för yttervägg, vind och tak (2026-11-01)',
+        url: 'https://sonochfar.se/blog/kostnad-isolera-vind/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [150, 400],
+        note: 'Loose fill on an open attic floor 150-400 kr/m2 incl. VAT before ROT, material and labour',
+      },
+      {
+        name: 'Offerta, Vad kostar isolering? (2026-02-19)',
+        url: 'https://offerta.se/guider/bygg-och-renovering/vad-kostar-isolering',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [250, 700],
+        note: 'Loose fill (cellulose, mineral wool) 250-700 kr/m2 under attic and roof insulation; labour inclusion not stated',
+      },
+      {
+        name: 'Anthesis för Swedisol, Mineralullens hållbarhetsprestanda (2024-05)',
+        url: 'https://www.anthesisgroup.com/se/wp-content/uploads/sites/9/2024/05/Rapport-Mineralullens-hallbarhetsprestanda-1.pdf',
+        lifespanYears: 50,
+        costSek: 155,
+        note: 'EPDs rest on a technical life of 50 years; studies show unchanged performance after more than half a century, one of 65-year-old wool; Wikells: 200 mm loose fill on a small-house attic 155 kr/m2 after ROT incl. VAT',
+      },
+      {
+        name: 'Naturskyddsföreningen, Slutrapport för isolering av vindsbjälklag, Bordslampan 3 (2022)',
+        url: 'https://cdn.naturskyddsforeningen.se/uploads/2025/01/slutrapport-naturskyddsforeningen.pdf',
+        lifespanYears: null,
+        lifespanYearsRange: [50, 100],
+        costSek: null,
+        note: 'Attic insulation from 1944 replaced in 2021 after being trampled down; the new cellulose loose fill "uppskattar livslängden på den till 50-100 år"',
+      },
+    ],
+  },
+  // Natural stone (smågatsten, granite slabs) laid incl. groundwork, per
+  // m2, no ROT. The stone itself lasts centuries and is relaid; the stone
+  // industry's planning figure before relaying is 30 years.
+  {
+    type: 'driveway',
+    match: { surface: 'natural_stone' },
+    lifespanMinYears: 25,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 50,
+    costLowSek: 1100,
+    costHighSek: 2300,
+    costUnit: 'M2',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Sveriges Stenindustriförbund, STEN 2020:3, Gatstenens ABC',
+        url: 'https://www.sten.se/wp-content/uploads/2020/10/STEN-2003_Gatstenens_ABC.pdf',
+        lifespanYears: 30,
+        costSek: null,
+        note: '"Den tekniska livslängden innan omläggning för en gatstensläggning anses vara 30 år"; keep the joints filled',
+      },
+      {
+        name: 'Sveriges Stenindustriförbund, STEN 2021:3, Lönsam livslängd',
+        url: 'https://www.sten.se/wp-content/uploads/2021/10/STEN-2103_Stenekonomi.pdf',
+        lifespanYears: 30,
+        costSek: null,
+        costSekRange: [1000, 1800],
+        note: '30 years before a square is relaid; the stone lasts "flera hundra år" and 98 % is reused; 2021 day prices incl. labour: gatsten about 1 000 kr/m2, slabs 1 600-1 800, groundwork about 500 extra',
+      },
+      {
+        name: 'Montrenad, Vad kostar stenläggning per kvadratmeter? (2025-09)',
+        url: 'https://montrenad.se/artiklar/vad-kostar-stenlaggning-per-kvadratmeter/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [1100, 1900],
+        note: 'Granite setts: material 500-1 000 plus labour 600-900 kr/m2 incl. excavation, base, sand, joints and edging; natural stone slabs 1 300-2 300',
+      },
+      {
+        name: 'Offerta, Pris för stensättning i trädgården (2026-09-24)',
+        url: 'https://offerta.se/tomt-och-markarbeten/stenlaggning/pris-for-stensattning-i-tradgarden',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [800, 1350],
+        note: 'Setts 800-1 250 and natural stone 850-1 350 kr/m2 incl. material and labour; base and sand extra; no ROT',
+      },
+      {
+        name: 'Son och Far, Lägga marksten: pris per kvm 2026 (2026-11-01)',
+        url: 'https://sonochfar.se/blog/lagga-marksten-pris-per-kvm/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [2200, 3500],
+        note: 'Natural stone 2 200-3 500 kr/m2 incl. VAT, laid with groundwork (Entreprenadguiden guide prices, 2026-08); no ROT',
+      },
+    ],
+  },
+  // A driveway whose surface is unknown: the span from asphalt (15 years,
+  // 500 kr/m2) to paving and stone (50 years, 2 500 kr/m2), so that the part
+  // counts with a wide range instead of nothing. The forecast flags that
+  // the default profile is used. Sources are the surface profiles' above.
+  {
+    type: 'driveway',
+    match: {},
+    lifespanMinYears: 15,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 50,
+    costLowSek: 500,
+    costHighSek: 2500,
+    costUnit: 'M2',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Entreprenadguiden, Asfaltera uppfart pris 2026/2027 (2026-10)',
+        url: 'https://entreprenadguiden.se/kostnadsguide/asfaltera-uppfart-pris',
+        lifespanYears: null,
+        lifespanYearsRange: [15, 50],
+        costSek: null,
+        costSekRange: [450, 1400],
+        note: 'Asphalt 15-25 years at 450-900 kr/m2, paving stones 40+ at 700-1 400 plus groundwork, concrete 30-50 years',
+      },
+      {
+        name: 'Offerta, Pris för stensättning i trädgården (2026-09-24)',
+        url: 'https://offerta.se/tomt-och-markarbeten/stenlaggning/pris-for-stensattning-i-tradgarden',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [800, 1350],
+        note: 'A paved driveway 800-1 200 kr/m2, natural stone 850-1 350, concrete 550-1 000; base extra',
+      },
+      {
+        name: 'Brabyggfirmor, Garageuppfart med marksten (2026-03)',
+        url: 'https://www.brabyggfirmor.se/guider/garageuppfart-marksten',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [1800, 2800],
+        note: 'Paving stones complete with excavation, geotextile, base, sand, stone and joints, before ROT',
+      },
+    ],
+  },
+  // A small wet room with a shower and no toilet, such as beside a sauna,
+  // per room. No guide prices it apart from a small bathroom (3-5 m2 at
+  // 90 000-190 000 before ROT); leaving out the toilet and the vanity trims
+  // 10-20 %, so 70 000-150 000. The lifespan is the membrane's, as for a
+  // bathroom: GVK about 25, M84:10 30, Länsförsäkringar 25-30.
+  {
+    type: 'shower_room',
+    match: {},
+    lifespanMinYears: 20,
+    lifespanTypicalYears: 28,
+    lifespanMaxYears: 35,
+    costLowSek: 70000,
+    costHighSek: 150000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Hantverkskollen, Vad kostar en badrumsrenovering 2026? (2026-04-12)',
+        url: 'https://www.hantverkskollen.se/artiklar/rormokare/rormokare-vad-kostar-en-badrumsrenovering-2026-komplett-prisguide',
+        lifespanYears: 30,
+        costSek: null,
+        costSekRange: [140000, 190000],
+        note: 'Small bathroom 3-5 m2 140 000-190 000 incl. VAT before ROT; a well-done bathroom "håller i 30 år"',
+      },
+      {
+        name: 'Badrumsrenoveringguiden, Vad kostar det att renovera badrum? Prisguide 2026',
+        url: 'https://badrumsrenoveringguiden.se/guider/vad-kostar-badrumsrenovering',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [90000, 150000],
+        note: 'Under 5 m2 with standard materials 90 000-150 000 before ROT; toilet fitted 2 500-6 000',
+      },
+      {
+        name: 'Offerta, Vad kostar det att renovera badrummet? (2026-04-29)',
+        url: 'https://offerta.se/bygg-och-renovering/badrumsrenovering/vad-kostar-det-att-renovera-badrummet',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [80000, 160000],
+        note: 'Standard about 5 m2 80 000-160 000; 8 000-25 000 kr/m2',
+      },
+      {
+        name: 'Son och Far, Renovera badrum med våtrumsmatta: vad kostar det 2026? (2026-11-01)',
+        url: 'https://sonochfar.se/blog/kostnad-renovera-badrum-med-vatrumsmatta/',
+        lifespanYears: null,
+        lifespanYearsRange: [25, 30],
+        costSek: null,
+        costSekRange: [140000, 190000],
+        note: '3 m2 with wet-room vinyl 140 000-190 000 before ROT; Länsförsäkringar: membrane and vinyl 25-30 years',
+      },
+      {
+        name: 'GVK via Mynewsdesk, Renovera badrummet i tid (2016-10-20)',
+        url: 'https://www.mynewsdesk.com/se/gvk/news/renovera-badrummet-i-tid-192755',
+        lifespanYears: 25,
+        costSek: null,
+        note: '"den tekniska livslängden på ett badrum är omkring 25 år"',
+      },
+    ],
+  },
+  // The sewer run under the slab of a house on a slab on ground, per house:
+  // the slab is broken up and recast, 5 000-10 000 kr per metre. From
+  // Sonochfar's itemised 43 000 for 10 m in an open concrete floor to
+  // 250 000-300 000 where finished rooms and a bathroom sit on the run;
+  // relining the main run under the slab (80 000-140 000) falls inside.
+  // Lifespan as cast iron and early plastic, 40-60, with 65 as the max
+  // since cast iron is seen working at 70-80.
+  {
+    type: 'sewer_pipes',
+    match: { section: 'under_slab' },
+    lifespanMinYears: 40,
+    lifespanTypicalYears: 50,
+    lifespanMaxYears: 65,
+    costLowSek: 60000,
+    costHighSek: 300000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Son och Far, Byta avlopp i hus kostnad: pris i villa 2026 (2026-11-01)',
+        url: 'https://sonochfar.se/blog/byta-avlopp-hus-kostnad/',
+        lifespanYears: null,
+        costSek: 43000,
+        note: '10 m in a concrete floor 43 000 incl. VAT before ROT (demolition, pipe work, jackhammering, backfill and concrete); excludes waterproofing, tiles and floor drains',
+      },
+      {
+        name: 'Reline Vision, Byta avloppsrör i betonggolv',
+        url: 'https://relinevision.se/byta-avloppsror-i-betonggolv/',
+        lifespanYears: null,
+        lifespanYearsRange: [40, 60],
+        costSek: null,
+        costSekRange: [100000, 250000],
+        note: '5 000-10 000 kr per metre; a villa usually 100 000-250 000, 300 000+ under a bathroom; cast iron in concrete "håller vanligtvis i 40 till 60 år"',
+      },
+      {
+        name: 'Utab Miljö, Byta avloppsrör i betonggolv',
+        url: 'https://utab.se/byta-avloppsror-i-betonggolv/',
+        lifespanYears: 40,
+        costSek: null,
+        costSekRange: [5000, 10000],
+        note: 'Replacement in concrete 5 000-10 000 kr per metre, relining 3 000-6 000; pipes older than 40 years are due',
+      },
+      {
+        name: 'Reliningbolaget, Relining av avlopp (2026-01)',
+        url: 'https://reliningbolaget.se/relining/avlopp',
+        lifespanYears: 50,
+        costSek: null,
+        costSekRange: [80000, 140000],
+        note: 'Relining of the main drain under the slab, 10-15 m, 80 000-140 000 in 2-3 days; liner lasts at least 50 years; not possible with large settlements',
+      },
+      {
+        name: 'NFK Sverige, Rör i äldre hus (2026-03-16)',
+        url: 'https://nfksverige.se/blogg/ror-i-aldre-hus',
+        lifespanYears: null,
+        lifespanYearsRange: [40, 60],
+        costSek: null,
+        costSekRange: [200000, 400000],
+        note: 'Cast iron 40-60 years, corrodes from inside; early plastic brittle after 40-50; villas before 1970 have cast iron, from 1970 plastic; a traditional stambyte 200 000-400 000',
+      },
+      {
+        name: 'Rörfiness, Gjutjärnsrör i avlopp: när måste de bytas? (2026-07-15)',
+        url: 'https://rorfiness.nu/blogg/avloppsror-gjutjarn-byta/',
+        lifespanYears: null,
+        lifespanYearsRange: [50, 70],
+        costSek: null,
+        note: 'Cast iron 50-70 years technical life, seen working at 80 and finished at 40; corrosion in the bottom of the pipe',
+      },
+    ],
+  },
 ]

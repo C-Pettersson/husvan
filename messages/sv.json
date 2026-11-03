@@ -647,7 +647,15 @@
     "one_of_several": "Huset har {count} sådana; medan en annan fungerar är den här mindre brådskande",
     "scenarios_cross": "Låg, typisk och hög är var sin väg med egna bytesår, och ett byte nollställer ommålningen, så den här postens spann är inte i ordning; husets summor är det",
     "ground_rent_revised": "Avgälden omregleras {year}; samma belopp ligger kvar därefter men är osäkert",
-    "ground_rent_no_revision_year": "Omregleringsår saknas; avgälden kan omregleras inom horisonten och är därför osäker hela vägen"
+    "ground_rent_no_revision_year": "Omregleringsår saknas; avgälden kan omregleras inom horisonten och är därför osäker hela vägen",
+    "earliest_year_used": "Installationsår saknas; typen fanns inte när huset byggdes, så den räknas från {year}",
+    "partial_renovation": "Delrenoverad {year}; räknas som hälften så gammal sedan dess, eftersom stomme, tätskikt eller kanaler inte förnyades",
+    "profile_default_used": "{keys} okänt; typens standardprofil med sitt breda spann används",
+    "quantity_by_share": "{key} som andel {share} av husets uppskattade helhet",
+    "quantity_assumed": "{key} saknas; en vanlig storlek på {value} antas",
+    "footprint_includes_secondary_area": "Fotavtrycket räknas ur boyta och biarea över en våning till, eftersom huset har källare",
+    "looks_like_other_building": "Namnet säger att delen hör till ett garage eller en komplementbyggnad, men den ligger på toppnivå och tar en andel av husets uppskattade yta; lägg den under byggnaden med egen yta",
+    "finding_without_severity": "Besiktningen noterade delen utan allvar; räknas som bedömd, men hur allvarligt det är vet vi inte"
   },
   "risk": {
     "title": "Risker",
@@ -893,5 +901,16 @@
     "RISK": "Risk",
     "DEFECT": "Brist",
     "SEVERE": "Allvarligt fel"
+  },
+  "warning": {
+    "title": "{count, plural, one {# sak} other {# saker}} att se över i underlaget",
+    "bedroom_count_exceeds_rooms": "Antal sovrum ({bedrooms}) lämnar inget annat rum av {rooms} rum; ett av talen är troligen fel",
+    "conflicting_values": "{key} har värden som skiljer sig mer än {percent} %: {values}; det aktuella är {current}",
+    "key_not_in_library": "{key} är inte ett attribut på {type} i typbiblioteket; prognosen läser det inte",
+    "house_key_not_in_library": "{key} är ingen känd nyckel på huset; prognosen läser den inte",
+    "installation_year_without_evidence": "Installationsåret {year} kommer från Claude utan dokument och citat; bekräfta det eller sänk säkerheten",
+    "installation_year_before_type": "Installationsåret {year} är före {earliest}, då typen började installeras i svenska hus",
+    "separate_building_part_at_top_level": "{type} \"{name}\" ligger på toppnivå men hör enligt namnet till ett garage eller en komplementbyggnad, så den tar en andel av husets uppskattade yta; flytta den under byggnaden med egen yta",
+    "building_without_parts": "{type} \"{name}\" har inget tak under sig; en byggnad prissätts genom sina delar, så den kostar inget i prognosen"
   }
 }

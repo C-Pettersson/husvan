@@ -6,6 +6,7 @@ import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { PrismaClient } from '@prisma/client'
 import { areaStatistics, houseAreas } from '@/server/houses/area'
+import { warningsFor } from '@/server/houses/checks'
 import { listSummary } from '@/server/forecast/compare'
 import { analyseHouse, type Analysis } from '@/server/forecast/run'
 import {
@@ -266,6 +267,9 @@ export function registerReadTools(
         bathrooms: bathroomCount(view.components),
         heating: heating(view.components),
         risks: risks(view.components, view.values),
+        // What looks wrong or incomplete in the stored values (checks.ts):
+        // worth a correction with propose_changes or edit_draft.
+        warnings: await warningsFor(prisma, view),
         area: await areaStatistics(prisma, houseAreas(view)),
         workItems: view.workItems.map((w) => ({
           id: w.id,
@@ -440,14 +444,18 @@ export function registerReadTools(
         conventions: [
           'Keys and type names are English snake_case.',
           'Shared keys the forecast reads: installation_year, condition (1 to 5, 5 is new), area (m2), length (m), quantity.',
-          'A component without installation_year uses the house’s construction_year.',
+          'A component without installation_year uses the house’s construction_year, or the type’s earliest year in Sweden when that is later (a 1979 house’s EV charger is not from 1979).',
+          'An approximate year may be given as a span, "1999-2004" or {from, to}, or as "before 2006"; it is stored as the middle year with confidence at most 0.7 and the original as the quote.',
+          'A partial renovation (new kitchen fronts and worktops, new bathroom fixtures without a new membrane, a new fan in an FTX unit) is partial_renovation_year on kitchen, bathroom, shower_room, wc, laundry_room and ventilation_ftx; installation_year stays.',
+          'A mixed facade is several facade components, one per material, each with its own area; without areas, share (0 to 1) says how the house’s estimated wall area is split.',
           'A replaced part is a new component with replacesId pointing at the old one; the old row is never changed.',
           'Windows one by one when the documents allow it, otherwise one window component with quantity.',
           'One sewer_pipes component per section (indoor, under_slab, ground).',
           'A listing that says "2 badrum" becomes two bathroom components. A bathroom has a shower or a bath; a toilet without one is a wc, and WC/dusch is a bathroom.',
           'Kommunalt vatten och avlopp sets water_supply and sewage_system to municipal. A private or shared well or sewage system also gets a water_well or private_sewage component; one water_treatment component per filter or unit.',
           'The inverter and the battery are subcomponents of solar_panels; a battery without panels is a top-level component.',
-          'A detached garage carries its roof, facade, windows and doors as subcomponents, each with its own area or count; they take no share of the house’s estimated areas.',
+          'A garage, carport or outbuilding, attached or detached, and an extension carries its roof, facade, windows and doors as subcomponents, each with its own area or count; they take no share of the house’s estimated areas. A roof or facade of theirs at top level is counted as the house’s and warned about.',
+          'A bathroom has a toilet and a shower or a bath; a shower without a toilet is a shower_room.',
           'Only a document that says something is missing makes it absent (absent_features); not mentioned is unknown.',
         ],
         houseKeys: HOUSE_KEYS,

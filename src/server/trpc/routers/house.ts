@@ -9,6 +9,7 @@ import {
 } from '@/server/forecast/compare'
 import { analyseHouse } from '@/server/forecast/run'
 import { areaStatistics, houseAreas } from '@/server/houses/area'
+import { warningsFor } from '@/server/houses/checks'
 import {
   answerAsUser,
   answerInput,
@@ -84,6 +85,7 @@ export const houseRouter = createTRPCRouter({
         ...house,
         houseKeys: HOUSE_KEYS,
         libraryUpdates: await libraryUpdates(ctx.prisma, house),
+        warnings: await warningsFor(ctx.prisma, house),
       }
     }),
 

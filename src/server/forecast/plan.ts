@@ -4,6 +4,7 @@
 // what a replacement or a repaint costs in start-year kronor. Worked out
 // once per component and scenario, so the two calculations agree.
 import type { CostUnit } from '@prisma/client'
+import { looksLikeOtherBuilding } from '@/server/houses/buildings'
 import { flatten, valueOf } from '@/server/houses/derive'
 import type { ComponentView, KeyValueView } from '@/server/houses/getHouse'
 import { selectProfile } from '@/server/library/profiles'
@@ -50,8 +51,43 @@ export type Library = {
 
 // Parts every house has, assumed from the construction year when the
 // documents do not mention them, so that a house is not cheaper for saying
-// less (forecastDefaults.assumeUndocumented).
+// less (forecastDefaults.assumeUndocumented). An assumed part's id is
+// assumed:<type>, and a variant with given values
+// assumed:<type>:<key>=<value>[,<key>=<value>] (assumeVariants).
 export const ASSUMED_PREFIX = 'assumed:'
+
+export const assumedId = (type: string, values: Record<string, string> = {}) =>
+  ASSUMED_PREFIX +
+  type +
+  (Object.keys(values).length
+    ? ':' +
+      Object.entries(values)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(',')
+    : '')
+
+// The type and values an assumed id stands for; null for any other id.
+export function parseAssumedId(id: string) {
+  if (!id.startsWith(ASSUMED_PREFIX)) return null
+  const [type, rest] = id.slice(ASSUMED_PREFIX.length).split(':')
+  const values = Object.fromEntries(
+    (rest ? rest.split(',') : []).map((pair) => {
+      const [key, value] = pair.split('=')
+      return [key, value ?? '']
+    })
+  )
+  return { type, values }
+}
+
+// How much of a part's age a partial renovation takes away: the fronts,
+// worktops, fixtures or fan are renewed, the frame, membrane and ducts are
+// not. Half, as a kitchen or bathroom facelift costs about half of a full
+// renovation in the price guides (CLAUDE.md, "Regler för beräkningen").
+export const PARTIAL_RENOVATION_SHARE = 0.5
+
+// Types whose top-level parts share the house's estimated area, so one that
+// belongs to another building must be registered under it.
+export const SHARED_ENVELOPE_TYPES = ['roof_covering', 'facade']
 
 // What a part's age rests on: its own installation year, the house's
 // construction year, nothing (anywhere in the lifespan), or the part is
@@ -176,30 +212,111 @@ export function planComponents(
       const value = contextOf(d)[key]
       return value !== undefined && values.includes(value)
     })
-  const assumed: ComponentView[] = [...library.defaults]
-    .filter(
-      ([type, d]) =>
+  // A part assumed only for houses with one of the parts it belongs to
+  // (assumeWhenTypes), and not where a top-level part does the same job
+  // (assumeUnlessParts): radiators belong to a water-borne heat source and
+  // are not assumed beside water underfloor heating.
+  const belongs = (d: ForecastDefaults) =>
+    !d.assumeWhenTypes ||
+    houseParts.some((c) => d.assumeWhenTypes!.includes(c.type))
+  const replacedBy = (d: ForecastDefaults) =>
+    (d.assumeUnlessParts ?? []).some((part) =>
+      components.some(
+        (c) =>
+          c.type === part.type &&
+          Object.entries(part.where ?? {}).every(([key, values]) => {
+            const value = valueOf(c.values, key)
+            return typeof value !== 'string' || values.includes(value)
+          })
+      )
+    )
+  const assumedValue = (key: string, value: string): KeyValueView => ({
+    key,
+    current: {
+      id: `${ASSUMED_PREFIX}${key}`,
+      key,
+      value,
+      unit: null,
+      source: 'CLAUDE',
+      confidence: null,
+      quote: null,
+      documentId: null,
+      recordedAt: new Date(0),
+      draft: false,
+    },
+    alternatives: [],
+  })
+  const assumed: ComponentView[] = [...library.defaults].flatMap(
+    ([type, d]) => {
+      if (Array.isArray(absent) && absent.includes(type)) return []
+      const parts: ComponentView[] = []
+      if (
         d.assumeUndocumented &&
         !ruledOut(d) &&
-        !houseParts.some((c) => c.type === type) &&
-        !(Array.isArray(absent) && absent.includes(type))
-    )
-    .map(([type]) => ({
-      id: ASSUMED_PREFIX + type,
-      type,
-      name: null,
-      draft: false,
-      values: [],
-      children: [],
-    }))
+        belongs(d) &&
+        !replacedBy(d) &&
+        !houseParts.some((c) => c.type === type)
+      )
+        parts.push({
+          id: ASSUMED_PREFIX + type,
+          type,
+          name: null,
+          draft: false,
+          values: [],
+          children: [],
+        })
+      // A variant with given values, when the context calls for it and no
+      // documented part of the type has those values.
+      const context = contextOf(d)
+      for (const variant of d.assumeVariants ?? []) {
+        const called = Object.entries(variant.whenContext).every(
+          ([key, values]) =>
+            context[key] !== undefined && values.includes(context[key])
+        )
+        const has = houseParts.some(
+          (c) =>
+            c.type === type &&
+            Object.entries(variant.values).every(
+              ([key, value]) => valueOf(c.values, key) === value
+            )
+        )
+        if (called && !has)
+          parts.push({
+            id: assumedId(type, variant.values),
+            type,
+            name: null,
+            draft: false,
+            values: Object.entries(variant.values).map(([k, v]) =>
+              assumedValue(k, v)
+            ),
+            children: [],
+          })
+      }
+      return parts
+    }
+  )
   const all = [...documented, ...assumed]
   const constructionYear = valueOf(houseValues, 'construction_year')
   const livingArea = valueOf(houseValues, 'living_area')
+  const secondaryArea = valueOf(houseValues, 'secondary_area')
   const floors = valueOf(houseValues, 'floor_count')
+  // The floor area on the ground. A basement is mostly secondary area and
+  // seldom counted among the floors, so with a basement the footprint is
+  // the living and secondary area together over one floor more.
+  const hasBasement = houseParts.some(
+    (c) =>
+      c.type === 'foundation' &&
+      valueOf(c.values, 'foundation_type') === 'basement'
+  )
+  const withSecondary =
+    hasBasement && typeof secondaryArea === 'number' && secondaryArea > 0
   const footprint =
     typeof livingArea === 'number' && typeof floors === 'number' && floors > 0
-      ? livingArea / floors
+      ? withSecondary
+        ? (livingArea + (secondaryArea as number)) / (floors + 1)
+        : livingArea / floors
       : undefined
+  const footprintFloors = withSecondary ? (floors as number) + 1 : floors
   // The whole house's quantity of a type: from the footprint when the
   // number of floors is known, since roof and drainage follow the footprint
   // and the facade the perimeter and the floors; else per m2 living area.
@@ -220,17 +337,29 @@ export function planComponents(
     return null
   }
   // The house's components of a type and the quantity they state, for
-  // sharing a per-area estimate among those that state none.
+  // sharing a per-area estimate among those that state none. A component
+  // without a quantity may state its share of the whole instead (a mixed
+  // facade: brick 0.7, wood 0.3); the rest is split equally among those
+  // that state neither.
   const quantities = (type: string, key: string) => {
     const of = all.filter((c) => c.type === type && !inBuilding.has(c.id))
     const stated = of
       .map((c) => c.values.find((v) => v.key === key)?.current.value)
       .filter((v): v is number => typeof v === 'number')
+    const unstated = of.filter(
+      (c) =>
+        typeof c.values.find((v) => v.key === key)?.current.value !== 'number'
+    )
+    const shares = unstated
+      .map((c) => valueOf(c.values, 'share'))
+      .filter((v): v is number => typeof v === 'number' && v > 0 && v <= 1)
     return {
-      unstated: of.length - stated.length,
+      unstated: unstated.length - shares.length,
       stated: stated.reduce((t, v) => t + v, 0),
+      shares: shares.reduce((t, v) => t + v, 0),
     }
   }
+  const topLevel = new Set(components.map((c) => c.id))
 
   return all.flatMap((c) => {
     const defaults = library.defaults.get(c.type) ?? {}
@@ -260,6 +389,25 @@ export function planComponents(
     const ofType = documented.filter((x) => x.type === c.type).length
     if (defaults.oneOfSeveral && ofType > 1)
       flags.push(flag('one_of_several', { count: ofType }))
+    // The type's default profile stands in while the attribute that would
+    // pick a narrower one is unknown: a driveway without a surface.
+    if (!Object.keys(profile.match).length) {
+      const deciding = [
+        ...new Set(typeProfiles.flatMap((p) => Object.keys(p.match))),
+      ].filter((key) => attributes[key] === undefined)
+      if (deciding.length)
+        flags.push(flag('profile_default_used', { keys: deciding.join(', ') }))
+    }
+    // A roof or facade at top level that by its name belongs to a garage or
+    // an outbuilding takes a share of the house's estimated area; it
+    // belongs under that building (CLAUDE.md, "Byggnader prissätts genom
+    // sina delar").
+    if (
+      topLevel.has(c.id) &&
+      SHARED_ENVELOPE_TYPES.includes(c.type) &&
+      looksLikeOtherBuilding(c.name)
+    )
+      flags.push(flag('looks_like_other_building'))
 
     // Condition moves the replacement year.
     const condition = numberValue(c.values, 'condition', flags)
@@ -281,23 +429,49 @@ export function planComponents(
     }
 
     // Installation year, else the house's, else anywhere in the lifespan.
+    // A type that did not exist when the house was built counts from its
+    // earliest year instead (forecastDefaults.earliestYear).
     let installYear: ByScenario
     let basis: PlanBasis = isAssumed ? 'assumed' : 'documented'
-    const installed = numberValue(c.values, 'installation_year', flags)
+    const installed =
+      numberValue(c.values, 'installation_year', flags) ??
+      (defaults.installationYearKey
+        ? numberValue(c.values, defaults.installationYearKey, flags)
+        : undefined)
+    const earliest = defaults.earliestYear ?? -Infinity
     if (installed !== undefined) {
       installYear = byScenario(() => installed)
     } else if (typeof constructionYear === 'number') {
-      installYear = byScenario(() => constructionYear)
+      const year = Math.max(constructionYear, earliest)
+      installYear = byScenario(() => year)
       if (!isAssumed) basis = 'construction_year'
-      flags.push(flag('construction_year_used'))
+      flags.push(
+        year > constructionYear
+          ? flag('earliest_year_used', { year })
+          : flag('construction_year_used')
+      )
     } else {
       installYear = {
         low: startYear,
-        typical: startYear - Math.round(years.typical / 2),
-        high: startYear - years.min,
+        typical: Math.max(startYear - Math.round(years.typical / 2), earliest),
+        high: Math.max(startYear - years.min, earliest),
       }
       if (!isAssumed) basis = 'unknown_year'
       flags.push(flag('installation_year_unknown'))
+    }
+    // A partial renovation (new fronts and worktops in a kitchen, new
+    // fixtures and surfaces in a bathroom, a new fan in a ventilation unit)
+    // renews the parts that wear fastest but not the frame, the membrane
+    // or the ducts: it moves the part halfway towards new.
+    const partial = numberValue(c.values, 'partial_renovation_year', flags)
+    if (partial !== undefined && partial > installYear.typical) {
+      installYear = byScenario((s) =>
+        Math.round(
+          installYear[s] +
+            PARTIAL_RENOVATION_SHARE * Math.max(0, partial - installYear[s])
+        )
+      )
+      flags.push(flag('partial_renovation', { year: partial }))
     }
 
     // Quantity in a profile's unit.
@@ -313,19 +487,26 @@ export function planComponents(
       // house cheaper. A part of another building on the plot gets none.
       const whole = inBuilding.has(c.id) ? null : estimate(defaults)
       if (whole) {
-        const { unstated, stated } = quantities(c.type, key)
-        const share = (whole.total - stated) / unstated
+        if (whole.fromFootprint && withSecondary)
+          flags.push(flag('footprint_includes_secondary_area'))
+        const ownShare = valueOf(c.values, 'share')
+        if (typeof ownShare === 'number' && ownShare > 0 && ownShare <= 1) {
+          flags.push(flag('quantity_by_share', { key, share: ownShare }))
+          return ownShare * whole.total
+        }
+        const { unstated, stated, shares } = quantities(c.type, key)
+        const share = (whole.total * (1 - shares) - stated) / unstated
         if (unit === 'EACH' ? share >= 1 : share > 0) {
           flags.push(
             whole.fromFootprint
               ? unstated === 1
                 ? flag('quantity_from_footprint', {
                     key,
-                    floors: floors as number,
+                    floors: footprintFloors as number,
                   })
                 : flag('quantity_from_footprint_shared', {
                     key,
-                    floors: floors as number,
+                    floors: footprintFloors as number,
                     count: unstated,
                   })
               : unstated === 1
@@ -339,6 +520,14 @@ export function planComponents(
         // Types priced per window or door usually come in numbers.
         if (whole) flags.push(flag('quantity_one_assumed'))
         return 1
+      }
+      // A usual size stands in where nothing else can be estimated: a shed
+      // or a driveway without an area (forecastDefaults.assumedQuantity).
+      if (defaults.assumedQuantity !== undefined) {
+        flags.push(
+          flag('quantity_assumed', { key, value: defaults.assumedQuantity })
+        )
+        return defaults.assumedQuantity
       }
       flags.push(flag('quantity_missing', { key }))
       return null

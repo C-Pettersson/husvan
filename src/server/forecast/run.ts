@@ -30,34 +30,33 @@ export const DEFAULT_HORIZON_YEARS = 15
 const num = (d: { toString(): string } | null) =>
   d === null ? null : Number(d)
 
-export async function loadLibrary(
-  prisma: PrismaClient,
+export type LoadedLibrary = Library & {
+  indexYear: number
+  attributes: Map<string, Record<string, AttributeDefinition>>
+}
+
+// The library as the forecast reads it, from the type rows, the profile
+// rows and the yearly means of the BKI index (year to index values). Pure,
+// so that tests can build it from the repository's data files
+// (fixtures/load.ts).
+export function buildLibrary(
+  types: {
+    type: string
+    forecastDefaults: unknown
+    attributeSchema: unknown
+  }[],
+  profiles: ProfileRow[],
+  byYear: Map<number, number[]>,
   startYear: number
-): Promise<
-  Library & {
-    indexYear: number
-    attributes: Map<string, Record<string, AttributeDefinition>>
-  }
-> {
-  const [types, profiles, index] = await Promise.all([
-    prisma.componentType.findMany({
-      select: { type: true, forecastDefaults: true, attributeSchema: true },
-    }),
-    prisma.lifespanProfile.findMany(),
-    prisma.priceIndex.findMany({ where: { series: BKI } }),
-  ])
-  // Yearly means of the monthly index; a start year after the latest data
-  // uses the latest year.
-  const byYear = new Map<number, number[]>()
-  for (const r of index) {
-    const y = r.period.getUTCFullYear()
-    byYear.set(y, [...(byYear.get(y) ?? []), Number(r.value)])
-  }
+): LoadedLibrary {
+  // A start year after the latest data uses the latest year.
   const mean = (y: number) => {
     const v = byYear.get(y)
     return v ? v.reduce((a, b) => a + b, 0) / v.length : undefined
   }
-  const indexYear = Math.min(startYear, Math.max(...byYear.keys()))
+  const indexYear = byYear.size
+    ? Math.min(startYear, Math.max(...byYear.keys()))
+    : startYear
   const target = mean(indexYear)
 
   return {
@@ -74,7 +73,34 @@ export async function loadLibrary(
         forecastDefaultsSchema.safeParse(t.forecastDefaults).data ?? {},
       ])
     ),
-    profiles: profiles.map((p): ProfileRow => ({
+    profiles,
+    indexFactor: (priceYear) => {
+      const from = mean(Math.min(priceYear, indexYear))
+      return from && target ? target / from : 1
+    },
+  }
+}
+
+export async function loadLibrary(
+  prisma: PrismaClient,
+  startYear: number
+): Promise<LoadedLibrary> {
+  const [types, profiles, index] = await Promise.all([
+    prisma.componentType.findMany({
+      select: { type: true, forecastDefaults: true, attributeSchema: true },
+    }),
+    prisma.lifespanProfile.findMany(),
+    prisma.priceIndex.findMany({ where: { series: BKI } }),
+  ])
+  // Yearly means of the monthly index.
+  const byYear = new Map<number, number[]>()
+  for (const r of index) {
+    const y = r.period.getUTCFullYear()
+    byYear.set(y, [...(byYear.get(y) ?? []), Number(r.value)])
+  }
+  return buildLibrary(
+    types,
+    profiles.map((p): ProfileRow => ({
       type: p.type,
       match: p.match as Record<string, string>,
       lifespanMinYears: p.lifespanMinYears,
@@ -90,11 +116,9 @@ export async function loadLibrary(
       repaintCostLowSek: num(p.repaintCostLowSek),
       repaintCostHighSek: num(p.repaintCostHighSek),
     })),
-    indexFactor: (priceYear) => {
-      const from = mean(Math.min(priceYear, indexYear))
-      return from && target ? target / from : 1
-    },
-  }
+    byYear,
+    startYear
+  )
 }
 
 export type ResolvedAssumptions = {

@@ -5,7 +5,7 @@
 import { z } from 'zod'
 import { flatten } from '@/server/houses/derive'
 import type { ComponentView, KeyValueView } from '@/server/houses/getHouse'
-import { ASSUMED_PREFIX } from './plan'
+import { parseAssumedId } from './plan'
 
 export type Answer = string | number | boolean
 
@@ -69,10 +69,12 @@ export function withAnswer(
   key: string,
   value: Answer
 ): ComponentView[] {
-  if (target.componentId.startsWith(ASSUMED_PREFIX)) {
+  const assumed = parseAssumedId(target.componentId)
+  if (assumed) {
     const existing = flatten(components).find(
       (c) => c.id === target.componentId
     )
+    // A variant keeps the values its id names, such as the sewer section.
     if (!existing)
       return [
         ...components,
@@ -81,7 +83,12 @@ export function withAnswer(
           type: target.type,
           name: null,
           draft: false,
-          values: [answered(key, value)],
+          values: [
+            ...Object.entries(assumed.values)
+              .filter(([k]) => k !== key)
+              .map(([k, v]) => answered(k, v)),
+            answered(key, value),
+          ],
           children: [],
         },
       ]
@@ -126,10 +133,10 @@ export function applyWhatIf(
     const id = v.componentId ?? null
     if (id === null) {
       values = withValue(values, v.key, v.value)
-    } else if (id.startsWith(ASSUMED_PREFIX)) {
+    } else if (parseAssumedId(id)) {
       list = withAnswer(
         list,
-        { componentId: id, type: id.slice(ASSUMED_PREFIX.length) },
+        { componentId: id, type: parseAssumedId(id)!.type },
         v.key,
         v.value
       )

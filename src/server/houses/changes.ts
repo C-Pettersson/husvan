@@ -7,6 +7,7 @@ import {
   checkValue,
   fromAttribute,
   fromHouseKey,
+  normalizeValue,
   type References,
 } from '@/server/library/checkValue'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
@@ -237,6 +238,9 @@ export function validateChanges(
       }
       const problem = checkValue(def, v.value, v.unit, refs)
       if (problem) errors.push(`${at}: ${problem}`)
+      // An approximate year ("1999-2004") is stored as one year with a
+      // lower confidence; the row is changed in place so the write sees it.
+      else Object.assign(v, normalizeValue(def, v) ?? {})
       if (!type && v.key === 'absent_features' && Array.isArray(v.value)) {
         const unknown = v.value.filter(
           (f) => f !== 'basement' && !ctx.types.has(f)
