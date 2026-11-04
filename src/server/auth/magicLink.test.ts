@@ -48,7 +48,7 @@ describe('deliverMagicLink', () => {
     expect(mailer).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'Owner@Example.com',
-        subject: `Din inloggningskod till Husvan är ${code}`,
+        subject: `Verifieringskod till Husvan: ${code}`,
       })
     )
     const message = mailer.mock.calls[0][0]
@@ -88,7 +88,7 @@ describe('magicLinkMail', () => {
     expect(mail.text.split('\n')[0]).toBe(mail.subject)
     expect(mail.html).toMatch(
       new RegExp(
-        `<body>\\n<p>Din inloggningskod till Husvan är <strong [^>]*>${code}</strong></p>`
+        `<body>\\n<p>Verifieringskod till Husvan: <strong [^>]*>${code}</strong></p>`
       )
     )
   })
@@ -103,7 +103,7 @@ describe('magicLinkMail', () => {
     expect(mail.html).toMatch(/^<!DOCTYPE html>\n<html lang="sv">\n<head>/)
     expect(mail.html).toContain('<meta charset="utf-8">')
     expect(mail.html).toContain(
-      `<title>Din inloggningskod till Husvan är ${code}</title>`
+      `<title>Verifieringskod till Husvan: ${code}</title>`
     )
     expect(mail.html).toContain(
       '</p>\n<p>Du bad om att logga in på husvan.se.</p>\n<p>Skriv koden'
@@ -111,7 +111,7 @@ describe('magicLinkMail', () => {
     expect(mail.html).toMatch(/<\/body>\n<\/html>$/)
     expect(mail.text).toBe(
       [
-        `Din inloggningskod till Husvan är ${code}`,
+        `Verifieringskod till Husvan: ${code}`,
         '',
         'Skriv koden på inloggningssidan eller öppna länken för att logga in.',
         '',
