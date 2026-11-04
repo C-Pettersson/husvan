@@ -33,30 +33,31 @@ export function magicLinkMail({
   // Same shape as sv in both languages, since en falls back to sv key by key.
   const messages = (locale === 'sv' ? sv : withFallback(en, sv)) as typeof sv
   const t = createTranslator({ locale, messages, namespace: 'mail.magicLink' })
-  const subject = t('subject')
+  // The sentence with the code is the subject and the opening line of both
+  // parts. iOS can offer a code from a mail app only if it sees it in the
+  // notification, which shows little more than the subject and a preview.
+  const subject = t('subject', { code })
   const text = [
+    subject,
+    '',
     t('intro'),
     '',
     url,
     '',
-    t('codeIntro'),
-    '',
-    code,
-    '',
     t('expires', { minutes: expiresInMinutes }),
     t('ignore'),
   ].join('\n')
+  const codeHtml = `<strong style="font-family:monospace;font-size:28px;letter-spacing:4px">${escapeHtml(code)}</strong>`
   // A complete document: mail clients and spam filters treat a bare fragment
   // as a sign of a careless sender. The context line exists only here.
   const html = htmlDocument({
     lang: locale,
     title: subject,
     body: [
+      `<p>${escapeHtml(subject).replace(escapeHtml(code), codeHtml)}</p>`,
       `<p>${escapeHtml(t('context'))}</p>`,
       `<p>${escapeHtml(t('intro'))}</p>`,
       `<p><a href="${escapeAttribute(url)}">${escapeHtml(t('button'))}</a></p>`,
-      `<p>${escapeHtml(t('codeIntro'))}</p>`,
-      `<p style="font-family:monospace;font-size:28px;letter-spacing:4px"><strong>${escapeHtml(code)}</strong></p>`,
       `<p>${escapeHtml(t('expires', { minutes: expiresInMinutes }))}<br>${escapeHtml(t('ignore'))}</p>`,
     ],
   })

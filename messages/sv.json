@@ -265,11 +265,10 @@
   },
   "mail": {
     "magicLink": {
-      "subject": "Logga in på Husvan",
-      "context": "Du bad om en inloggningslänk till husvan.se.",
-      "intro": "Klicka på länken för att logga in på Husvan.",
+      "subject": "Din inloggningskod till Husvan är {code}",
+      "context": "Du bad om att logga in på husvan.se.",
+      "intro": "Skriv koden på inloggningssidan eller öppna länken för att logga in.",
       "button": "Logga in",
-      "codeIntro": "Läser du mejlet på en annan enhet kan du i stället skriva den här koden på inloggningssidan:",
       "expires": "Länken och koden gäller i {minutes} minuter och kan bara användas en gång.",
       "ignore": "Har du inte bett om att logga in kan du bortse från det här mejlet."
     }
