@@ -20,6 +20,7 @@ export type DraftCounts = {
   components: number
   observations: number
   workItems: number
+  retractions: number
 }
 
 export type EditDraftResult =
@@ -36,6 +37,7 @@ const counts = (r: DraftRemoval): DraftCounts => ({
   components: r.components.length,
   observations: r.observations.length,
   workItems: r.workItems.length,
+  retractions: r.retractions.length,
 })
 
 export async function editDraft(
@@ -69,8 +71,11 @@ export async function editDraft(
   if (!draft) return refuse([`No open draft ${draftId} for this house.`])
 
   const where = { changesetId: draftId }
-  const [components, observations, workItems] = await Promise.all([
-    prisma.component.findMany({ where, select: { id: true, parentId: true } }),
+  const [components, observations, workItems, retractions] = await Promise.all([
+    prisma.component.findMany({
+      where,
+      select: { id: true, parentId: true },
+    }),
     prisma.observation.findMany({
       where,
       select: { id: true, componentId: true },
@@ -79,11 +84,13 @@ export async function editDraft(
       where,
       select: { id: true, componentId: true },
     }),
+    prisma.retraction.findMany({ where, select: { id: true } }),
   ])
   const { errors, remove } = validateDraftEdit(edit, changes, {
     components,
     observations,
     workItems,
+    retractions,
   })
 
   const ctx = await loadContext(prisma, houseId, draftId)
@@ -107,7 +114,8 @@ export async function editDraft(
     const removing =
       remove.components.length ||
       remove.observations.length ||
-      remove.workItems.length
+      remove.workItems.length ||
+      remove.retractions.length
     if (removing) {
       const rejected = await tx.changeset.create({
         data: {
@@ -133,6 +141,10 @@ export async function editDraft(
         where: { ...where, id: { in: remove.components } },
         data,
       })
+      await tx.retraction.updateMany({
+        where: { ...where, id: { in: remove.retractions } },
+        data,
+      })
     }
 
     const added: Written = adding
@@ -146,16 +158,29 @@ export async function editDraft(
       : {
           draftId,
           components: {},
-          counts: { components: 0, observations: 0, workItems: 0 },
+          corrections: {},
+          counts: {
+            components: 0,
+            observations: 0,
+            workItems: 0,
+            corrections: 0,
+            retractions: 0,
+          },
         }
-    const [c, o, w] = await Promise.all([
+    const [c, o, w, r] = await Promise.all([
       tx.component.count({ where }),
       tx.observation.count({ where }),
       tx.workItem.count({ where }),
+      tx.retraction.count({ where }),
     ])
     return {
       ...added,
-      remaining: { components: c, observations: o, workItems: w },
+      remaining: {
+        components: c,
+        observations: o,
+        workItems: w,
+        retractions: r,
+      },
     }
   })
   if (!written)

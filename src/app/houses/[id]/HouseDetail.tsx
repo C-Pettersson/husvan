@@ -27,6 +27,7 @@ import {
   type AttributeDefinition,
 } from '@/lib/format'
 import AssumptionsSection from './AssumptionsSection'
+import CorrectionsPanel from './CorrectionsPanel'
 import CostSection from './CostSection'
 import DocumentsSection from './DocumentsSection'
 import DraftBanner from './DraftBanner'
@@ -182,7 +183,13 @@ export default function HouseDetail({
           {typeLabel(c.type)}
         </Typography>
         {c.draft && (
-          <Chip size="small" color="warning" label={t('houseDetail.draft')} />
+          <Chip
+            size="small"
+            color="warning"
+            label={t(
+              c.corrects ? 'houseDetail.correction' : 'houseDetail.draft'
+            )}
+          />
         )}
         {c.draft && h.preview && (
           <IconButton
@@ -276,6 +283,21 @@ export default function HouseDetail({
       </Typography>
 
       <DraftBanner houseId={h.id} drafts={h.drafts} preview={h.preview} />
+      {h.preview && (
+        <CorrectionsPanel
+          components={h.components}
+          retirements={h.retirements}
+          typeLabel={typeLabel}
+          attributesOf={attributesOf}
+          keyLabel={(key, type) =>
+            keyLabel(key, {
+              attribute: type ? attributesOf(type)[key] : undefined,
+              locale,
+              t,
+            })
+          }
+        />
+      )}
       <LibraryUpdatesNote updates={h.libraryUpdates} />
       <WarningsNote warnings={h.warnings} />
 

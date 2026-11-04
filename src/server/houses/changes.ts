@@ -73,6 +73,17 @@ export const componentInput = z.object({
     .describe(
       'Id of the existing component this one replaced, e.g. a relined sewer pipe or a new electrical panel.'
     ),
+  documentId: z
+    .uuid()
+    .optional()
+    .describe(
+      'The saved document that mentions the part itself, for a part registered without values of its own.'
+    ),
+  quote: z
+    .string()
+    .max(2000)
+    .optional()
+    .describe('The passage that mentions the part, verbatim.'),
   values: z.array(valueInput).default([]),
 })
 
@@ -121,11 +132,53 @@ export const workItemInput = z.object({
   yearMax: z.int().min(2000).max(2100).optional(),
   costLowSek: z.number().nonnegative().optional(),
   costHighSek: z.number().nonnegative().optional(),
+  confidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .optional()
+    .describe(
+      'How sure the reading of the finding is, 0 to 1, as for a value; set it below 0.7 when the severity is your interpretation rather than the protocol’s words.'
+    ),
   documentId: z.uuid().optional(),
   quote: z.string().max(2000).optional(),
 })
 
 export type WorkItemInput = z.infer<typeof workItemInput>
+
+// Corrections of approved rows (CLAUDE.md, "Rättningar"). Each becomes a
+// row in the draft: a component that corrects the old one (a moved, renamed
+// or retyped part), or a retraction of a value. The old rows are never
+// touched; once the draft is approved the new row stands for the part and
+// the retired value is hidden.
+export const moveComponentInput = z.object({
+  componentId: z.uuid().describe('An approved component of the house.'),
+  newParent: z
+    .uuid()
+    .nullable()
+    .describe(
+      'Id of the new parent, or null for the top level. The parent type must allow the component’s type as a subcomponent.'
+    ),
+})
+export const renameComponentInput = z.object({
+  componentId: z.uuid(),
+  name: z.string().min(1).max(200).describe('The new Swedish name.'),
+})
+export const retypeComponentInput = z.object({
+  componentId: z.uuid(),
+  newType: keySchema.describe(
+    'The type the part should have had, e.g. wc for a bathroom without a shower. For a part that was physically replaced, use a new component with replaces instead.'
+  ),
+  reason: z.string().max(500).optional(),
+})
+export const retireValueInput = z.object({
+  valueId: z
+    .uuid()
+    .describe(
+      'Id of an approved value, current or alternative, from get_house.'
+    ),
+  reason: z.string().min(1).max(500).describe('Why the value is wrong.'),
+})
 
 export const changesShape = {
   houseValues: z
@@ -140,6 +193,26 @@ export const changesShape = {
     .default([])
     .describe('New values for components that already exist.'),
   workItems: z.array(workItemInput).default([]),
+  moveComponents: z
+    .array(moveComponentInput)
+    .default([])
+    .describe('Approved components to move under another parent.'),
+  renameComponents: z
+    .array(renameComponentInput)
+    .default([])
+    .describe('Approved components to rename.'),
+  retypeComponents: z
+    .array(retypeComponentInput)
+    .default([])
+    .describe(
+      'Approved components registered with the wrong type. Values stay with the part; those outside the new type’s attributes are listed in the answer.'
+    ),
+  retireValues: z
+    .array(retireValueInput)
+    .default([])
+    .describe(
+      'Approved values to retire. Hidden once the draft is approved; the row stays as history.'
+    ),
 }
 
 export const changesInput = z.object(changesShape)
@@ -150,13 +223,49 @@ export const emptyChanges: ChangesInput = {
   components: [],
   componentValues: [],
   workItems: [],
+  moveComponents: [],
+  renameComponents: [],
+  retypeComponents: [],
+  retireValues: [],
 }
 
 export const isEmpty = (input: ChangesInput) =>
   !input.houseValues.length &&
   !input.components.length &&
   !input.componentValues.length &&
-  !input.workItems.length
+  !input.workItems.length &&
+  !input.moveComponents.length &&
+  !input.renameComponents.length &&
+  !input.retypeComponents.length &&
+  !input.retireValues.length
+
+// The one correction row a draft writes for a component: what moves,
+// renames and retypes of the same component in one call add up to.
+export type Correction = {
+  componentId: string
+  newParent?: string | null
+  name?: string
+  newType?: string
+  reason?: string
+}
+
+export function corrections(input: ChangesInput): Correction[] {
+  const map = new Map<string, Correction>()
+  const of = (id: string) => {
+    const c = map.get(id) ?? { componentId: id }
+    map.set(id, c)
+    return c
+  }
+  for (const m of input.moveComponents)
+    of(m.componentId).newParent = m.newParent
+  for (const r of input.renameComponents) of(r.componentId).name = r.name
+  for (const r of input.retypeComponents) {
+    const c = of(r.componentId)
+    c.newType = r.newType
+    if (r.reason) c.reason = r.reason
+  }
+  return [...map.values()]
+}
 
 export type LibraryType = {
   attributeSchema: Record<string, AttributeDefinition>
@@ -177,6 +286,15 @@ export type ChangeContext = {
   workItems: Map<string, string | null>
   replacedWorkItems: Set<string>
   pendingReplacements: Map<string, string>
+  // For corrections: each visible component's parent, the rows that are in
+  // the draft itself (corrected with edit_draft, not here), the ids another
+  // open draft already corrects, the approved values that may be retired
+  // (id to component and key) and the ids another open draft retires.
+  parents?: Map<string, string | null>
+  draftComponents?: Set<string>
+  pendingCorrections?: Map<string, string>
+  values?: Map<string, { componentId: string | null; key: string }>
+  pendingRetirements?: Map<string, string>
 }
 
 export type Problems = { errors: string[]; warnings: string[] }
@@ -321,8 +439,144 @@ export function validateChanges(
       )
   }
 
+  validateCorrections(input, ctx, errors, warnings)
+
   if (isEmpty(input)) errors.push('nothing to propose')
   return { errors, warnings }
+}
+
+// Moves, renames, retypes and retirements of approved rows.
+function validateCorrections(
+  input: ChangesInput,
+  ctx: ChangeContext,
+  errors: string[],
+  warnings: string[]
+) {
+  const parents = ctx.parents ?? new Map<string, string | null>()
+  const draftRows = ctx.draftComponents ?? new Set<string>()
+  const pending = ctx.pendingCorrections ?? new Map<string, string>()
+  // The approved component a correction may name.
+  const target = (id: string, path: string) => {
+    if (ctx.replaced.has(id)) {
+      errors.push(`${path}: component ${id} has been replaced`)
+      return undefined
+    }
+    const type = ctx.components.get(id)
+    if (!type) {
+      errors.push(`${path}: no component ${id} in this house; use get_house`)
+      return undefined
+    }
+    if (draftRows.has(id)) {
+      errors.push(
+        `${path}: component ${id} is a row of this draft; correct it with edit_draft`
+      )
+      return undefined
+    }
+    const draft = pending.get(id)
+    if (draft)
+      errors.push(
+        `${path}: component ${id} is already corrected in open draft ${draft}; add to that draft with draftId, or let the user decide it first`
+      )
+    return type
+  }
+  const all = corrections(input)
+  // Where each part is after the moves of this call.
+  const moved = new Map(
+    all
+      .filter((c) => c.newParent !== undefined)
+      .map((c) => [c.componentId, c.newParent as string | null])
+  )
+  const parentOf = (id: string) =>
+    moved.has(id) ? moved.get(id)! : (parents.get(id) ?? null)
+  const childrenOf = (id: string) =>
+    [...parents.keys()].filter((child) => parentOf(child) === id)
+
+  for (const c of all) {
+    const path = `corrections ${c.componentId}`
+    const type = target(c.componentId, path)
+    if (!type) continue
+    const finalType = c.newType ?? type
+    if (c.newType !== undefined) {
+      const lib = ctx.types.get(c.newType)
+      if (!lib) {
+        errors.push(
+          `${path}.newType: unknown component type ${c.newType}; pick one from type_library`
+        )
+      } else {
+        if (c.newType === type)
+          errors.push(`${path}.newType: the component already has type ${type}`)
+        const kept = childrenOf(c.componentId).filter(
+          (child) =>
+            !lib.allowedSubcomponents.includes(ctx.components.get(child)!)
+        )
+        if (kept.length)
+          errors.push(
+            `${path}.newType: ${c.newType} does not take the subcomponents ${kept.join(', ')}; move them first`
+          )
+        const keys = [...(ctx.values ?? [])]
+          .filter(([, v]) => v.componentId === c.componentId)
+          .map(([, v]) => v.key)
+        const outside = [...new Set(keys)].filter(
+          (k) => !lib.attributeSchema[k]
+        )
+        if (outside.length)
+          warnings.push(
+            `${path}: values ${outside.join(', ')} are outside ${c.newType}’s attributes and stay with the part; retire them if they no longer apply`
+          )
+      }
+    }
+    if (c.newParent !== undefined) {
+      const at = `${path}.newParent`
+      if (c.newParent === c.componentId)
+        errors.push(`${at}: a component cannot be its own parent`)
+      else if (c.newParent !== null) {
+        const parentType = target(c.newParent, at)
+        for (
+          let up: string | null | undefined = c.newParent;
+          up;
+          up = parentOf(up)
+        )
+          if (up === c.componentId) {
+            errors.push(`${at}: ${c.newParent} is below ${c.componentId}`)
+            break
+          }
+        const allowed = parentType && ctx.types.get(parentType)
+        if (allowed && !allowed.allowedSubcomponents.includes(finalType))
+          errors.push(
+            `${at}: ${parentType} does not take ${finalType} as a subcomponent (allowed: ${allowed.allowedSubcomponents.join(', ') || 'none'})`
+          )
+      } else if (ctx.types.get(finalType) === undefined) {
+        // unknown type reported above
+      }
+    } else if (c.newType !== undefined && ctx.types.get(c.newType)) {
+      // A retyped part stays where it is; its parent must take the new type.
+      const parent = parents.get(c.componentId)
+      const parentType = parent ? ctx.components.get(parent) : undefined
+      const allowed = parentType && ctx.types.get(parentType)
+      if (allowed && !allowed.allowedSubcomponents.includes(finalType))
+        errors.push(
+          `${path}.newType: the parent ${parentType} does not take ${finalType} as a subcomponent; move it as well`
+        )
+    }
+  }
+
+  const retiring = new Set<string>()
+  input.retireValues.forEach((r, i) => {
+    const path = `retireValues[${i}]`
+    const value = ctx.values?.get(r.valueId)
+    if (!value)
+      errors.push(
+        `${path}: no approved value ${r.valueId} in this house; get_house gives each value its id`
+      )
+    if (retiring.has(r.valueId))
+      errors.push(`${path}: ${r.valueId} is retired twice`)
+    retiring.add(r.valueId)
+    const draft = ctx.pendingRetirements?.get(r.valueId)
+    if (draft)
+      errors.push(
+        `${path}: ${r.valueId} is already retired in open draft ${draft}`
+      )
+  })
 }
 
 // Correcting an open draft row by row (CLAUDE.md, "Rätta ett utkast"). Rows
@@ -348,6 +602,12 @@ export const draftEditShape = {
     .array(z.uuid())
     .default([])
     .describe('Ids of work items in the draft that should not be added.'),
+  removeRetirements: z
+    .array(z.uuid())
+    .default([])
+    .describe(
+      'Ids of retirements in the draft (get_house with draftId lists them) that should not take effect.'
+    ),
 }
 
 export const draftEditInput = z.object(draftEditShape)
@@ -358,6 +618,7 @@ export type DraftRows = {
   components: { id: string; parentId: string | null }[]
   observations: { id: string; componentId: string | null }[]
   workItems: { id: string; componentId: string | null }[]
+  retractions?: { id: string }[]
 }
 
 // What leaves the draft: the rows named, the subcomponents of a removed
@@ -366,6 +627,7 @@ export type DraftRemoval = {
   components: string[]
   observations: string[]
   workItems: string[]
+  retractions: string[]
 }
 
 export function validateDraftEdit(
@@ -417,6 +679,12 @@ export function validateDraftEdit(
     'work item'
   )
   for (const w of rows.workItems.filter(onRemoved)) workItems.add(w.id)
+  const retractions = inDraft(
+    edit.removeRetirements,
+    rows.retractions ?? [],
+    'removeRetirements',
+    'retirement'
+  )
 
   // Additions may not build on what this call removes.
   const removedTarget = (target: string | undefined, path: string) => {
@@ -435,7 +703,10 @@ export function validateDraftEdit(
   )
 
   const nothingRemoved =
-    !components.size && !observations.size && !workItems.size
+    !components.size &&
+    !observations.size &&
+    !workItems.size &&
+    !retractions.size
   if (nothingRemoved && isEmpty(changes)) errors.push('nothing to change')
   return {
     errors,
@@ -443,6 +714,7 @@ export function validateDraftEdit(
       components: [...components],
       observations: [...observations],
       workItems: [...workItems],
+      retractions: [...retractions],
     },
   }
 }

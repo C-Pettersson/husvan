@@ -179,15 +179,18 @@ export async function analyseHouse(
     houseId,
     overrides,
     whatIf,
+    draftId,
   }: {
     ownerId: string
     houseId: string
     overrides?: AssumptionValues
     // A scenario tried on the house as read; nothing is written.
     whatIf?: WhatIf
+    // An open draft counted as if it were approved.
+    draftId?: string
   }
 ) {
-  const stored = await getHouse(prisma, { ownerId, houseId })
+  const stored = await getHouse(prisma, { ownerId, houseId, draftId })
   if (!stored) return null
   const tried = applyWhatIf(stored.components, stored.values, whatIf)
   const view = {
@@ -286,6 +289,8 @@ export async function analyseHouse(
 
   return {
     view,
+    // The open draft counted in, or null.
+    draftId: view.preview,
     // The scenario tried, or null when the house is analysed as it is. With
     // problems nothing was applied.
     whatIf: whatIf

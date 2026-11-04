@@ -40,9 +40,10 @@ import { HOUSE_KEYS } from '@/server/library/houseKeys'
 import { StorageNotConfigured } from '@/server/storage/s3'
 import { result, toolError } from './result'
 
-// A draft value carries its id, so that edit_draft can name it.
+// Every value carries its id: edit_draft names a draft value by it, and
+// retireValues an approved one.
 const row = (r: ValueRow, withQuote: boolean) => ({
-  id: r.draft ? r.id : undefined,
+  id: r.id,
   value: r.value,
   unit: r.unit ?? undefined,
   source: r.source,
@@ -74,6 +75,17 @@ function component(c: ComponentView): Record<string, unknown> {
     type: c.type,
     name: c.name ?? undefined,
     draft: c.draft || undefined,
+    documentId: c.documentId ?? undefined,
+    quote: c.quote ?? undefined,
+    // The registration this row corrects, for before and after.
+    corrects: c.corrects
+      ? {
+          id: c.corrects.id,
+          type: c.corrects.type,
+          name: c.corrects.name ?? undefined,
+          parentId: c.corrects.parentId ?? null,
+        }
+      : undefined,
     values: values(c.values),
     children: c.children.length ? c.children.map(component) : undefined,
   }
@@ -202,7 +214,8 @@ export function registerReadTools(
         'Everything approved about one house: current values with source, confidence, document and quote, and alternative values reported for the same key; ' +
         'the component tree; features (yes, no or unknown; unknown is not no); heating; bathroom count; flagged risk constructions, older electrical systems, radon above 200 Bq/m3, a private sewage system the municipality has failed or that is a sludge separator alone, and well water unfit for drinking; ' +
         'area statistics with level and year (a municipal figure is not the neighbourhood’s); actions from inspections; documents, whose text get_document returns; and open drafts awaiting approval, whose rows are not included. ' +
-        'With draftId, the open draft is shown together with the approved data and its rows carry draft: true, so you can tell the user what approving it would add; draft values also carry their id, for edit_draft. ' +
+        'With draftId, the open draft is shown together with the approved data and its rows carry draft: true, so you can tell the user what approving it would add. Every value carries its id: a draft value for edit_draft, an approved one for retireValues in propose_changes. ' +
+        'A component with corrects is a correction of an earlier registration (moved, renamed or retyped with propose_changes): corrects holds the old type, name and parent, so you can say before and after; the old row is history. retirements lists the values the previewed draft retires, with their reason. ' +
         'With asOf, the house as it stood at the end of that day, e.g. before an inspection. ' +
         'libraryUpdates lists the component types added to the library after the house was last read (readAt: the latest approved draft from you, a marked review, or the house’s creation), with their attributes, whether they have a lifespan profile, whether the forecast already assumes one, and related: the house’s parts of the same category that the new type may describe better, such as a bathroom that is really a WC. ' +
         'When it is not empty, re-read the documents with get_document for those parts and propose what they say with propose_changes (a retyped part is a new component with replaces set to the old id and its values given again); when the documents say nothing more, call mark_library_review so the list starts over.',
@@ -294,6 +307,18 @@ export function registerReadTools(
           date: d.documentDate?.toISOString().slice(0, 10),
           hasFile: d.hasFile || undefined,
         })),
+        retirements: view.retirements.length
+          ? view.retirements.map((r) => ({
+              id: r.id,
+              valueId: r.observationId,
+              componentId: r.componentId ?? undefined,
+              key: r.key,
+              value: r.value,
+              unit: r.unit ?? undefined,
+              source: r.source,
+              reason: r.reason ?? undefined,
+            }))
+          : undefined,
         openDrafts: view.drafts.map((d) => ({
           id: d.id,
           comment: d.comment,

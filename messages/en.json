@@ -349,9 +349,9 @@
     "draft": "Draft",
     "confidence": "confidence {value}%",
     "alternative": "Also: {value} ({source})",
-    "draftWaiting": "A draft is waiting for your approval: {components} components, {observations} values and {workItems} actions.",
+    "draftWaiting": "A draft is waiting for your approval: {components} components, {observations} values, {workItems} actions and {retractions} retired values.",
     "showDraft": "Show the draft",
-    "previewing": "You are looking at the draft with {components} components, {observations} values and {workItems} actions, marked as draft. None of it counts until you approve it.",
+    "previewing": "You are looking at the draft with {components} components, {observations} values, {workItems} actions and {retractions} retired values, marked as draft. None of it counts until you approve it.",
     "previewingEdit": "You can leave single rows out of the draft and correct values before you approve the rest.",
     "removeFromDraft": "Leave out of the draft",
     "removeComponentLabel": "Leave {name} out of the draft",
@@ -374,7 +374,14 @@
       "area": "The area"
     },
     "libraryUpdates": "{count, plural, one {# type has} other {# types have}} been added to the type library since the house was read ({date}): {types}.",
-    "libraryUpdatesHint": "Ask Claude to re-read the documents and propose what they say about such parts."
+    "libraryUpdatesHint": "Ask Claude to re-read the documents and propose what they say about such parts.",
+    "correction": "Correction",
+    "corrections": "Corrections in the draft",
+    "correctionBefore": "Before",
+    "correctionAfter": "After",
+    "correctionTop": "at the top level",
+    "correctionUnder": "under {parent}",
+    "retirement": "Retired"
   },
   "source": {
     "user": "You",

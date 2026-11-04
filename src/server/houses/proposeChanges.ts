@@ -6,12 +6,14 @@ import type { Prisma, PrismaClient, ValueSource } from '@prisma/client'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
 import type { AttributeDefinition } from '@/server/library/schema'
 import {
+  corrections,
   validateChanges,
   type ChangeContext,
   type ChangesInput,
   type Problems,
   type ValueInput,
 } from './changes'
+import { resolveChains } from './componentChain'
 
 type Db = PrismaClient | Prisma.TransactionClient
 
@@ -47,11 +49,27 @@ export async function loadContext(
     status: 'DRAFT',
     ...(draftId && { id: { not: draftId } }),
   }
-  const [types, components, documents, workItems, pending] = await Promise.all([
+  const [
+    types,
+    components,
+    documents,
+    workItems,
+    pending,
+    observations,
+    pendingCorrections,
+    pendingRetirements,
+  ] = await Promise.all([
     loadLibrary(db),
     db.component.findMany({
       where: { houseId, changeset: visible },
-      select: { id: true, type: true, replacesId: true },
+      select: {
+        id: true,
+        type: true,
+        parentId: true,
+        replacesId: true,
+        correctsId: true,
+        changesetId: true,
+      },
     }),
     db.document.findMany({
       where: { houseId, changeset: { status: 'APPROVED' } },
@@ -71,6 +89,25 @@ export async function loadContext(
         select: { replacesId: true, changesetId: true },
       }),
     ]),
+    // Approved values that may be retired: not retracted, not already
+    // retired by an approved changeset.
+    db.observation.findMany({
+      where: {
+        houseId,
+        changeset: { status: 'APPROVED' },
+        retractedAt: null,
+        retractions: { none: { changeset: { status: 'APPROVED' } } },
+      },
+      select: { id: true, componentId: true, key: true },
+    }),
+    db.component.findMany({
+      where: { houseId, changeset: otherDrafts, correctsId: { not: null } },
+      select: { correctsId: true, changesetId: true },
+    }),
+    db.retraction.findMany({
+      where: { houseId, changeset: otherDrafts },
+      select: { observationId: true, changesetId: true },
+    }),
   ])
   const replacedWorkItems = new Set(
     workItems.flatMap((w) => (w.replacesId ? [w.replacesId] : []))
@@ -78,12 +115,40 @@ export async function loadContext(
   const replaced = new Set(
     components.flatMap((c) => (c.replacesId ? [c.replacesId] : []))
   )
+  // A corrected row is history too; its values belong to the newest row of
+  // its chain, which is what a draft may point at.
+  const { heads, headOf } = resolveChains(components)
   return {
     types,
-    components: new Map(
-      components.filter((c) => !replaced.has(c.id)).map((c) => [c.id, c.type])
-    ),
+    components: new Map(heads.map((c) => [c.id, c.type])),
     replaced,
+    parents: new Map(
+      heads.map((c) => [
+        c.id,
+        c.parentId === null ? null : (headOf.get(c.parentId) ?? null),
+      ])
+    ),
+    draftComponents: new Set(
+      heads.filter((c) => c.changesetId === draftId).map((c) => c.id)
+    ),
+    pendingCorrections: new Map(
+      pendingCorrections.map((c) => [c.correctsId!, c.changesetId])
+    ),
+    values: new Map(
+      observations.map((o) => [
+        o.id,
+        {
+          componentId:
+            o.componentId === null
+              ? null
+              : (headOf.get(o.componentId) ?? o.componentId),
+          key: o.key,
+        },
+      ])
+    ),
+    pendingRetirements: new Map(
+      pendingRetirements.map((r) => [r.observationId, r.changesetId])
+    ),
     documents: new Set(documents.map((d) => d.id)),
     workItems: new Map(
       workItems
@@ -101,7 +166,15 @@ export type Written = {
   draftId: string
   // Ids of the new components by the ref Claude gave them.
   components: Record<string, string>
-  counts: { components: number; observations: number; workItems: number }
+  // Ids of the correction rows by the id of the component they correct.
+  corrections: Record<string, string>
+  counts: {
+    components: number
+    observations: number
+    workItems: number
+    corrections: number
+    retractions: number
+  }
 }
 
 // Inserts validated changes into a changeset. Components go in the order
@@ -159,12 +232,52 @@ export async function insertChanges(
         name: c.name ?? null,
         parentId: target(c.parent),
         replacesId: c.replaces ?? null,
+        documentId: c.documentId ?? null,
+        quote: c.quote ?? null,
         changesetId,
       },
     })
     ids[c.ref] = row.id
     observations.push(...rows(row.id, c.type, c.values))
   }
+
+  // Corrections: one new row per corrected component, carrying what does
+  // not change from the old row, and pointing at it with correctsId.
+  const corrected: Record<string, string> = {}
+  const toCorrect = corrections(input)
+  if (toCorrect.length) {
+    const old = new Map(
+      (
+        await tx.component.findMany({
+          where: { id: { in: toCorrect.map((c) => c.componentId) } },
+          select: { id: true, type: true, name: true, parentId: true },
+        })
+      ).map((c) => [c.id, c])
+    )
+    for (const c of toCorrect) {
+      const was = old.get(c.componentId)!
+      const row = await tx.component.create({
+        data: {
+          houseId,
+          type: c.newType ?? was.type,
+          name: c.name ?? was.name,
+          parentId: c.newParent !== undefined ? c.newParent : was.parentId,
+          correctsId: was.id,
+          changesetId,
+        },
+      })
+      corrected[c.componentId] = row.id
+    }
+  }
+  if (input.retireValues.length)
+    await tx.retraction.createMany({
+      data: input.retireValues.map((r) => ({
+        houseId,
+        observationId: r.valueId,
+        reason: r.reason,
+        changesetId,
+      })),
+    })
   if (input.componentValues.length) {
     const existing = await tx.component.findMany({
       where: { id: { in: input.componentValues.map((c) => c.componentId) } },
@@ -206,6 +319,7 @@ export async function insertChanges(
       yearMax: w.yearMax ?? null,
       costLowSek: w.costLowSek ?? null,
       costHighSek: w.costHighSek ?? null,
+      confidence: w.confidence ?? null,
       source,
       documentId: w.documentId ?? null,
       quote: w.quote ?? null,
@@ -215,10 +329,13 @@ export async function insertChanges(
   return {
     draftId: changesetId,
     components: ids,
+    corrections: corrected,
     counts: {
       components: input.components.length,
       observations: observations.length,
       workItems: input.workItems.length,
+      corrections: toCorrect.length,
+      retractions: input.retireValues.length,
     },
   }
 }

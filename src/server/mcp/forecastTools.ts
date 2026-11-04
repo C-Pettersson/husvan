@@ -87,28 +87,45 @@ export function registerForecastTools(
         'gaps counts work items without a cost (they count as zero), parts with the construction year as their installation year and parts without a cost, says whether there is an inspection protocol, and lists assumedParts: parts every house has that the documents do not mention, counted from the construction year so that saying less does not make a house cheaper; their items have assumed: true. Say these next to the total, and call an assumed part assumed, never documented. ' +
         'Also the maintenance debt (the used-up share of every part, independent of the horizon) and the maintenance-adjusted price = price + debt. ' +
         'annualCost spreads every replacement and repaint over the years it lasts (a bathroom for 200 000 kr lasting 25 years is 8 000 kr a year), adds running costs and interest, and gives the total per month; annualCostByPart breaks the wear down. It leaves out work items, which are overdue maintenance counted in the debt. Use it when the user asks what the house costs per year or month regardless of when things are paid. ' +
-        'Each call is saved; previous gives the last saved forecast so you can say how the assessment changed. A call with whatIf is not saved. Tell the user what notModelled leaves out.',
+        'Each call is saved; previous gives the last saved forecast so you can say how the assessment changed. A call with whatIf or draftId is not saved. ' +
+        'With draftId the open draft is counted as if it were approved, and withoutDraft gives the approved house’s totals for comparison, so you can say what approving the draft changes; whatIf may then name the draft’s components too. Tell the user what notModelled leaves out.',
       inputSchema: z.object({
         houseId: z.uuid(),
         overrides: overridesInput.optional(),
         whatIf: whatIfInput.optional().describe(whatIfDescription),
+        draftId: z
+          .uuid()
+          .optional()
+          .describe('An open draft of the house to count as if approved.'),
       }),
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
-    async ({ houseId, overrides, whatIf }) => {
+    async ({ houseId, overrides, whatIf, draftId }) => {
       const a = await analyseHouse(prisma, {
         ownerId: userId,
         houseId,
         overrides,
         whatIf,
+        draftId,
       })
       if (!a) return toolError(`No house with id ${houseId}.`)
+      if (draftId && a.draftId !== draftId)
+        return toolError(`No open draft ${draftId} for this house.`)
       if (a.whatIf && !a.whatIf.applied)
         return toolError(a.whatIf.problems.join(' '))
+      const approved = draftId
+        ? await analyseHouse(prisma, { ownerId: userId, houseId, overrides })
+        : null
       const answer = rounded({
         house: { id: a.view.id, address: a.view.address },
         assumptions: a.assumptions,
         whatIf: a.whatIf?.tried ?? null,
+        draftId: a.draftId,
+        withoutDraft: approved && {
+          forecastTotal: approved.forecast.total,
+          maintenanceDebt: approved.debt.total,
+          maintenanceAdjustedPrice: approved.adjustedPrice,
+        },
         ...costSummary(a),
         years: a.forecast.years,
         items: items(a),
@@ -134,17 +151,19 @@ export function registerForecastTools(
         orderBy: { calculatedAt: 'desc' },
         select: { calculatedAt: true, result: true },
       })
-      // A scenario is not an assessment of the house; it is not saved.
-      const saved = a.whatIf
-        ? null
-        : await prisma.forecast.create({
-            data: {
-              houseId,
-              assumptions: answer.assumptions as Prisma.InputJsonValue,
-              result: answer as Prisma.InputJsonValue,
-            },
-            select: { id: true },
-          })
+      // A scenario or a draft is not an assessment of the house as it is;
+      // it is not saved.
+      const saved =
+        a.whatIf || draftId
+          ? null
+          : await prisma.forecast.create({
+              data: {
+                houseId,
+                assumptions: answer.assumptions as Prisma.InputJsonValue,
+                result: answer as Prisma.InputJsonValue,
+              },
+              select: { id: true },
+            })
       const before = previous?.result as Record<string, unknown> | undefined
       return result({
         forecastId: saved?.id ?? null,
@@ -218,15 +237,22 @@ export function registerForecastTools(
           .record(z.uuid(), whatIfInput)
           .optional()
           .describe(`Per house id. ${whatIfDescription}`),
+        draftIds: z
+          .record(z.uuid(), z.uuid())
+          .optional()
+          .describe(
+            'Per house id, an open draft of that house to count as if approved.'
+          ),
       }),
       annotations: { readOnlyHint: true },
     },
-    async ({ houseIds, overrides, whatIf }) => {
+    async ({ houseIds, overrides, whatIf, draftIds }) => {
       const c = await compareHouses(prisma, {
         ownerId: userId,
         houseIds,
         overrides,
         whatIf,
+        draftIds,
       })
       if (!c.ok)
         return toolError(

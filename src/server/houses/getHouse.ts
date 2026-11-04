@@ -1,7 +1,10 @@
 // Everything about one house as its owner may see it: approved rows, plus the
 // rows of one draft when the reader previews it. Drafts are real rows
 // (CLAUDE.md, "Utkast är riktiga rader"), so a preview reads the same tables
-// and marks what comes from the draft.
+// and marks what comes from the draft. Corrections and retirements
+// (CLAUDE.md, "Rättningar") are rows too: a correcting component stands for
+// the one it corrects, and a retired value is hidden once its changeset is
+// approved.
 import type {
   DocumentType,
   Prisma,
@@ -9,6 +12,7 @@ import type {
   ValueSource,
   WorkItemKind,
 } from '@prisma/client'
+import { resolveChains } from './componentChain'
 import { currentValues } from './currentValue'
 
 export type Label = { sv: string; en?: string }
@@ -32,13 +36,40 @@ export type KeyValueView = {
   alternatives: ValueRow[]
 }
 
+// The row a correction replaces in the reading, for showing before and
+// after; parentId is the id of the old parent as stored.
+export type CorrectedRow = {
+  id: string
+  type: string
+  name: string | null
+  parentId: string | null
+}
+
 export type ComponentView = {
   id: string
   type: string
   name: string | null
   draft: boolean
+  // Where the part itself is documented, when it has no values of its own.
+  documentId?: string | null
+  quote?: string | null
+  // Set when this row corrects an earlier registration of the part.
+  corrects?: CorrectedRow
   values: KeyValueView[]
   children: ComponentView[]
+}
+
+// A value the previewed draft retires: shown with the draft so that the
+// user sees what approving it hides.
+export type RetirementView = {
+  id: string
+  observationId: string
+  componentId: string | null
+  key: string
+  value: Prisma.JsonValue
+  unit: string | null
+  source: ValueSource
+  reason: string | null
 }
 
 export type HouseView = Awaited<ReturnType<typeof getHouse>>
@@ -67,7 +98,12 @@ export async function getHouse(
     orderBy: { createdAt: 'asc' },
     include: {
       _count: {
-        select: { components: true, observations: true, workItems: true },
+        select: {
+          components: true,
+          observations: true,
+          workItems: true,
+          retractions: true,
+        },
       },
     },
   })
@@ -84,39 +120,65 @@ export async function getHouse(
     ? { OR: [{ retractedAt: null }, { retractedAt: { gte: asOf } }] }
     : { retractedAt: null }
 
-  const [components, observations, workItems, documents] = await Promise.all([
-    prisma.component.findMany({
-      where: { houseId, changeset: visible },
-      orderBy: { createdAt: 'asc' },
-    }),
-    prisma.observation.findMany({
-      where: {
-        houseId,
-        changeset: visible,
-        ...notRetracted,
-        ...(asOf && { recordedAt: { lt: asOf } }),
-      },
-      orderBy: { recordedAt: 'asc' },
-    }),
-    prisma.workItem.findMany({
-      where: { houseId, changeset: visible, ...notRetracted },
-      orderBy: { createdAt: 'asc' },
-    }),
-    prisma.document.findMany({
-      where: { houseId, changeset: visible },
-      orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        type: true,
-        title: true,
-        sourceUrl: true,
-        filename: true,
-        documentDate: true,
-        storagePath: true,
-        changesetId: true,
-      },
-    }),
-  ])
+  const [components, observations, workItems, documents, retractions] =
+    await Promise.all([
+      prisma.component.findMany({
+        where: { houseId, changeset: visible },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.observation.findMany({
+        where: {
+          houseId,
+          changeset: visible,
+          ...notRetracted,
+          ...(asOf && { recordedAt: { lt: asOf } }),
+        },
+        orderBy: { recordedAt: 'asc' },
+      }),
+      prisma.workItem.findMany({
+        where: { houseId, changeset: visible, ...notRetracted },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.document.findMany({
+        where: { houseId, changeset: visible },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          sourceUrl: true,
+          filename: true,
+          documentDate: true,
+          storagePath: true,
+          changesetId: true,
+        },
+      }),
+      prisma.retraction.findMany({
+        where: { houseId, changeset: visible },
+        select: {
+          id: true,
+          observationId: true,
+          reason: true,
+          changesetId: true,
+        },
+      }),
+    ])
+
+  // Values retired by an approved changeset are hidden; those the previewed
+  // draft retires are hidden from the values and listed on their own.
+  const retiredApproved = new Set(
+    retractions
+      .filter((r) => r.changesetId !== preview)
+      .map((r) => r.observationId)
+  )
+  const retiredInDraft = new Map(
+    retractions
+      .filter((r) => r.changesetId === preview)
+      .map((r) => [r.observationId, r])
+  )
+  const shown = observations.filter(
+    (o) => !retiredApproved.has(o.id) && !retiredInDraft.has(o.id)
+  )
 
   const types = await prisma.componentType.findMany({
     where: { type: { in: [...new Set(components.map((c) => c.type))] } },
@@ -135,32 +197,65 @@ export async function getHouse(
     recordedAt: o.recordedAt,
     draft: o.changesetId === preview,
   })
-  const valuesOf = (componentId: string | null): KeyValueView[] =>
-    [
-      ...currentValues(
-        observations.filter((o) => o.componentId === componentId).map(toRow)
-      ),
+
+  // A correcting row stands for the rows it corrects: their values and
+  // children are read as the newest row's.
+  const { heads, headOf, chainOf } = resolveChains(components)
+  const byId = new Map(components.map((c) => [c.id, c]))
+  const valuesOf = (ids: (string | null)[]): KeyValueView[] => {
+    const own = new Set(ids)
+    return [
+      ...currentValues(shown.filter((o) => own.has(o.componentId)).map(toRow)),
     ].map(([key, v]) => ({ key, ...v }))
+  }
 
   // A work item another visible one restates is history.
   const restated = new Set(workItems.map((w) => w.replacesId).filter(Boolean))
   const currentWorkItems = workItems.filter((w) => !restated.has(w.id))
 
-  // A component another visible component replaces is history, not part of
-  // the house as it stands.
-  const replaced = new Set(components.map((c) => c.replacesId).filter(Boolean))
-  const current = components.filter((c) => !replaced.has(c.id))
-  const build = (parentId: string | null): ComponentView[] =>
-    current
-      .filter((c) => c.parentId === parentId)
-      .map((c) => ({
-        id: c.id,
-        type: c.type,
-        name: c.name,
-        draft: c.changesetId === preview,
-        values: valuesOf(c.id),
-        children: build(c.id),
-      }))
+  const build = (parentHead: string | null): ComponentView[] =>
+    heads
+      .filter(
+        (c) =>
+          (c.parentId === null ? null : (headOf.get(c.parentId) ?? false)) ===
+          parentHead
+      )
+      .map((c) => {
+        const chain = chainOf.get(c.id) ?? [c]
+        const old = c.correctsId ? byId.get(c.correctsId) : undefined
+        return {
+          id: c.id,
+          type: c.type,
+          name: c.name,
+          draft: c.changesetId === preview,
+          documentId: c.documentId,
+          quote: c.quote,
+          corrects: old && {
+            id: old.id,
+            type: old.type,
+            name: old.name,
+            parentId: old.parentId,
+          },
+          values: valuesOf(chain.map((r) => r.id)),
+          children: build(c.id),
+        }
+      })
+
+  const retirements: RetirementView[] = observations
+    .filter((o) => retiredInDraft.has(o.id))
+    .map((o) => ({
+      id: retiredInDraft.get(o.id)!.id,
+      observationId: o.id,
+      componentId:
+        o.componentId === null
+          ? null
+          : (headOf.get(o.componentId) ?? o.componentId),
+      key: o.key,
+      value: o.value,
+      unit: o.unit,
+      source: o.source,
+      reason: retiredInDraft.get(o.id)!.reason,
+    }))
 
   return {
     id: house.id,
@@ -168,7 +263,7 @@ export async function getHouse(
     propertyDesignation: house.propertyDesignation,
     status: house.status,
     municipality: house.municipality,
-    values: valuesOf(null),
+    values: valuesOf([null]),
     components: build(null),
     types: Object.fromEntries(
       types.map((t) => [
@@ -191,9 +286,15 @@ export async function getHouse(
     workItems: currentWorkItems.map((w) => ({
       id: w.id,
       replacesId: w.replacesId,
-      componentId: w.componentId,
+      // A work item on a corrected row belongs to the row that stands for
+      // the part now.
+      componentId:
+        w.componentId === null
+          ? null
+          : (headOf.get(w.componentId) ?? w.componentId),
       kind: w.kind as WorkItemKind,
       severity: w.severity,
+      confidence: w.confidence === null ? null : Number(w.confidence),
       description: w.description,
       yearMin: w.yearMin,
       yearMax: w.yearMax,
@@ -213,6 +314,8 @@ export async function getHouse(
       // The original file is uploaded and can be opened.
       hasFile: d.storagePath !== null,
     })),
+    // What the previewed draft retires; empty without a preview.
+    retirements,
     drafts: drafts.map((d) => ({
       id: d.id,
       comment: d.comment,

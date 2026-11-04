@@ -349,9 +349,9 @@
     "draft": "Utkast",
     "confidence": "säkerhet {value} %",
     "alternative": "Även: {value} ({source})",
-    "draftWaiting": "Ett utkast väntar på ditt godkännande: {components} komponenter, {observations} värden och {workItems} åtgärder.",
+    "draftWaiting": "Ett utkast väntar på ditt godkännande: {components} komponenter, {observations} värden, {workItems} åtgärder och {retractions} pensionerade värden.",
     "showDraft": "Visa utkastet",
-    "previewing": "Du ser utkastet med {components} komponenter, {observations} värden och {workItems} åtgärder, markerade som utkast. Inget av det räknas förrän du godkänner det.",
+    "previewing": "Du ser utkastet med {components} komponenter, {observations} värden, {workItems} åtgärder och {retractions} pensionerade värden, markerade som utkast. Inget av det räknas förrän du godkänner det.",
     "previewingEdit": "Du kan ta bort enskilda rader ur utkastet och rätta värden innan du godkänner resten.",
     "removeFromDraft": "Ta bort ur utkastet",
     "removeComponentLabel": "Ta bort {name} ur utkastet",
@@ -374,7 +374,14 @@
       "area": "Området"
     },
     "libraryUpdates": "{count, plural, one {# typ har} other {# typer har}} tillkommit i typbiblioteket sedan huset lästes in ({date}): {types}.",
-    "libraryUpdatesHint": "Be Claude läsa om dokumenten och föreslå det de säger om sådana delar."
+    "libraryUpdatesHint": "Be Claude läsa om dokumenten och föreslå det de säger om sådana delar.",
+    "correction": "Rättning",
+    "corrections": "Rättningar i utkastet",
+    "correctionBefore": "Före",
+    "correctionAfter": "Efter",
+    "correctionTop": "på toppnivå",
+    "correctionUnder": "under {parent}",
+    "retirement": "Pensioneras"
   },
   "source": {
     "user": "Du",
