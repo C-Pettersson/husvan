@@ -5,6 +5,7 @@
   },
   "nav": {
     "houses": "Hus",
+    "gettingStarted": "Kom igång",
     "signIn": "Logga in",
     "signOut": "Logga ut",
     "language": "Språk",
@@ -203,6 +204,50 @@
     "invalid": "Länken för godkännande är ogiltig eller har gått ut. Börja om från appen som bad om åtkomst.",
     "failed": "Det gick inte att spara ditt svar. Försök igen."
   },
+  "gettingStarted": {
+    "title": "Kom igång",
+    "intro": "Du använder Husvan från din egen Claude. Lägg till Husvan som koppling en gång, så kan Claude läsa och spara dina hus i dina samtal.",
+    "openClaude": "Öppna Claude",
+    "toHouses": "Till dina hus",
+    "copy": "Kopiera",
+    "copied": "Kopierad",
+    "copyFailed": "Gick inte att kopiera, markera adressen",
+    "steps": {
+      "open": {
+        "title": "Öppna kopplingarna i Claude",
+        "body": "Gå till <b>Customize > Connectors</b> på claude.ai. Välj <b>+ Add</b> och sedan <b>Add custom connector</b>."
+      },
+      "address": {
+        "title": "Fyll i namn och adress",
+        "body": "Skriv <b>Husvan</b> som namn, klistra in adressen nedan och välj <b>Continue</b>. Claude hittar inställningarna för inloggning själv, så välj <b>Continue</b> en gång till."
+      },
+      "auth": {
+        "title": "Välj hur Claude loggar in",
+        "body": "Under <b>Authentication</b> väljer du <b>Sign in now</b>. Under <b>OAuth client</b> väljer du <b>Use Claude's published identity (Recommended)</b>. Lämna <b>Request headers</b> tomt och välj <b>Add</b>."
+      },
+      "signIn": {
+        "title": "Logga in och ge åtkomst",
+        "body": "Claude skickar dig till Husvan. Är du redan inloggad i den webbläsaren kommer du direkt till godkännandet. Annars loggar du in med {email}, samma adress som här, så att Claude når samma hus. Välj <b>{allow}</b> så är kopplingen klar."
+      },
+      "enable": {
+        "title": "Slå på kopplingen i samtalet",
+        "body": "Välj <b>+</b> nere till vänster i chatten och sedan <b>Connectors</b>. Kontrollera att Husvan är påslagen."
+      },
+      "try": {
+        "title": "Prova",
+        "body": "Ladda upp prospektet för ett hus och skriv ”Lägg in det här huset i Husvan”. Claude visar ett utkast, och när du har godkänt det syns huset bland dina hus."
+      }
+    },
+    "notesTitle": "Bra att veta",
+    "notes": {
+      "team": "<b>Claude Team och Enterprise:</b> en ägare lägger först till kopplingen under <b>Organization settings > Connectors</b> (<b>Add</b>, <b>Custom</b>, <b>Web</b>). Sedan väljer du <b>Connect</b> vid Husvan under <b>Customize > Connectors</b>.",
+      "free": "<b>Claude Free:</b> du kan ha en egen koppling.",
+      "mobile": "<b>Mobilen:</b> kopplingen hör till ditt Claude-konto. När du har lagt till den går den att använda även i datorappen och mobilappen.",
+      "sameBrowser": "<b>Inloggning med mejl:</b> öppna länken i samma webbläsare som du började i, annars avbryts kopplingen. Läser du mejlet på en annan enhet skriver du koden från mejlet i stället.",
+      "claudeCode": "<b>Claude Code:</b> fungerar inte. Det ansluter från din egen dator, och Husvans koppling tar bara emot trafik från Anthropics servrar.",
+      "labels": "<b>Menyerna:</b> namnen ovan kommer från Claudes engelska gränssnitt och kan se annorlunda ut om Claude har ändrat dem."
+    }
+  },
   "admin": {
     "title": "Användare",
     "intro": "Adresser som får logga in. En ny adress får ett eget konto första gången den följer en inloggningslänk. Tar du bort en adress loggas användaren ut och Claudes åtkomst upphör; husen finns kvar.",
@@ -238,6 +283,7 @@
   "houses": {
     "title": "Dina hus",
     "empty": "Inga hus än. Lägg till ett hus genom att ladda upp prospektet i Claude.",
+    "connect": "Så kopplar du Husvan till Claude",
     "count": "{count, plural, one {# hus} other {# hus}}",
     "filter": "Måste ha",
     "filterHint": "Hus som saknar det du valt döljs. Hus där det är okänt visas för sig, eftersom okänt inte är nej.",

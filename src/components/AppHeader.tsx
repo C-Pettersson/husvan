@@ -12,13 +12,25 @@ export default async function AppHeader() {
 
   return (
     <AppBar position="static" color="default" elevation={0}>
-      <Toolbar sx={{ gap: 2 }}>
+      <Toolbar
+        sx={{
+          gap: { xs: 1, sm: 2 },
+          py: { xs: 1, sm: 0 },
+          flexWrap: 'wrap',
+          '& .MuiButton-root': { whiteSpace: 'nowrap' },
+        }}
+      >
         <Button href="/" color="inherit" sx={{ textTransform: 'none', ml: -1 }}>
           <Logo />
         </Button>
         {session && (
           <Button href="/houses" color="inherit">
             {t('houses')}
+          </Button>
+        )}
+        {session && (
+          <Button href="/getting-started" color="inherit">
+            {t('gettingStarted')}
           </Button>
         )}
         {session?.user.role === 'ADMIN' && (
