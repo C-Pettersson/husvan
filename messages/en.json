@@ -220,11 +220,10 @@
   },
   "mail": {
     "magicLink": {
-      "subject": "Sign in to Husvan",
-      "context": "You asked for a login link to husvan.se.",
-      "intro": "Click the link to sign in to Husvan.",
+      "subject": "Your Husvan sign-in code is {code}",
+      "context": "You asked to sign in to husvan.se.",
+      "intro": "Enter the code on the sign-in page or open the link to sign in.",
       "button": "Sign in",
-      "codeIntro": "Reading this on another device? Type this code on the sign-in page instead:",
       "expires": "The link and the code are valid for {minutes} minutes and can be used once.",
       "ignore": "If you did not ask to sign in, you can ignore this email."
     }

@@ -48,7 +48,7 @@ describe('deliverMagicLink', () => {
     expect(mailer).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'Owner@Example.com',
-        subject: 'Logga in på Husvan',
+        subject: `Din inloggningskod till Husvan är ${code}`,
       })
     )
     const message = mailer.mock.calls[0][0]
@@ -56,7 +56,7 @@ describe('deliverMagicLink', () => {
     expect(message.html).toContain(`href="${link}"`)
     expect(createCode).toHaveBeenCalledWith('Owner@Example.com')
     expect(message.text).toContain(code)
-    expect(message.html).toContain(`<strong>${code}</strong>`)
+    expect(message.html).toContain(`${code}</strong>`)
   })
 })
 
@@ -68,11 +68,29 @@ describe('magicLinkMail', () => {
       locale: 'en',
       expiresInMinutes: 10,
     })
-    expect(mail.subject).toBe('Sign in to Husvan')
+    expect(mail.subject).toBe(`Your Husvan sign-in code is ${code}`)
     expect(mail.text).toContain('10 minutes')
     expect(mail.html).toContain('<html lang="en">')
-    expect(mail.html).toContain('<title>Sign in to Husvan</title>')
-    expect(mail.html).toContain('You asked for a login link to husvan.se.')
+    expect(mail.html).toContain(
+      `<title>Your Husvan sign-in code is ${code}</title>`
+    )
+    expect(mail.html).toContain('You asked to sign in to husvan.se.')
+  })
+
+  // iOS offers the code above the keyboard only if the notification shows it.
+  it('opens both parts with the sentence that holds the code', () => {
+    const mail = magicLinkMail({
+      url: link,
+      code,
+      locale: 'sv',
+      expiresInMinutes: 10,
+    })
+    expect(mail.text.split('\n')[0]).toBe(mail.subject)
+    expect(mail.html).toMatch(
+      new RegExp(
+        `<body>\\n<p>Din inloggningskod till Husvan är <strong [^>]*>${code}</strong></p>`
+      )
+    )
   })
 
   it('wraps the html part in a document and keeps the text part plain', () => {
@@ -84,20 +102,20 @@ describe('magicLinkMail', () => {
     })
     expect(mail.html).toMatch(/^<!DOCTYPE html>\n<html lang="sv">\n<head>/)
     expect(mail.html).toContain('<meta charset="utf-8">')
-    expect(mail.html).toContain('<title>Logga in på Husvan</title>')
     expect(mail.html).toContain(
-      '<body>\n<p>Du bad om en inloggningslänk till husvan.se.</p>\n<p>Klicka på länken'
+      `<title>Din inloggningskod till Husvan är ${code}</title>`
+    )
+    expect(mail.html).toContain(
+      '</p>\n<p>Du bad om att logga in på husvan.se.</p>\n<p>Skriv koden'
     )
     expect(mail.html).toMatch(/<\/body>\n<\/html>$/)
     expect(mail.text).toBe(
       [
-        'Klicka på länken för att logga in på Husvan.',
+        `Din inloggningskod till Husvan är ${code}`,
+        '',
+        'Skriv koden på inloggningssidan eller öppna länken för att logga in.',
         '',
         link,
-        '',
-        'Läser du mejlet på en annan enhet kan du i stället skriva den här koden på inloggningssidan:',
-        '',
-        code,
         '',
         'Länken och koden gäller i 10 minuter och kan bara användas en gång.',
         'Har du inte bett om att logga in kan du bortse från det här mejlet.',
