@@ -5,6 +5,7 @@
   },
   "nav": {
     "houses": "Houses",
+    "gettingStarted": "Get started",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "language": "Language",
@@ -203,6 +204,50 @@
     "invalid": "The approval link is invalid or has expired. Start over from the app that asked for access.",
     "failed": "Your answer could not be saved. Try again."
   },
+  "gettingStarted": {
+    "title": "Get started",
+    "intro": "You use Husvan from your own Claude. Add Husvan as a connector once, and Claude can read and save your houses in your conversations.",
+    "openClaude": "Open Claude",
+    "toHouses": "To your houses",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy, select the address",
+    "steps": {
+      "open": {
+        "title": "Open the connectors in Claude",
+        "body": "Go to <b>Customize > Connectors</b> on claude.ai. Choose <b>+ Add</b> and then <b>Add custom connector</b>."
+      },
+      "address": {
+        "title": "Enter a name and the address",
+        "body": "Type <b>Husvan</b> as the name, paste the address below and choose <b>Continue</b>. Claude finds the sign-in settings by itself, so choose <b>Continue</b> once more."
+      },
+      "auth": {
+        "title": "Choose how Claude signs in",
+        "body": "Under <b>Authentication</b>, choose <b>Sign in now</b>. Under <b>OAuth client</b>, choose <b>Use Claude's published identity (Recommended)</b>. Leave <b>Request headers</b> empty and choose <b>Add</b>."
+      },
+      "signIn": {
+        "title": "Sign in and give access",
+        "body": "Claude sends you to Husvan. If you are already signed in in that browser, you go straight to the approval. Otherwise sign in with {email}, the same address as here, so that Claude reaches the same houses. Choose <b>{allow}</b> and the connector is ready."
+      },
+      "enable": {
+        "title": "Turn the connector on in the conversation",
+        "body": "Choose <b>+</b> at the lower left of the chat and then <b>Connectors</b>. Check that Husvan is turned on."
+      },
+      "try": {
+        "title": "Try it",
+        "body": "Upload the listing for a house and write \"Add this house to Husvan\". Claude shows a draft, and once you have approved it the house appears among your houses."
+      }
+    },
+    "notesTitle": "Good to know",
+    "notes": {
+      "team": "<b>Claude Team and Enterprise:</b> an owner first adds the connector under <b>Organization settings > Connectors</b> (<b>Add</b>, <b>Custom</b>, <b>Web</b>). Then you choose <b>Connect</b> next to Husvan under <b>Customize > Connectors</b>.",
+      "free": "<b>Claude Free:</b> you can have one custom connector.",
+      "mobile": "<b>Mobile:</b> the connector belongs to your Claude account. Once you have added it, you can also use it in the desktop and mobile apps.",
+      "sameBrowser": "<b>Signing in by email:</b> open the link in the same browser you started in, or the connection is cancelled. If you read the email on another device, type the code from the email instead.",
+      "claudeCode": "<b>Claude Code:</b> does not work. It connects from your own computer, and Husvan's connector only accepts traffic from Anthropic's servers.",
+      "labels": "<b>Menus:</b> the names above come from Claude's English interface and may look different if Claude has changed them."
+    }
+  },
   "admin": {
     "title": "Users",
     "intro": "Addresses that may sign in. A new address gets its own account the first time it follows a sign-in link. Removing an address signs that user out and ends Claude's access; the houses stay.",
@@ -237,6 +282,7 @@
   "houses": {
     "title": "Your houses",
     "empty": "No houses yet. Add a house by uploading the listing in Claude.",
+    "connect": "How to connect Husvan to Claude",
     "count": "{count, plural, one {# house} other {# houses}}",
     "filter": "Must have",
     "filterHint": "Houses without what you picked are hidden. Houses where it is unknown are shown apart, because unknown is not no.",

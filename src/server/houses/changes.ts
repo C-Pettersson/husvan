@@ -531,15 +531,20 @@ function validateCorrections(
         errors.push(`${at}: a component cannot be its own parent`)
       else if (c.newParent !== null) {
         const parentType = target(c.newParent, at)
-        for (
-          let up: string | null | undefined = c.newParent;
-          up;
-          up = parentOf(up)
-        )
+        // Walk up from the new parent; reaching the part itself is a cycle,
+        // and so is a loop among the moves of this call.
+        const seen = new Set<string>()
+        let up: string | null | undefined = c.newParent
+        while (up && !seen.has(up)) {
           if (up === c.componentId) {
             errors.push(`${at}: ${c.newParent} is below ${c.componentId}`)
             break
           }
+          seen.add(up)
+          up = parentOf(up)
+        }
+        if (up && seen.has(up))
+          errors.push(`${at}: the moves in this call form a cycle`)
         const allowed = parentType && ctx.types.get(parentType)
         if (allowed && !allowed.allowedSubcomponents.includes(finalType))
           errors.push(

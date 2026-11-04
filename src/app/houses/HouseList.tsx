@@ -68,7 +68,14 @@ function HouseList({ houses }: { houses: House[] }) {
   const [selected, setSelected] = useState<string[]>([])
 
   if (houses.length === 0) {
-    return <Typography color="text.secondary">{t('houses.empty')}</Typography>
+    return (
+      <Stack spacing={2} alignItems="flex-start">
+        <Typography color="text.secondary">{t('houses.empty')}</Typography>
+        <Button href="/getting-started" variant="outlined">
+          {t('houses.connect')}
+        </Button>
+      </Stack>
+    )
   }
 
   // A filter hides only houses known to lack a feature; unknown is shown
