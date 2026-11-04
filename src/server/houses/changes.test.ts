@@ -383,22 +383,40 @@ describe('corrections', () => {
     expect(r.errors).toEqual([])
   })
 
-  it('refuses a parent that does not take the type, a cycle and a draft row', () => {
+  it('refuses a parent that does not take the type, a draft row and a replaced part', () => {
     const r = checkCorr({
       moveComponents: [
         { componentId: GARAGE_ROOF, newParent: BATH },
-        { componentId: BATH, newParent: FLOOR_HEAT },
         { componentId: DRAFT_ROW, newParent: null },
         { componentId: OLD_PANEL, newParent: null },
       ],
     })
     expect(r.errors).toEqual([
       `corrections ${GARAGE_ROOF}.newParent: bathroom does not take roof_covering as a subcomponent (allowed: underfloor_heating)`,
-      `corrections ${BATH}.newParent: ${FLOOR_HEAT} is below ${BATH}`,
-      `corrections ${BATH}.newParent: underfloor_heating does not take bathroom as a subcomponent (allowed: none)`,
       `corrections ${DRAFT_ROW}: component ${DRAFT_ROW} is a row of this draft; correct it with edit_draft`,
       `corrections ${OLD_PANEL}: component ${OLD_PANEL} has been replaced`,
     ])
+  })
+
+  it('refuses moving a part under its own subcomponent, and a cycle among the moves', () => {
+    const below = checkCorr({
+      moveComponents: [{ componentId: BATH, newParent: FLOOR_HEAT }],
+    })
+    expect(below.errors).toEqual([
+      `corrections ${BATH}.newParent: ${FLOOR_HEAT} is below ${BATH}`,
+      `corrections ${BATH}.newParent: underfloor_heating does not take bathroom as a subcomponent (allowed: none)`,
+    ])
+    // The bathroom goes under its floor heating and the garage roof under
+    // the bathroom: walking up from the bathroom never ends, so it is said.
+    const loop = checkCorr({
+      moveComponents: [
+        { componentId: BATH, newParent: FLOOR_HEAT },
+        { componentId: GARAGE_ROOF, newParent: BATH },
+      ],
+    })
+    expect(loop.errors).toContain(
+      `corrections ${GARAGE_ROOF}.newParent: the moves in this call form a cycle`
+    )
   })
 
   it('retypes a bathroom to a wc, warns about values outside the new type and refuses kept subcomponents', () => {
