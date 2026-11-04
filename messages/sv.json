@@ -265,7 +265,7 @@
   },
   "mail": {
     "magicLink": {
-      "subject": "Din inloggningskod till Husvan är {code}",
+      "subject": "Verifieringskod till Husvan: {code}",
       "context": "Du bad om att logga in på husvan.se.",
       "intro": "Skriv koden på inloggningssidan eller öppna länken för att logga in.",
       "button": "Logga in",

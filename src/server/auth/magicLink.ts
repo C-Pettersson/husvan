@@ -36,6 +36,9 @@ export function magicLinkMail({
   // The sentence with the code is the subject and the opening line of both
   // parts. iOS can offer a code from a mail app only if it sees it in the
   // notification, which shows little more than the subject and a preview.
+  // The wording matters and only a phone can test it: on iOS 26 "Verifieringskod
+  // till Husvan: 123456" got a suggestion from the Outlook app, while "Din kod
+  // till Husvan är 123456" and "Din inloggningskod till Husvan är 123456" did not.
   const subject = t('subject', { code })
   const text = [
     subject,
