@@ -11,6 +11,9 @@ import type {
 
 export type SaveDocumentInput = {
   houseId: string
+  // An existing document of the house to fill in, when it was saved
+  // without text or file details and has no sha256 or sourceUrl to match.
+  documentId?: string
   type: DocumentType
   title?: string
   sourceUrl?: string
@@ -27,8 +30,42 @@ export type SaveDocumentInput = {
 }
 
 export type SaveDocumentResult =
-  | { ok: true; documentId: string; alreadySaved: boolean }
+  | {
+      ok: true
+      documentId: string
+      alreadySaved: boolean
+      // What a repeated call filled in on a document saved without it.
+      filled: string[]
+    }
   | { ok: false; error: string }
+
+// The fields of a stored document a later call may fill in where they are
+// null: a document saved with its interpretation but without its text (as
+// happened when houses were re-created through MCP) gets the text back
+// under the same id. Nothing stored is replaced.
+export const FILLABLE = [
+  'title',
+  'filename',
+  'mime',
+  'fullText',
+  'interpretation',
+  'documentDate',
+  'amountSek',
+] as const
+export type Fillable = (typeof FILLABLE)[number]
+
+export function backfill(
+  existing: Partial<Record<Fillable, unknown>>,
+  incoming: Partial<Record<Fillable, unknown>>
+): Fillable[] {
+  return FILLABLE.filter(
+    (k) =>
+      (existing[k] === null || existing[k] === undefined) &&
+      incoming[k] !== undefined &&
+      incoming[k] !== null &&
+      incoming[k] !== ''
+  )
+}
 
 export async function saveDocument(
   prisma: PrismaClient,
@@ -42,16 +79,38 @@ export async function saveDocument(
 
   // Saving the same listing or file again returns the first copy, so a
   // repeated call cannot fork the evidence.
+  if (doc.documentId) {
+    const byId = await prisma.document.findFirst({
+      where: { id: doc.documentId },
+      select: { id: true, houseId: true },
+    })
+    if (!byId || byId.houseId !== doc.houseId)
+      return {
+        ok: false,
+        error: `No document ${doc.documentId} for this house.`,
+      }
+  }
   const same = await prisma.document.findFirst({
     where: {
       OR: [
+        ...(doc.documentId ? [{ id: doc.documentId }] : []),
         ...(doc.sha256 ? [{ sha256: doc.sha256 }] : []),
         ...(doc.sourceUrl
           ? [{ houseId: doc.houseId, type: doc.type, sourceUrl: doc.sourceUrl }]
           : []),
       ],
     },
-    select: { id: true, houseId: true },
+    select: {
+      id: true,
+      houseId: true,
+      title: true,
+      filename: true,
+      mime: true,
+      fullText: true,
+      interpretation: true,
+      documentDate: true,
+      amountSek: true,
+    },
   })
   if (same) {
     if (same.houseId !== doc.houseId)
@@ -59,7 +118,18 @@ export async function saveDocument(
         ok: false,
         error: 'A document with this sha256 belongs to another house.',
       }
-    return { ok: true, documentId: same.id, alreadySaved: true }
+    const filled = backfill(same, doc)
+    if (filled.length)
+      await prisma.document.update({
+        where: { id: same.id },
+        data: Object.fromEntries(
+          filled.map((k) => [
+            k,
+            k === 'documentDate' ? new Date(doc.documentDate!) : doc[k],
+          ])
+        ),
+      })
+    return { ok: true, documentId: same.id, alreadySaved: true, filled }
   }
 
   const created = await prisma.$transaction(async (tx) => {
@@ -91,5 +161,5 @@ export async function saveDocument(
       select: { id: true },
     })
   })
-  return { ok: true, documentId: created.id, alreadySaved: false }
+  return { ok: true, documentId: created.id, alreadySaved: false, filled: [] }
 }
