@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ComponentView, KeyValueView } from '@/server/houses/getHouse'
 import { flagText } from './flags'
+import { withAnswer } from './whatIf'
 import {
   assumedId,
   parseAssumedId,
@@ -120,21 +121,67 @@ describe('earliest year of a type', () => {
 describe('partial renovation', () => {
   const library = lib([], [profile({ type: 'kitchen' })])
 
-  it('moves the part halfway towards new from the partial renovation', () => {
+  const due = (values: Record<string, unknown>, l = library) => {
+    const [p] = planComponents([comp('kitchen', values)], house, l, START)
+    return { plan: p, year: p.installYear.typical + p.lifespan.typical }
+  }
+
+  it('gives a third of a lifespan from the partial renovation', () => {
+    // New fronts in 2025 on a kitchen from 1996, lifespan 30: 2025 + 10.
+    const { plan, year } = due({
+      installation_year: 1996,
+      partial_renovation_year: 2025,
+    })
+    expect(year).toBe(2035)
+    expect(codes(plan)).toContain('partial_renovation')
+    expect(plan.flags.map(flagText).join()).toContain('33 % of a lifespan')
+  })
+
+  it('does not reward a part for being old when it was renovated', () => {
+    // A kitchen from 1967 gets no more from new worktops than one from 1996.
+    expect(
+      due({ installation_year: 1967, partial_renovation_year: 2026 }).year
+    ).toBe(2036)
+    expect(
+      due({ installation_year: 1996, partial_renovation_year: 2026 }).year
+    ).toBe(2036)
+  })
+
+  it('takes a part out of being overdue, with the type’s own share', () => {
+    // A new motor in 2021 in an FTX unit from 1989, lifespan 18.
+    const ftx = lib(
+      [['ventilation_ftx', { partialRenovationShare: 0.5 }]],
+      [
+        profile({
+          type: 'ventilation_ftx',
+          lifespanMinYears: 12,
+          lifespanTypicalYears: 18,
+          lifespanMaxYears: 20,
+        }),
+      ]
+    )
     const [p] = planComponents(
       [
-        comp('kitchen', {
-          installation_year: 1979,
-          partial_renovation_year: 2003,
+        comp('ventilation_ftx', {
+          installation_year: 1989,
+          partial_renovation_year: 2021,
         }),
       ],
       house,
-      library,
+      ftx,
       START
     )
-    // 1979 + 0.5 × (2003 − 1979) = 1991.
-    expect(p.installYear.typical).toBe(1991)
-    expect(codes(p)).toContain('partial_renovation')
+    expect(p.installYear.typical + p.lifespan.typical).toBe(2030)
+    expect(p.flags.map(flagText).join()).toContain('50 % of a lifespan')
+  })
+
+  it('says so when the part’s own lifespan runs longer', () => {
+    const { plan, year } = due({
+      installation_year: 2010,
+      partial_renovation_year: 2015,
+    })
+    expect(year).toBe(2040)
+    expect(codes(plan)).toEqual(['partial_renovation_no_effect'])
   })
 
   it('ignores a partial renovation before the installation year', () => {
@@ -328,6 +375,218 @@ describe('quantities', () => {
     const [p] = planComponents([comp('deck')], house, library, START)
     expect(p.quantity).toBe(25)
     expect(p.flags.map(flagText)).toContain('area missing; a usual 25 assumed')
+  })
+
+  it('assumes far less for entrance steps than for a terrace', () => {
+    const library = lib(
+      [['deck', { assumedQuantity: 25, assumedEntranceQuantity: 5 }]],
+      [profile({ type: 'deck', costUnit: 'M2' })]
+    )
+    const quantity = (name: string, values = {}) =>
+      planComponents([comp('deck', values, { name })], house, library, START)[0]
+        .quantity
+    expect(quantity('Entrébro')).toBe(5)
+    expect(quantity('Farstubro')).toBe(5)
+    expect(quantity('Altan')).toBe(25)
+    expect(quantity('Altan och entrébro')).toBe(25)
+    expect(quantity('Entrébro', { area: 8 })).toBe(8)
+  })
+
+  describe('parts under a building of their own', () => {
+    const library = lib(
+      [
+        ['garage', { separateBuilding: true, assumedQuantity: 30 }],
+        ['shed', { separateBuilding: true }],
+        [
+          'roof_covering',
+          { quantityFromFootprint: { basis: 'area', factor: 1.3 } },
+        ],
+        ['facade', { quantityFromFootprint: { basis: 'wall', factor: 2.7 } }],
+      ],
+      [
+        profile({ type: 'roof_covering', costUnit: 'M2' }),
+        profile({ type: 'facade', costUnit: 'M2' }),
+      ]
+    )
+    const values = [...house, kv('floor_count', 1)]
+    const plan = (building: ComponentView) =>
+      Object.fromEntries(
+        planComponents([building], values, library, START)
+          .filter((p) => !p.assumed)
+          .map((p) => [p.name ?? p.type, p])
+      )
+    const roof = comp('roof_covering')
+    const facade = comp('facade')
+
+    it('are estimated from the building’s area, as one storey', () => {
+      const parts = plan(
+        comp('garage', { area: 36 }, { children: [roof, facade] })
+      )
+      expect(parts.roof_covering.quantity).toBeCloseTo(1.3 * 36)
+      // 6 × 6 m: 24 m of wall, 2.7 m high.
+      expect(parts.facade.quantity).toBeCloseTo(2.7 * 24)
+      expect(parts.roof_covering.flags.map(flagText)).toContain(
+        "area estimated from the building's 36 m2"
+      )
+      expect(parts.roof_covering.cost?.typical).toBeGreaterThan(0)
+    })
+
+    it('take a usual size when the building states none', () => {
+      const parts = plan(comp('garage', {}, { children: [roof] }))
+      expect(parts.roof_covering.quantity).toBeCloseTo(1.3 * 30)
+      expect(codes(parts.roof_covering)).toContain(
+        'quantity_from_usual_building'
+      )
+    })
+
+    it('keep their own area and share what the others do not state', () => {
+      const parts = plan(
+        comp(
+          'garage',
+          { area: 50 },
+          {
+            children: [
+              comp('roof_covering', { area: 40 }, { name: 'own' }),
+              comp('roof_covering', {}, { name: 'rest' }),
+            ],
+          }
+        )
+      )
+      expect(parts.own.quantity).toBe(40)
+      expect(parts.rest.quantity).toBeCloseTo(1.3 * 50 - 40)
+    })
+
+    describe('when nothing registers them', () => {
+      const assuming = lib(
+        [
+          ...library.defaults,
+          [
+            'garage',
+            {
+              separateBuilding: true,
+              assumedQuantity: 30,
+              assumeParts: ['roof_covering', 'facade'],
+            },
+          ],
+          [
+            'carport',
+            {
+              separateBuilding: true,
+              assumedQuantity: 30,
+              assumeParts: ['roof_covering'],
+            },
+          ],
+        ],
+        library.profiles
+      )
+      const plans = (...list: ComponentView[]) =>
+        planComponents(list, values, assuming, START)
+      const ofBuilding = (id: string) => (p: { componentId: string }) =>
+        p.componentId.endsWith(`building=${id}`)
+
+      it('assumes a bare garage’s roof and facade from its area', () => {
+        const garage = comp('garage', { area: 36 }, { name: 'Kallgarage' })
+        const parts = plans(garage).filter(ofBuilding(garage.id))
+        expect(parts.map((p) => p.type)).toEqual(['roof_covering', 'facade'])
+        expect(parts[0]).toMatchObject({
+          assumed: true,
+          basis: 'assumed',
+          name: 'Kallgarage',
+        })
+        expect(parts[0].quantity).toBeCloseTo(1.3 * 36)
+        expect(codes(parts[0])).toContain('assumed_building_part')
+        expect(codes(parts[0])).not.toContain('assumed_part')
+      })
+
+      it('assumes only what is missing, and only a roof on a carport', () => {
+        const garage = comp('garage', {}, { children: [comp('facade')] })
+        const carport = comp('carport')
+        const list = plans(garage, carport)
+        expect(list.filter(ofBuilding(garage.id)).map((p) => p.type)).toEqual([
+          'roof_covering',
+        ])
+        expect(list.filter(ofBuilding(carport.id)).map((p) => p.type)).toEqual([
+          'roof_covering',
+        ])
+      })
+
+      it('counts a roof named for the building at top level only once', () => {
+        const garage = comp('garage')
+        const list = plans(
+          garage,
+          comp('roof_covering', {}, { name: 'Tak, garage' })
+        )
+        expect(list.filter(ofBuilding(garage.id)).map((p) => p.type)).toEqual([
+          'facade',
+        ])
+      })
+
+      it('does not count a part as old as the house', () => {
+        const garage = comp('garage')
+        const [roof] = plans(garage).filter(ofBuilding(garage.id))
+        // Typical is halfway through the lifespan of 30, not 1979.
+        expect(roof.installYear).toEqual({
+          low: START,
+          typical: START - 15,
+          high: START - 20,
+        })
+        expect(codes(roof)).toContain('installation_year_unknown')
+        expect(codes(roof)).not.toContain('construction_year_used')
+        // A registered part without a year reads the same.
+        const [own] = plans(comp('garage', {}, { children: [comp('facade')] }))
+          .filter((p) => p.type === 'facade')
+          .filter((p) => !p.assumed)
+        expect(own.basis).toBe('unknown_year')
+      })
+
+      it('counts three walls on an attached garage', () => {
+        const wall = (values: Record<string, unknown>) => {
+          const garage = comp('garage', { area: 36, ...values })
+          return plans(garage)
+            .filter(ofBuilding(garage.id))
+            .filter((p) => p.type === 'facade' || p.type === 'roof_covering')
+        }
+        const [roof, facade] = wall({ attached: true })
+        expect(facade.quantity).toBeCloseTo(2.7 * 24 * 0.75)
+        expect(codes(facade)).toContain('attached_wall_shared')
+        // The roof is the building's whole, and a detached garage all walls.
+        expect(roof.quantity).toBeCloseTo(1.3 * 36)
+        expect(codes(roof)).not.toContain('attached_wall_shared')
+        expect(wall({ attached: false })[1].quantity).toBeCloseTo(2.7 * 24)
+      })
+
+      it('counts from the building’s own year', () => {
+        const garage = comp('garage', { installation_year: 2015 })
+        const [part] = plans(garage).filter(ofBuilding(garage.id))
+        expect(part.installYear.typical).toBe(2015)
+        expect(codes(part)).toContain('building_year_used')
+      })
+
+      it('keeps a part tried with an answer under its building', () => {
+        const garage = comp('garage', { area: 36 })
+        const [assumed] = plans(garage).filter(ofBuilding(garage.id))
+        const answered = withAnswer(
+          [garage],
+          { componentId: assumed.componentId, type: assumed.type },
+          'installation_year',
+          2000
+        )
+        const list = plans(...answered)
+        const part = list.find((p) => p.componentId === assumed.componentId)!
+        expect(part.installYear.typical).toBe(2000)
+        expect(part.quantity).toBeCloseTo(1.3 * 36)
+        // Not doubled by a second assumption, and not the house's roof.
+        expect(list.filter(ofBuilding(garage.id))).toHaveLength(2)
+      })
+    })
+
+    it('stay without a cost and say so when nothing gives a size', () => {
+      const parts = plan(comp('shed', {}, { children: [roof] }))
+      expect(parts.roof_covering.cost).toBeNull()
+      expect(parts.roof_covering.flags.map(flagText)).toContain(
+        'area missing; no cost'
+      )
+    })
   })
 
   it('takes a basement into the footprint', () => {

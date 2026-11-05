@@ -79,11 +79,20 @@ export function parseAssumedId(id: string) {
   return { type, values }
 }
 
-// How much of a part's age a partial renovation takes away: the fronts,
-// worktops, fixtures or fan are renewed, the frame, membrane and ducts are
-// not. Half, as a kitchen or bathroom facelift costs about half of a full
-// renovation in the price guides (CLAUDE.md, "Regler för beräkningen").
-export const PARTIAL_RENOVATION_SHARE = 0.5
+// How much of a lifespan a partial renovation gives the part, counted from
+// the renovation: new fronts and worktops or new fixtures leave the carcass,
+// the appliances and the membrane as old as they were, so a third unless the
+// type says otherwise (forecastDefaults.partialRenovationShare; CLAUDE.md,
+// "Regler för beräkningen").
+export const PARTIAL_RENOVATION_SHARE = 1 / 3
+
+// An entrance platform or steps registered as a deck (entrébro, farstubro,
+// förstukvist, entrétrappa): far smaller than a terrace when no area is
+// stated. A name that also says altan or terrass is a deck of the usual size.
+const ENTRANCE = /entr[eé]|farstu|f[öo]rstu|trapp/i
+const TERRACE = /altan|terrass/i
+export const looksLikeEntrance = (name: string | null | undefined) =>
+  !!name && ENTRANCE.test(name) && !TERRACE.test(name)
 
 // Types whose top-level parts share the house's estimated area, so one that
 // belongs to another building must be registered under it.
@@ -173,6 +182,9 @@ const scale = (c: ByScenario, f: number): ByScenario =>
 // 140 m2 about 48 m).
 export const PERIMETER_PER_SQRT_M2 = 4
 
+// An attached garage shares one of its four walls with the house.
+export const ATTACHED_WALL_SHARE = 0.75
+
 export function planComponents(
   components: ComponentView[],
   houseValues: KeyValueView[],
@@ -181,17 +193,24 @@ export function planComponents(
 ): ComponentPlan[] {
   const documented = flatten(components)
   // Parts under a building of its own, such as a garage's roof
-  // (forecastDefaults.separateBuilding): they state their own quantities,
-  // take no share of the house's estimate and do not stand in for a part of
-  // the house.
-  const inBuilding = new Set(
-    components.flatMap(function under(c): string[] {
-      return library.defaults.get(c.type)?.separateBuilding
-        ? flatten(c.children).map((x) => x.id)
-        : c.children.flatMap(under)
-    })
-  )
-  const houseParts = documented.filter((c) => !inBuilding.has(c.id))
+  // (forecastDefaults.separateBuilding): they take no share of the house's
+  // estimate and do not stand in for a part of the house. What they do not
+  // state is estimated from the building's own area.
+  const buildingOf = new Map<string, ComponentView>()
+  const collectBuildings = (c: ComponentView) => {
+    if (library.defaults.get(c.type)?.separateBuilding)
+      for (const x of flatten(c.children)) buildingOf.set(x.id, c)
+    else c.children.forEach(collectBuildings)
+  }
+  components.forEach(collectBuildings)
+  // A building's assumed part tried with an answer (whatIf.ts) comes back
+  // at top level; its id says which building it belongs to.
+  for (const c of documented) {
+    const id = parseAssumedId(c.id)?.values.building
+    const building = id && documented.find((x) => x.id === id)
+    if (building) buildingOf.set(c.id, building)
+  }
+  const houseParts = documented.filter((c) => !buildingOf.has(c.id))
   const absent = valueOf(houseValues, 'absent_features')
   // Attributes a type reads from another part of the house, such as the
   // foundation type that prices drainage (forecastDefaults.context).
@@ -295,7 +314,35 @@ export function planComponents(
       return parts
     }
   )
-  const all = [...documented, ...assumed]
+  // What a building must have although nothing registers it: a garage's roof
+  // and facade (forecastDefaults.assumeParts), so that a garage is not free
+  // for being mentioned without its parts. Not where a part of that type sits
+  // at top level under a name that places it on another building, since it
+  // is counted there already and the fix is to move it.
+  const buildingParts: ComponentView[] = documented.flatMap((building) =>
+    (library.defaults.get(building.type)?.assumeParts ?? []).flatMap((type) => {
+      const id = assumedId(type, { building: building.id })
+      if (
+        flatten(building.children).some((x) => x.type === type) ||
+        documented.some((x) => x.id === id) ||
+        components.some(
+          (x) => x.type === type && looksLikeOtherBuilding(x.name)
+        )
+      )
+        return []
+      const part: ComponentView = {
+        id,
+        type,
+        name: building.name,
+        draft: false,
+        values: [],
+        children: [],
+      }
+      buildingOf.set(id, building)
+      return [part]
+    })
+  )
+  const all = [...documented, ...assumed, ...buildingParts]
   const constructionYear = valueOf(houseValues, 'construction_year')
   const livingArea = valueOf(houseValues, 'living_area')
   const secondaryArea = valueOf(houseValues, 'secondary_area')
@@ -317,32 +364,55 @@ export function planComponents(
         : livingArea / floors
       : undefined
   const footprintFloors = withSecondary ? (floors as number) + 1 : floors
+  // A quantity from a footprint: roof and drainage follow its area or its
+  // perimeter, the facade the perimeter and the floors.
+  const fromFootprint = (
+    geometry: NonNullable<ForecastDefaults['quantityFromFootprint']>,
+    area: number,
+    storeys: number
+  ) => {
+    const perimeter = PERIMETER_PER_SQRT_M2 * Math.sqrt(area)
+    return geometry.basis === 'area'
+      ? geometry.factor * area
+      : geometry.basis === 'perimeter'
+        ? geometry.factor * perimeter
+        : geometry.factor * perimeter * storeys
+  }
   // The whole house's quantity of a type: from the footprint when the
-  // number of floors is known, since roof and drainage follow the footprint
-  // and the facade the perimeter and the floors; else per m2 living area.
+  // number of floors is known; else per m2 living area.
   const estimate = (d: ForecastDefaults) => {
     const geometry = d.quantityFromFootprint
-    if (geometry && footprint !== undefined) {
-      const perimeter = PERIMETER_PER_SQRT_M2 * Math.sqrt(footprint)
-      const total =
-        geometry.basis === 'area'
-          ? geometry.factor * footprint
-          : geometry.basis === 'perimeter'
-            ? geometry.factor * perimeter
-            : geometry.factor * perimeter * (floors as number)
-      return { total, fromFootprint: true }
-    }
+    if (geometry && footprint !== undefined)
+      return {
+        total: fromFootprint(geometry, footprint, floors as number),
+        fromFootprint: true,
+      }
     if (d.quantityPerLivingM2 && typeof livingArea === 'number')
       return { total: d.quantityPerLivingM2 * livingArea, fromFootprint: false }
     return null
   }
-  // The house's components of a type and the quantity they state, for
-  // sharing a per-area estimate among those that state none. A component
-  // without a quantity may state its share of the whole instead (a mixed
-  // facade: brick 0.7, wood 0.3); the rest is split equally among those
-  // that state neither.
-  const quantities = (type: string, key: string) => {
-    const of = all.filter((c) => c.type === type && !inBuilding.has(c.id))
+  // A building's area as its parts read it: its own, else a usual size for
+  // the type (forecastDefaults.assumedQuantity), so that a garage whose size
+  // no document gives still has a roof that costs something.
+  const buildingArea = (building: ComponentView) => {
+    const own = valueOf(building.values, 'area')
+    if (typeof own === 'number' && own > 0) return { area: own, assumed: false }
+    const usual = library.defaults.get(building.type)?.assumedQuantity
+    return usual === undefined ? null : { area: usual, assumed: true }
+  }
+  // The components of a type that share an estimate, the house's or one
+  // building's, and the quantity they state, for sharing the estimate among
+  // those that state none. A component without a quantity may state its
+  // share of the whole instead (a mixed facade: brick 0.7, wood 0.3); the
+  // rest is split equally among those that state neither.
+  const quantities = (
+    type: string,
+    key: string,
+    building: ComponentView | undefined
+  ) => {
+    const of = all.filter(
+      (c) => c.type === type && buildingOf.get(c.id) === building
+    )
     const stated = of
       .map((c) => c.values.find((v) => v.key === key)?.current.value)
       .filter((v): v is number => typeof v === 'number')
@@ -381,7 +451,12 @@ export function planComponents(
     // Types without a profile are shown and compared but cost nothing.
     if (!profile) return []
     const isAssumed = c.id.startsWith(ASSUMED_PREFIX)
-    const flags: Flag[] = isAssumed ? [flag('assumed_part')] : []
+    const building = buildingOf.get(c.id)
+    const flags: Flag[] = !isAssumed
+      ? []
+      : building
+        ? [flag('assumed_building_part')]
+        : [flag('assumed_part')]
     for (const [key, value] of Object.entries(profile.match))
       if (context[key] === value)
         flags.push(flag('priced_by_context', { key, value }))
@@ -430,18 +505,27 @@ export function planComponents(
 
     // Installation year, else the house's, else anywhere in the lifespan.
     // A type that did not exist when the house was built counts from its
-    // earliest year instead (forecastDefaults.earliestYear).
+    // earliest year instead (forecastDefaults.earliestYear). A part of another
+    // building has no year from the house either: a garage is often built
+    // later, so counting it as old as the house would use it up for nothing.
     let installYear: ByScenario
     let basis: PlanBasis = isAssumed ? 'assumed' : 'documented'
-    const installed =
+    const ownYear =
       numberValue(c.values, 'installation_year', flags) ??
       (defaults.installationYearKey
         ? numberValue(c.values, defaults.installationYearKey, flags)
         : undefined)
+    // A part of another building is as old as that building, not the house.
+    const buildingYear =
+      ownYear === undefined && building
+        ? numberValue(building.values, 'installation_year', flags)
+        : undefined
+    if (buildingYear !== undefined) flags.push(flag('building_year_used'))
+    const installed = ownYear ?? buildingYear
     const earliest = defaults.earliestYear ?? -Infinity
     if (installed !== undefined) {
       installYear = byScenario(() => installed)
-    } else if (typeof constructionYear === 'number') {
+    } else if (typeof constructionYear === 'number' && !building) {
       const year = Math.max(constructionYear, earliest)
       installYear = byScenario(() => year)
       if (!isAssumed) basis = 'construction_year'
@@ -461,17 +545,29 @@ export function planComponents(
     }
     // A partial renovation (new fronts and worktops in a kitchen, new
     // fixtures and surfaces in a bathroom, a new fan in a ventilation unit)
-    // renews the parts that wear fastest but not the frame, the membrane
-    // or the ducts: it moves the part halfway towards new.
+    // renews what wears fastest, not the whole. It gives the part a share of
+    // a lifespan from that year, or nothing if its own lifespan runs longer.
+    // How old the part was at the time does not count: an old part does not
+    // get more out of new fronts than a younger one. The installation year
+    // is moved so that the replacement and the debt both follow.
     const partial = numberValue(c.values, 'partial_renovation_year', flags)
     if (partial !== undefined && partial > installYear.typical) {
-      installYear = byScenario((s) =>
-        Math.round(
-          installYear[s] +
-            PARTIAL_RENOVATION_SHARE * Math.max(0, partial - installYear[s])
+      const share = defaults.partialRenovationShare ?? PARTIAL_RENOVATION_SHARE
+      const counted = byScenario((s) =>
+        Math.max(
+          installYear[s],
+          Math.round(partial - (1 - share) * lifespan[s])
         )
       )
-      flags.push(flag('partial_renovation', { year: partial }))
+      flags.push(
+        counted.typical > installYear.typical
+          ? flag('partial_renovation', {
+              year: partial,
+              percent: Math.round(share * 100),
+            })
+          : flag('partial_renovation_no_effect', { year: partial })
+      )
+      installYear = counted
     }
 
     // Quantity in a profile's unit.
@@ -481,37 +577,62 @@ export function planComponents(
         unit === 'M2' ? 'area' : unit === 'LINEAR_M' ? 'length' : 'quantity'
       const own = numberValue(c.values, key, flags)
       if (own !== undefined) return own
-      // A per-area estimate stands for the whole house: what the other
-      // components of the type do not state is shared among those that
-      // state nothing, so listing parts without numbers does not make a
-      // house cheaper. A part of another building on the plot gets none.
-      const whole = inBuilding.has(c.id) ? null : estimate(defaults)
+      // A per-area estimate stands for the whole house, or for the whole
+      // building a part sits under: what the other components of the type
+      // do not state is shared among those that state nothing, so listing
+      // parts without numbers does not make a house cheaper. A building is
+      // taken as one storey, from its own area.
+      const size = building && buildingArea(building)
+      const sharesWall =
+        !!building &&
+        valueOf(building.values, 'attached') === true &&
+        defaults.quantityFromFootprint?.basis === 'wall'
+      if (sharesWall && size && defaults.quantityFromFootprint)
+        flags.push(flag('attached_wall_shared'))
+      const whole = building
+        ? size && defaults.quantityFromFootprint
+          ? {
+              total:
+                fromFootprint(defaults.quantityFromFootprint, size.area, 1) *
+                (sharesWall ? ATTACHED_WALL_SHARE : 1),
+              fromFootprint: true,
+            }
+          : null
+        : estimate(defaults)
       if (whole) {
-        if (whole.fromFootprint && withSecondary)
+        if (!building && whole.fromFootprint && withSecondary)
           flags.push(flag('footprint_includes_secondary_area'))
         const ownShare = valueOf(c.values, 'share')
         if (typeof ownShare === 'number' && ownShare > 0 && ownShare <= 1) {
           flags.push(flag('quantity_by_share', { key, share: ownShare }))
           return ownShare * whole.total
         }
-        const { unstated, stated, shares } = quantities(c.type, key)
+        const { unstated, stated, shares } = quantities(c.type, key, building)
         const share = (whole.total * (1 - shares) - stated) / unstated
         if (unit === 'EACH' ? share >= 1 : share > 0) {
           flags.push(
-            whole.fromFootprint
-              ? unstated === 1
-                ? flag('quantity_from_footprint', {
+            building && size
+              ? size.assumed
+                ? flag('quantity_from_usual_building', {
                     key,
-                    floors: footprintFloors as number,
+                    building: building.id,
+                    area: size.area,
                   })
-                : flag('quantity_from_footprint_shared', {
-                    key,
-                    floors: footprintFloors as number,
-                    count: unstated,
-                  })
-              : unstated === 1
-                ? flag('quantity_estimated', { key })
-                : flag('quantity_estimated_shared', { key, count: unstated })
+                : flag('quantity_from_building', { key, area: size.area })
+              : whole.fromFootprint
+                ? unstated === 1
+                  ? flag('quantity_from_footprint', {
+                      key,
+                      floors: footprintFloors as number,
+                    })
+                  : flag('quantity_from_footprint_shared', {
+                      key,
+                      floors: footprintFloors as number,
+                      count: unstated,
+                    })
+                : unstated === 1
+                  ? flag('quantity_estimated', { key })
+                  : flag('quantity_estimated_shared', { key, count: unstated })
           )
           return share
         }
@@ -522,12 +643,14 @@ export function planComponents(
         return 1
       }
       // A usual size stands in where nothing else can be estimated: a shed
-      // or a driveway without an area (forecastDefaults.assumedQuantity).
-      if (defaults.assumedQuantity !== undefined) {
-        flags.push(
-          flag('quantity_assumed', { key, value: defaults.assumedQuantity })
-        )
-        return defaults.assumedQuantity
+      // or a driveway without an area (forecastDefaults.assumedQuantity), and
+      // a smaller one for entrance steps registered as a deck.
+      const usual =
+        (looksLikeEntrance(c.name) ? defaults.assumedEntranceQuantity : null) ??
+        defaults.assumedQuantity
+      if (usual !== undefined) {
+        flags.push(flag('quantity_assumed', { key, value: usual }))
+        return usual
       }
       flags.push(flag('quantity_missing', { key }))
       return null

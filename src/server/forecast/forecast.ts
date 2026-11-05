@@ -251,8 +251,14 @@ export function computeForecast(input: ForecastInput): Forecast {
     events: ByScenario<Event[]>
   }
   const entries: Entry[] = []
-  const add = (item: Entry['item'], events: Entry['events']) => {
-    if (SCENARIOS.some((s) => events[s].length)) entries.push({ item, events })
+  const add = (
+    item: Entry['item'],
+    events: Entry['events'],
+    // Listed without any cost, so that its flags still say why.
+    always = false
+  ) => {
+    if (always || SCENARIOS.some((s) => events[s].length))
+      entries.push({ item, events })
   }
 
   // Components: replacements by lifespan, and repaints between them.
@@ -325,7 +331,8 @@ export function computeForecast(input: ForecastInput): Forecast {
         renewedAs: plan.renewal && !cost ? plan.renewal.match : undefined,
         flags,
       },
-      byScenario((s) => runs[s].replacements)
+      byScenario((s) => runs[s].replacements),
+      !plan.cost && !cost
     )
     if (plan.inspection) {
       // The earliest renewal in any scenario, which is high's.

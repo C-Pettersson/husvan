@@ -44,9 +44,9 @@ const inspectedYear: Attributes = {
 
 // A renovation of the parts that wear fastest (kitchen fronts and worktops,
 // bathroom fixtures and surfaces without a new membrane, the fan of a
-// ventilation unit). The forecast counts the part as half as old since then;
-// installation_year stays the year the whole was built or last fully
-// renovated (CLAUDE.md, "Regler för beräkningen").
+// ventilation unit). The forecast gives the part a share of a lifespan from
+// that year; installation_year stays the year the whole was built or last
+// fully renovated (CLAUDE.md, "Regler för beräkningen").
 const partialRenovation: Attributes = {
   partial_renovation_year: {
     label: { sv: 'Delrenoverad år', en: 'Partly renovated' },
@@ -720,7 +720,10 @@ export const componentTypes: ComponentTypeDefinition[] = [
     category: 'ventilation',
     attributeSchema: { ...replaceable, ...partialRenovation, ...modelName },
     allowedSubcomponents: ['electric_duct_heater'],
-    forecastDefaults: { earliestYear: 1975 },
+    // A new fan motor renews more of the unit's wear than new fronts do of a
+    // kitchen's, so half a lifespan from then rather than a third; a
+    // judgement, the heat exchanger and controls stay as old as they were.
+    forecastDefaults: { earliestYear: 1975, partialRenovationShare: 0.5 },
   },
   // Mechanical exhaust became usual in new homes in the early 1970s, with
   // early systems before that (Flexit; SFV 2009). With heat recovery it is
@@ -1240,8 +1243,10 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...orientation,
     },
     // A deck without an area is taken as the guides' standard example of
-    // 25 m2 (BraByggare 2026; Hantverkskollen's 30 and Offerta's 20).
-    forecastDefaults: { assumedQuantity: 25 },
+    // 25 m2 (BraByggare 2026; Hantverkskollen's 30 and Offerta's 20). That
+    // is a terrace: entrance steps by their name get 5 m2, about 2 × 2.5 m,
+    // a judgement since no guide prices them.
+    forecastDefaults: { assumedQuantity: 25, assumedEntranceQuantity: 5 },
   },
   // A balcony on an upper floor, as the deck is on the ground: a glazed one
   // is a common search criterion. Priced per balcony.
@@ -1288,9 +1293,13 @@ export const componentTypes: ComponentTypeDefinition[] = [
       ...condition,
     },
     // Priced through its parts: a detached garage's roof and facade are
-    // components under it, each with its own area. A building of its own,
-    // so its parts neither take from nor count toward the house's estimated
-    // roof and wall area (forecastDefaults.separateBuilding).
+    // components under it. A building of its own, so its parts neither take
+    // from nor count toward the house's estimated roof and wall area
+    // (forecastDefaults.separateBuilding). A part that states no area is
+    // estimated from the garage's; without that, from a usual 30 m2, between
+    // a single garage of 3 × 6 m and a double of about 6 × 8 m. No guide
+    // gives a figure, so the flag says it is assumed. A garage always has a
+    // roof and walls, so those are assumed when nothing registers them.
     allowedSubcomponents: [
       'garage_door',
       'roof_covering',
@@ -1298,7 +1307,11 @@ export const componentTypes: ComponentTypeDefinition[] = [
       'window',
       'exterior_door',
     ],
-    forecastDefaults: { separateBuilding: true },
+    forecastDefaults: {
+      separateBuilding: true,
+      assumedQuantity: 30,
+      assumeParts: ['roof_covering', 'facade'],
+    },
   },
 
   // The plot, apart from the buildings -----------------------------------------
@@ -1432,12 +1445,16 @@ export const componentTypes: ComponentTypeDefinition[] = [
         steel: ['Stål', 'Steel'],
         aluminium: ['Aluminium', 'Aluminium'],
       }),
+      ...area,
       ...installationYear,
       ...condition,
       last_painted_year: paint.last_painted_year,
     },
     // A carport with storage has walls, a window and a door as well as the
-    // roof, its gutters and the space under the roof.
+    // roof, its gutters and the space under the roof. Like a garage, its
+    // parts are estimated from its area; without one, from the usual 30 m2.
+    // A roof is assumed when nothing registers one; walls are not, since most
+    // carports are open.
     allowedSubcomponents: [
       'roof_covering',
       'roof_drainage',
@@ -1446,6 +1463,10 @@ export const componentTypes: ComponentTypeDefinition[] = [
       'exterior_door',
       'attic',
     ],
-    forecastDefaults: { separateBuilding: true },
+    forecastDefaults: {
+      separateBuilding: true,
+      assumedQuantity: 30,
+      assumeParts: ['roof_covering'],
+    },
   },
 ]

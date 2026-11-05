@@ -662,10 +662,15 @@
   "flag": {
     "uncertain": "{key} är osäker ({confidence} %)",
     "assumed_part": "Nämns inte i underlaget; antagen eftersom alla hus har en",
+    "assumed_building_part": "Nämns inte i underlaget; antagen eftersom byggnaden måste ha en",
+    "building_year_used": "Installationsår saknas; byggnadens eget år används",
     "construction_year_used": "Installationsår saknas; husets byggår används",
     "installation_year_unknown": "Installationsår okänt; spannet täcker hela livslängden",
     "quantity_estimated": "{key} uppskattad ur boytan",
     "quantity_estimated_shared": "{key} uppskattad ur boytan och delad på {count} delar",
+    "quantity_from_building": "{key} uppskattad ur byggnadens {area} m²",
+    "quantity_from_usual_building": "{key} uppskattad ur en vanlig byggnad på {area} m², eftersom varken delen eller byggnaden anger sin storlek",
+    "attached_wall_shared": "Sammanbyggd med huset, så tre av byggnadens fyra väggar räknas",
     "quantity_one_assumed": "Antal saknas; 1 antas",
     "quantity_missing": "{key} saknas; ingen kostnad",
     "profile_without_cost": "Livslängdsprofilen saknar kostnad",
@@ -701,7 +706,8 @@
     "ground_rent_revised": "Avgälden omregleras {year}; samma belopp ligger kvar därefter men är osäkert",
     "ground_rent_no_revision_year": "Omregleringsår saknas; avgälden kan omregleras inom horisonten och är därför osäker hela vägen",
     "earliest_year_used": "Installationsår saknas; typen fanns inte när huset byggdes, så den räknas från {year}",
-    "partial_renovation": "Delrenoverad {year}; räknas som hälften så gammal sedan dess, eftersom stomme, tätskikt eller kanaler inte förnyades",
+    "partial_renovation": "Delrenoverad {year}; ger {percent} % av en livslängd räknat därifrån, eftersom bara det som slits snabbast förnyades",
+    "partial_renovation_no_effect": "Delrenoverad {year}; flyttar inte bytet, eftersom delens egen livslängd räcker minst lika länge",
     "profile_default_used": "{keys} okänt; typens standardprofil med sitt breda spann används",
     "quantity_by_share": "{key} som andel {share} av husets uppskattade helhet",
     "quantity_assumed": "{key} saknas; en vanlig storlek på {value} antas",
@@ -963,6 +969,7 @@
     "installation_year_without_evidence": "Installationsåret {year} kommer från Claude utan dokument och citat; bekräfta det eller sänk säkerheten",
     "installation_year_before_type": "Installationsåret {year} är före {earliest}, då typen började installeras i svenska hus",
     "separate_building_part_at_top_level": "{type} \"{name}\" ligger på toppnivå men hör enligt namnet till ett garage eller en komplementbyggnad, så den tar en andel av husets uppskattade yta; flytta den under byggnaden med egen yta",
-    "building_without_parts": "{type} \"{name}\" har inget tak under sig; en byggnad prissätts genom sina delar, så den kostar inget i prognosen"
+    "building_without_parts": "{type} \"{name}\" har inget tak under sig; en byggnad prissätts genom sina delar, så den kostar inget i prognosen",
+    "building_parts_assumed": "{type} \"{name}\" har inget tak under sig; prognosen antar ett ur byggnadens yta, så registrera det underlaget säger"
   }
 }

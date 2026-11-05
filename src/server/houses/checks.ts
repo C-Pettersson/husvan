@@ -7,7 +7,11 @@
 import type { PrismaClient } from '@prisma/client'
 import { forecastDefaultsSchema } from '@/server/library/schema'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
-import { BUILDING_TYPES, looksLikeOtherBuilding } from './buildings'
+import {
+  BUILDINGS_WITH_ASSUMED_ROOF,
+  BUILDING_TYPES,
+  looksLikeOtherBuilding,
+} from './buildings'
 import { flatten, valueOf } from './derive'
 import type { ComponentView, HouseView, KeyValueView } from './getHouse'
 
@@ -30,6 +34,8 @@ const ENGLISH = {
     `${p.type} "${p.name}" sits at top level but by its name belongs to a garage or an outbuilding, so it takes a share of the house's estimated area; move it under that building with its own area`,
   building_without_parts: (p: Params) =>
     `${p.type} "${p.name}" has no roof_covering under it; a building is priced through its parts, so it costs nothing in the forecast`,
+  building_parts_assumed: (p: Params) =>
+    `${p.type} "${p.name}" has no roof_covering under it; the forecast assumes one from the building's area, so register what the documents say`,
 } satisfies Record<string, (p: Params) => string>
 
 export type WarningCode = keyof typeof ENGLISH
@@ -154,10 +160,22 @@ export function houseWarnings(
       !c.children.some((x) => x.type === 'roof_covering')
     )
       warnings.push(
-        warn('building_without_parts', c.id, {
-          type: c.type,
-          name: c.name ?? '',
-        })
+        warn(
+          // A roof at top level named for the building holds the assumption
+          // back; it has its own warning above.
+          BUILDINGS_WITH_ASSUMED_ROOF.includes(c.type) &&
+            !components.some(
+              (x) =>
+                x.type === 'roof_covering' && looksLikeOtherBuilding(x.name)
+            )
+            ? 'building_parts_assumed'
+            : 'building_without_parts',
+          c.id,
+          {
+            type: c.type,
+            name: c.name ?? '',
+          }
+        )
       )
   }
   return warnings
