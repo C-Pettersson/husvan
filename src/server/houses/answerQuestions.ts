@@ -8,6 +8,7 @@
 import { z } from 'zod'
 import type { PrismaClient } from '@prisma/client'
 import type { WorkItemInput } from '@/server/forecast/forecast'
+import { parseAssumedId } from '@/server/forecast/plan'
 import type { Question } from '@/server/forecast/questions'
 import { analyseHouse } from '@/server/forecast/run'
 import { emptyChanges, type ChangesInput, type ValueInput } from './changes'
@@ -113,12 +114,17 @@ export function answersToChanges(
       // its answers.
       const part = input.components.find((c) => c.ref === q.componentId)
       if (part) part.values.push(value)
-      else
+      else {
+        // A part assumed for a garage goes under that garage, and keeps the
+        // name that says whose it is.
+        const parent = parseAssumedId(q.componentId)?.values.building
         input.components.push({
           ref: q.componentId,
           type: q.type,
+          ...(parent && { parent, name: q.name ?? undefined }),
           values: [value],
         })
+      }
     } else {
       const part = input.componentValues.find(
         (c) => c.componentId === q.componentId

@@ -124,12 +124,19 @@ const ESTIMATED: FlagCode[] = [
   'quantity_from_footprint_shared',
   'quantity_one_assumed',
 ]
+// A usual size is a guess about this very part, such as a deck of 25 m2, and
+// the answer can be read off the listing or measured at a viewing.
 const askQuantity = (f: Flag) =>
   f.code === 'quantity_missing' ||
+  f.code === 'quantity_assumed' ||
   (ESTIMATED.includes(f.code) && (f.params?.key ?? 'quantity') === 'quantity')
 
 // Floors a Swedish house usually has; 1.5 is a storey under the roof.
 const FLOOR_ANSWERS = [1, 1.5, 2]
+
+// Sizes tried for a garage or another building whose parts are priced on a
+// usual size: a single garage, a double one and a large one, in m2.
+const BUILDING_AREA_ANSWERS = [20, 40, 60]
 
 // Condition 1, replacement within two years, is a defect, which the
 // inspection reports as a work item. Trying it would make every part look
@@ -271,7 +278,7 @@ export function openQuestions(input: QuestionInput): OpenQuestions {
         .map((p) => ({
           componentId: p.componentId,
           type: p.type,
-          name: null,
+          name: p.name,
           documented: false,
           values: [],
           plan: p,
@@ -293,6 +300,16 @@ export function openQuestions(input: QuestionInput): OpenQuestions {
         values: [],
       })
 
+  // Buildings whose size their parts had to assume: one answer about the
+  // building settles its roof and its facade together.
+  const usualBuildings = new Set(
+    plans.flatMap((p) =>
+      p.flags
+        .filter((f) => f.code === 'quantity_from_usual_building')
+        .map((f) => f.params?.building)
+    )
+  )
+
   for (const { values, plan, ...target } of targets) {
     const risk = riskKeys(target.type, values)
     for (const [key, def] of Object.entries(attributes.get(target.type) ?? {}))
@@ -302,6 +319,8 @@ export function openQuestions(input: QuestionInput): OpenQuestions {
         })
       else if (def.datatype === 'boolean')
         ask(target, values, key, [true, false], { decides: risk[key] })
+    if (target.componentId && usualBuildings.has(target.componentId))
+      ask(target, values, 'area', BUILDING_AREA_ANSWERS)
     if (!plan) continue
 
     const oldest =

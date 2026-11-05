@@ -444,6 +444,30 @@ const work = (w: Partial<WorkItemInput>): WorkItemInput => ({
 })
 
 describe('computeForecast', () => {
+  it('lists a part without a cost, so that its flags say why', () => {
+    const noCost = plan(comp('roof_covering'))
+    expect(noCost.cost).toBeNull()
+    const f = computeForecast({
+      startYear: START,
+      horizonYears: 3,
+      plans: [noCost],
+      workItems: [],
+      running: [],
+      trend: null,
+      capital: null,
+    })
+    expect(f.total.typical).toBe(0)
+    const [item] = f.items
+    expect(item.componentId).toBe(noCost.componentId)
+    expect(item.total).toEqual({ low: 0, typical: 0, high: 0 })
+    expect(item.flags.map(flagText)).toEqual(
+      expect.arrayContaining([
+        'area missing; no cost',
+        'replacement not costed',
+      ])
+    )
+  })
+
   it('spreads work items, adds running costs and sums the scenarios', () => {
     const f = computeForecast({
       startYear: START,

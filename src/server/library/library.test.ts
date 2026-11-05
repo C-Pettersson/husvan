@@ -325,6 +325,20 @@ describe('selectProfile', () => {
         sheet_profile: 'standing_seam',
       })?.match
     ).toEqual({ material: 'sheet_metal', sheet_profile: 'standing_seam' })
-    expect(selectProfile(roofs, { material: 'thatch' })).toBeUndefined()
+    // A material without a profile, or none, takes the type's default.
+    expect(selectProfile(roofs, { material: 'thatch' })?.match).toEqual({})
+    expect(selectProfile(roofs, {})?.match).toEqual({})
+  })
+
+  it('leaves no type without a profile for an unknown attribute', () => {
+    const types = [...new Set(lifespanProfiles.map((p) => p.type))]
+    const withoutDefault = types.filter(
+      (type) =>
+        !lifespanProfiles.some(
+          (p) => p.type === type && !Object.keys(p.match ?? {}).length
+        )
+    )
+    // A guest house or workshop is priced through its parts instead.
+    expect(withoutDefault).toEqual(['outbuilding'])
   })
 })

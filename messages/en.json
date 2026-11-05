@@ -662,10 +662,15 @@
   "flag": {
     "uncertain": "{key} is uncertain ({confidence} %)",
     "assumed_part": "Not in the documents; assumed, as every house has one",
+    "assumed_building_part": "Not in the documents; assumed, as the building must have one",
+    "building_year_used": "Installation year missing; the building's own year is used",
     "construction_year_used": "Installation year missing; the construction year is used",
     "installation_year_unknown": "Installation year unknown; the range covers the whole lifespan",
     "quantity_estimated": "{key} estimated from the living area",
     "quantity_estimated_shared": "{key} estimated from the living area and shared among {count} parts",
+    "quantity_from_building": "{key} estimated from the building's {area} m²",
+    "quantity_from_usual_building": "{key} estimated from a usual building of {area} m², since neither this part nor the building states its size",
+    "attached_wall_shared": "Attached to the house, so three of the building's four walls are counted",
     "quantity_one_assumed": "Quantity missing; 1 assumed",
     "quantity_missing": "{key} missing; no cost",
     "profile_without_cost": "The lifespan profile has no cost",
@@ -701,7 +706,8 @@
     "ground_rent_revised": "The ground rent is revised in {year}; the same amount is kept after that but is uncertain",
     "ground_rent_no_revision_year": "Revision year missing; the rent may be revised within the horizon, so it is uncertain throughout",
     "earliest_year_used": "Installation year missing; the type did not exist when the house was built, so it counts from {year}",
-    "partial_renovation": "Partly renovated in {year}; counted as half as old since then, since the frame, membrane or ducts were not renewed",
+    "partial_renovation": "Partly renovated in {year}; gives {percent} % of a lifespan from then, since only what wears fastest was renewed",
+    "partial_renovation_no_effect": "Partly renovated in {year}; does not move the replacement, since the part's own lifespan runs at least as long",
     "profile_default_used": "{keys} unknown; the type’s default profile with its wide range is used",
     "quantity_by_share": "{key} as share {share} of the house’s estimated whole",
     "quantity_assumed": "{key} missing; a usual {value} is assumed",
@@ -963,6 +969,7 @@
     "installation_year_without_evidence": "Installation year {year} comes from Claude without a document or a quote; confirm it or lower its confidence",
     "installation_year_before_type": "Installation year {year} is before {earliest}, when the type first came into Swedish houses",
     "separate_building_part_at_top_level": "{type} \"{name}\" sits at top level but by its name belongs to a garage or an outbuilding, so it takes a share of the house’s estimated area; move it under that building with its own area",
-    "building_without_parts": "{type} \"{name}\" has no roof under it; a building is priced through its parts, so it costs nothing in the forecast"
+    "building_without_parts": "{type} \"{name}\" has no roof under it; a building is priced through its parts, so it costs nothing in the forecast",
+    "building_parts_assumed": "{type} \"{name}\" has no roof under it; the forecast assumes one from the building's area, so register what the documents say"
   }
 }

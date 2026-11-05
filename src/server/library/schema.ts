@@ -97,8 +97,17 @@ export const forecastDefaultsSchema = z.object({
     .optional(),
   // A usual quantity, in the unit of the profile's costUnit, for a part
   // whose own is missing and that nothing in the house can estimate: a shed
-  // of 12 m2, a driveway of 60 m2. Flagged as assumed.
+  // of 12 m2, a driveway of 60 m2. Flagged as assumed. On a building
+  // (separateBuilding) it is also the area its parts are estimated from when
+  // the building states none: a garage of 30 m2.
   assumedQuantity: z.number().positive().optional(),
+  // The usual quantity instead when the part's name says it is an entrance,
+  // not a terrace: an entrébro of 5 m2 registered as a deck.
+  assumedEntranceQuantity: z.number().positive().optional(),
+  // How much of a lifespan a partial renovation gives, counted from that
+  // year, where the part renewed is more of the whole than the default third:
+  // the fan motor of a ventilation unit.
+  partialRenovationShare: z.number().positive().max(1).optional(),
   // Attributes read from another component of the house, attribute to
   // component type, such as drainage priced by the foundation type. The
   // component's own value wins; profiles may match on them.
@@ -162,10 +171,13 @@ export const forecastDefaultsSchema = z.object({
   // year, not the construction year: a 1979 house's charger is not from 1979.
   earliestYear: z.number().int().min(1900).max(2100).optional(),
   // A building of its own on the plot, such as a garage: the parts under it
-  // state their own quantities and neither take from nor count toward the
-  // house's estimated quantities, and they do not stand in for a part the
-  // house itself is assumed to have.
+  // state their own quantities or are estimated from the building's area,
+  // neither take from nor count toward the house's estimated quantities, and
+  // do not stand in for a part the house itself is assumed to have.
   separateBuilding: z.boolean().optional(),
+  // Subcomponent types a building must have although nothing registers them,
+  // assumed under it from its area: a garage's roof and facade.
+  assumeParts: z.array(keySchema).min(1).optional(),
   // A cheaper renewal than replacement when the component's attributes are
   // among `when` or unknown, such as relining a cast-iron pipe. Low and typical renew
   // with the profile that `match` selects; high replaces.
@@ -275,6 +287,10 @@ export function validateLibrary(
       if (!byType.has(sub))
         errors.push(`${t.type}: unknown subcomponent ${sub}`)
     }
+    for (const part of t.forecastDefaults?.assumeParts ?? []) {
+      if (!t.allowedSubcomponents?.includes(part))
+        errors.push(`${t.type}: assumes ${part}, not an allowed subcomponent`)
+    }
   }
 
   for (const p of profiles) {
@@ -346,7 +362,9 @@ export function validateLibrary(
     for (const part of t.forecastDefaults?.assumeUnlessParts ?? []) {
       const other = byType.get(part.type)
       if (!other) {
-        errors.push(`${t.type}: assumeUnlessParts names unknown type ${part.type}`)
+        errors.push(
+          `${t.type}: assumeUnlessParts names unknown type ${part.type}`
+        )
         continue
       }
       for (const [key, values] of Object.entries(part.where ?? {})) {

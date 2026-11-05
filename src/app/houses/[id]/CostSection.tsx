@@ -296,6 +296,7 @@ export default function CostSection({ houseId }: { houseId: string }) {
                         .filter(
                           (f) =>
                             f.code !== 'assumed_part' &&
+                            f.code !== 'assumed_building_part' &&
                             f.code !== 'cheaper_renewal'
                         )
                         .map((f, j) => (

@@ -18,3 +18,7 @@ export function looksLikeOtherBuilding(name: string | null | undefined) {
 // separateBuilding in the library; listed here for the checks, which run
 // without the library).
 export const BUILDING_TYPES = ['garage', 'carport', 'outbuilding']
+
+// Those whose roof the forecast assumes when nothing registers one
+// (forecastDefaults.assumeParts).
+export const BUILDINGS_WITH_ASSUMED_ROOF = ['garage', 'carport']

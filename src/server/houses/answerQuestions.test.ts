@@ -183,3 +183,35 @@ describe('answersToChanges', () => {
     }
   })
 })
+
+describe('a part assumed for a building', () => {
+  const GARAGE = '0b5c7f0e-0000-4000-8000-000000000003'
+  const id = `assumed:roof_covering:building=${GARAGE}`
+
+  it('is created under that building', () => {
+    const r = answersToChanges(
+      [
+        question({
+          id: `${id}:material`,
+          componentId: id,
+          type: 'roof_covering',
+          name: 'Kallgarage',
+          documented: false,
+          key: 'material',
+          manual: { datatype: 'number' },
+        }),
+      ],
+      [],
+      [{ questionId: `${id}:material`, value: 'sheet_metal' }]
+    )
+    expect(r.ok && r.input.components).toEqual([
+      {
+        ref: id,
+        type: 'roof_covering',
+        parent: GARAGE,
+        name: 'Kallgarage',
+        values: [{ key: 'material', value: 'sheet_metal', confidence: 1 }],
+      },
+    ])
+  })
+})

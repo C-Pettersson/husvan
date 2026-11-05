@@ -105,10 +105,17 @@ describe('Yxgränd 6: the garage roof at top level', () => {
     expect(
       warnings.filter((w) => w.code === 'separate_building_part_at_top_level')
     ).toHaveLength(1)
-    // Without an area the garage roof costs nothing instead of the house's
-    // share.
+    // Without an area of its own or the garage's, the roof is priced on a
+    // usual garage, not on nothing and not on the house's share.
     const bare = analyse('yxgrand-6', under(roof))
-    expect(byName(bare.plans, 'Tak, garage').cost).toBeNull()
+    const usual = byName(bare.plans, 'Tak, garage')
+    expect(usual.quantity).toBeCloseTo(1.3 * 30)
+    expect(usual.flags.map((f) => f.code)).toContain(
+      'quantity_from_usual_building'
+    )
+    expect(byName(bare.plans, 'Sadeltak, bostadshus').quantity).toBeCloseTo(
+      1.3 * 121
+    )
   })
 
   it('assumes the sewer under the slab and no radiators beside water floor heating', () => {
@@ -180,9 +187,9 @@ describe('all four houses', () => {
   // costs). A change here is a change in a rule or a profile: check it is
   // meant before updating.
   it.each([
-    ['yxgrand-6', 1951143, 1479802],
-    ['mjardgatan-1', 1564448, 1293252],
-    ['bredviksvagen-15', 1595031, 1602579],
+    ['yxgrand-6', 1980771, 1479802],
+    ['mjardgatan-1', 1805637, 1293252],
+    ['bredviksvagen-15', 1660790, 1602579],
     ['ytterviksvagen-30a', 2004309, 1483957],
   ] as const)('%s lands on its totals', (name, debt, total) => {
     const a = analyse(name)

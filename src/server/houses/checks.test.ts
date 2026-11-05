@@ -135,6 +135,27 @@ describe('houseWarnings', () => {
     expect(w[0].text).toContain('"Tak, garage"')
     expect(w[1].text).toContain('"Fristående garage"')
   })
+
+  it('says a bare garage’s roof is assumed, and an outbuilding’s is not', () => {
+    const w = houseWarnings(
+      {
+        values: [],
+        components: [
+          comp('garage', [], { name: 'Kallgarage' }),
+          comp('carport', [], { name: 'Carport' }),
+          comp('outbuilding', [kv('building_kind', 'guest_house')], {
+            name: 'Gäststuga',
+          }),
+        ],
+      },
+      library
+    )
+    expect(w.map((x) => x.code)).toEqual([
+      'building_parts_assumed',
+      'building_parts_assumed',
+      'building_without_parts',
+    ])
+  })
 })
 
 describe('looksLikeOtherBuilding', () => {

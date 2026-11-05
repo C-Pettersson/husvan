@@ -337,6 +337,53 @@ describe('openQuestions', () => {
     })
   })
 
+  it('asks for a building’s area once when its parts assume a usual size', () => {
+    const garage: ComponentView = {
+      ...comp('garage', [], 'garage'),
+      children: [
+        comp('roof_covering', [kv('installation_year', 2000)], 'garage-roof'),
+      ],
+    }
+    const list = [garage, foundation]
+    const r = openQuestions({
+      ...input(list),
+      library: {
+        ...library,
+        defaults: new Map([
+          ...library.defaults,
+          ['garage', { separateBuilding: true, assumedQuantity: 30 }],
+          [
+            'roof_covering',
+            { quantityFromFootprint: { basis: 'area', factor: 1 } },
+          ],
+        ]),
+      },
+    })
+    const q = find(r, 'garage', 'area')!
+    expect(q.why).toBe('missing')
+    expect(q.how).toBe('ask')
+    expect(q.answers.map((a) => a.value)).toEqual([20, 40, 60])
+    // 1000 to 2000 kr per m2 over 40 m2 between the answers, 26 of 40 years used.
+    expect(q.swing!.maintenanceDebtSek).toBeCloseTo(1500 * 40 * (26 / 40))
+    expect(find(r, 'garage-roof', 'area')).toBeUndefined()
+  })
+
+  it('asks for the area of a part priced on a usual size', () => {
+    const deck = comp('deck', [kv('installation_year', 2000)], 'deck')
+    const r = openQuestions({
+      ...input([deck, foundation]),
+      library: {
+        ...library,
+        defaults: new Map([
+          ...library.defaults,
+          ['deck', { assumedQuantity: 25 }],
+        ]),
+        profiles: [...library.profiles, profile({ type: 'deck' })],
+      },
+    })
+    expect(find(r, 'deck', 'area')).toMatchObject({ why: 'estimated' })
+  })
+
   it('lists what it cannot try, after the ones it can', () => {
     const r = openQuestions(
       input(

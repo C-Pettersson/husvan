@@ -24,7 +24,7 @@ import {
   woodWindowRepaintSources,
 } from './repaint.mts'
 
-export const lifespanProfiles: LifespanProfileDefinition[] = [
+const profilesByAttribute: LifespanProfileDefinition[] = [
   // Typical 45 is a researcher midpoint. Underlay felt (underlagspapp) often
   // fails before the tiles (Planima: 35-40 years), so a relay of the underlay
   // may come before the tiles are worn out.
@@ -4765,4 +4765,91 @@ export const lifespanProfiles: LifespanProfileDefinition[] = [
       },
     ],
   },
+]
+
+// The default of a type whose profiles all match on an attribute, for a part
+// where that attribute is unknown: a roof without a material. Without one the
+// part would have no profile, so it would cost nothing and still take its
+// share of the house's estimated area. The figures span the type's usual
+// choices, leaving out the extremes that would make the range useless, as the
+// driveway's default leaves out gravel; the sources are those of the profiles
+// it spans. Flagged profile_default_used. Repainting is left out, since it
+// depends on what the material turns out to be.
+function spanning(
+  type: string,
+  figures: Pick<
+    LifespanProfileDefinition,
+    | 'lifespanMinYears'
+    | 'lifespanTypicalYears'
+    | 'lifespanMaxYears'
+    | 'costLowSek'
+    | 'costHighSek'
+    | 'costUnit'
+  >
+): LifespanProfileDefinition {
+  const seen = new Set<string>()
+  return {
+    type,
+    match: {},
+    ...figures,
+    priceYear: 2026,
+    sources: profilesByAttribute
+      .filter((p) => p.type === type)
+      .flatMap((p) => p.sources)
+      .filter((source) => {
+        if (seen.has(source.name)) return false
+        seen.add(source.name)
+        return true
+      }),
+  }
+}
+
+export const lifespanProfiles: LifespanProfileDefinition[] = [
+  ...profilesByAttribute,
+  // Roofing felt's 15 years to tile's 60, at felt's 1 000 to clay tile's
+  // 3 500 kr/m2; standing seam at 4 500 and century-old clay are left out.
+  spanning('roof_covering', {
+    lifespanMinYears: 15,
+    lifespanTypicalYears: 40,
+    lifespanMaxYears: 60,
+    costLowSek: 1000,
+    costHighSek: 3500,
+    costUnit: 'M2',
+  }),
+  // Render's 20 years to brick's 80, at wood panel's 1 800 to render's
+  // 4 000 kr/m2.
+  spanning('facade', {
+    lifespanMinYears: 20,
+    lifespanTypicalYears: 45,
+    lifespanMaxYears: 80,
+    costLowSek: 1800,
+    costHighSek: 4000,
+    costUnit: 'M2',
+  }),
+  spanning('underfloor_heating', {
+    lifespanMinYears: 25,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 40,
+    costLowSek: 750,
+    costHighSek: 2000,
+    costUnit: 'M2',
+  }),
+  // Wood's 10 years to metal's 50; mesh's lowest price is left out.
+  spanning('fence', {
+    lifespanMinYears: 10,
+    lifespanTypicalYears: 20,
+    lifespanMaxYears: 50,
+    costLowSek: 1000,
+    costHighSek: 3000,
+    costUnit: 'LINEAR_M',
+  }),
+  // Concrete blocks to cast concrete and stone; sleepers are left out.
+  spanning('retaining_wall', {
+    lifespanMinYears: 30,
+    lifespanTypicalYears: 45,
+    lifespanMaxYears: 60,
+    costLowSek: 3000,
+    costHighSek: 12000,
+    costUnit: 'LINEAR_M',
+  }),
 ]

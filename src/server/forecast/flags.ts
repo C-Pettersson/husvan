@@ -6,12 +6,18 @@ type Params = Record<string, string | number>
 const ENGLISH = {
   uncertain: (p: Params) => `${p.key} uncertain (confidence ${p.confidence})`,
   assumed_part: () => 'not in the documents; assumed, as every house has one',
+  assumed_building_part: () =>
+    'not in the documents; assumed, as the building must have one',
+  building_year_used: () =>
+    "installation_year missing; the building's own year used",
   construction_year_used: () =>
     'installation_year missing; construction_year used',
   earliest_year_used: (p: Params) =>
     `installation_year missing; the type did not exist when the house was built, so it counts from ${p.year}`,
   partial_renovation: (p: Params) =>
-    `partly renovated in ${p.year}; counted as half as old since then, since the frame, membrane or ducts were not renewed`,
+    `partly renovated in ${p.year}; gives ${p.percent} % of a lifespan from then, since only what wears fastest was renewed`,
+  partial_renovation_no_effect: (p: Params) =>
+    `partly renovated in ${p.year}; does not move the replacement, since the part's own lifespan runs at least as long`,
   profile_default_used: (p: Params) =>
     `${p.keys} unknown; the type's default profile with its wide range is used`,
   quantity_by_share: (p: Params) =>
@@ -33,6 +39,12 @@ const ENGLISH = {
     `${p.key} estimated from living_area over ${p.floors} floor(s)`,
   quantity_from_footprint_shared: (p: Params) =>
     `${p.key} estimated from living_area over ${p.floors} floor(s), shared among ${p.count} components`,
+  quantity_from_building: (p: Params) =>
+    `${p.key} estimated from the building's ${p.area} m2`,
+  quantity_from_usual_building: (p: Params) =>
+    `${p.key} estimated from a usual building of ${p.area} m2, since neither this part nor the building states its size`,
+  attached_wall_shared: () =>
+    'attached to the house, so three of the building’s four walls are counted',
   quantity_one_assumed: () => 'quantity missing; 1 assumed',
   priced_by_context: (p: Params) =>
     `priced for the house's ${p.key} = ${p.value}`,
