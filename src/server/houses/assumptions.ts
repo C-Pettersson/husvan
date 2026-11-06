@@ -1,7 +1,6 @@
 // Forecast assumptions (CLAUDE.md, "Kostnadsprognos"): the user's own
 // choices, approved directly. Append only; the newest row per (house, key)
-// wins, and a row without a house is the default for all houses. Such a row
-// has no owner, which holds while version 1 has one user.
+// wins, and a row without a house is the owner's default for all their houses.
 import { z } from 'zod'
 import type { PrismaClient } from '@prisma/client'
 
@@ -56,6 +55,7 @@ export async function setAssumptions(
     await tx.assumption.createMany({
       data: entries.map(([key, value]) => ({
         houseId: houseId ?? null,
+        ownerId: houseId ? null : ownerId,
         key,
         value: value as string | number,
         changesetId: changeset.id,

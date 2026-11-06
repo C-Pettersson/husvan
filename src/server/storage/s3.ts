@@ -65,7 +65,7 @@ export function signRequest(
     Config,
     'endpoint' | 'region' | 'accessKeyId' | 'secretAccessKey'
   >,
-  method: 'GET' | 'PUT',
+  method: 'GET' | 'PUT' | 'DELETE',
   path: string,
   payloadHash: string,
   extraHeaders: Record<string, string> = {},
@@ -156,4 +156,24 @@ export async function getObject(key: string) {
     sha256Hex('')
   )
   return fetch(request.url, { headers: request.headers, cache: 'no-store' })
+}
+
+// Deleting an object that is already gone is not an error, so a failed erasure
+// can simply be run again.
+export async function deleteObject(key: string) {
+  const config = storageConfig()
+  const request = signRequest(
+    config,
+    'DELETE',
+    objectPath(config, key),
+    sha256Hex('')
+  )
+  const response = await fetch(request.url, {
+    method: 'DELETE',
+    headers: request.headers,
+  })
+  if (!response.ok && response.status !== 404)
+    throw new Error(
+      `Storage delete failed with ${response.status}: ${(await response.text()).slice(0, 200)}`
+    )
 }

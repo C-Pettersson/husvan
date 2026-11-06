@@ -47,6 +47,7 @@ model User {
   oauthaccesstokens  OauthAccessToken[]
   oauthconsents      OauthConsent[]
   allowedEmails      AllowedEmail[]
+  defaultAssumptions Assumption[]
 
   @@map("user")
 }
@@ -811,23 +812,30 @@ enum AreaLevel {
 // Forecast assumptions --------------------------------------------------------
 
 // Append only; the newest approved row per (houseId, key) wins. houseId null
-// is the default for all houses. Keys and their value shapes are validated in
-// code: horizon_years, start_year, interest_rate, loan_sek, borrower_count,
-// electricity_price_sek_kwh, district_heating_price_sek_kwh,
-// operating_cost_trend ('none' | 'municipality'), household_income_sek,
-// leasehold_buyout_year (null = keep the leasehold).
+// is the owner's default for all their houses; ownerId says whose, and is null
+// on a row with a house, which has its owner through the house. Keys and their
+// value shapes are validated in code: horizon_years, start_year, interest_rate,
+// loan_sek, borrower_count, electricity_price_sek_kwh,
+// district_heating_price_sek_kwh, operating_cost_trend ('none' | 'municipality'),
+// household_income_sek, leasehold_buyout_year (null = keep the leasehold).
 model Assumption {
   id          String   @id @default(uuid(7)) @db.Uuid
   houseId     String?  @db.Uuid
+  ownerId     String?
   key         String
   value       Json
   changesetId String   @db.Uuid
   createdAt   DateTime @default(now())
 
   house     House?    @relation(fields: [houseId], references: [id])
+  // Restrict, like House.owner: erasure removes these rows itself
+  // (src/server/users/deleteAccount.ts), and a default that lost its owner
+  // could never be exported or erased.
+  owner     User?     @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   changeset Changeset @relation(fields: [changesetId], references: [id])
 
   @@index([houseId, key])
+  @@index([ownerId, key])
 }
 
 // Saved forecasts, to see how the assessment of a house changes ---------------
