@@ -4,6 +4,7 @@
     "description": "Understand what a house costs over time."
   },
   "nav": {
+    "label": "Main menu",
     "houses": "Houses",
     "gettingStarted": "Get started",
     "signIn": "Sign in",
@@ -13,11 +14,21 @@
   },
   "home": {
     "title": "What does the house cost over time?",
-    "lead": "Husvan is the house’s memory. Your own AI reads the listing and the inspection, Husvan keeps what is known about the house and works out maintenance, running costs and replacements, so you can compare the houses on equal terms.",
+    "lead": "Your own Claude reads the listing and the inspection. Husvan keeps what is known about the house and works out maintenance, running costs and replacements, so you can compare the houses on equal terms.",
     "open": "Go to your houses",
     "signIn": "Sign in",
-    "split": "The thinking in your AI, the memory in Husvan",
-    "splitLead": "AI models keep getting better. Husvan gets better with them, because what takes judgement is done by your AI and what has to last is kept by Husvan.",
+    "access": "Invitation required, and you need a Claude account.",
+    "hero": {
+      "label": "Example: two houses, the same sums",
+      "houseA": "Videvägen 7",
+      "houseB": "Lingonstigen",
+      "price": "Price",
+      "amount": "+{amount, number} kr",
+      "summary": "{measure}: {house} is {amount, number} kronor more expensive",
+      "takeaway": "Lingonstigen has a new roof and newer pipes. The difference is almost entirely the roof and the crawl space, so those are what you ask the agent about."
+    },
+    "flow": "From listing to comparison",
+    "flowLead": "You upload the documents and ask in your own Claude. Claude reads and interprets. Husvan keeps what you approve and does the sums on it.",
     "chat": {
       "label": "An example conversation",
       "you": "You",
@@ -43,14 +54,14 @@
           "text": "What will the house cost per year over the next 15 years?"
         },
         "forecast": {
-          "text": "Around 74,000 kronor a year in today’s money, with a range from 58,000 to 96,000. Most of it is running costs. The largest single item is the roof, which is nearing the end of its lifespan. The range is wide because the age of the ventilation is missing. Is it in the energy certificate?",
+          "text": "Around <b>74,000 kronor a year</b> in today’s money, with a range from 58,000 to 96,000. Most of it is running costs. The largest single item is the roof, which is nearing the end of its lifespan. The range is wide because the age of the ventilation is missing. Is it in the energy certificate?",
           "note": "forecast by fixed rules, with a list of what is missing"
         },
         "compare": {
           "text": "How does it compare with the house on Lingonstigen?"
         },
         "comparison": {
-          "text": "Lingonstigen costs 400,000 kronor more, but has a new roof and newer pipes. Counting the maintenance debt, Videvägen comes out 120,000 kronor more expensive. The difference is almost entirely the roof and the crawl space, so those are what I would ask the agent about.",
+          "text": "<b>Lingonstigen costs 400,000 kronor more</b>, but has a new roof and newer pipes. Counting the maintenance debt, <b>Videvägen comes out 120,000 kronor more expensive</b>. The difference is almost entirely the roof and the crawl space, so those are what I would ask the agent about.",
           "note": "maintenance-adjusted price for both houses, item by item"
         }
       }
@@ -59,7 +70,7 @@
     "steps": {
       "connect": {
         "title": "Connect Husvan to Claude",
-        "body": "Husvan is a connector in your own Claude. All reading and interpreting happens there."
+        "body": "You need a Claude account. That is where you add Husvan as a connector, and where all reading and interpreting happens."
       },
       "upload": {
         "title": "Upload the documents in the chat",
@@ -74,7 +85,7 @@
         "body": "Ask Claude about cost per year, maintenance debt and maintenance-adjusted price. The answers build on Husvan’s figures, with a range from low to high."
       }
     },
-    "measures": "What it calculates",
+    "measures": "What Husvan works out",
     "debt": {
       "title": "Maintenance debt",
       "body": "How much of each part is already used up, in kronor. A roof halfway through its lifespan is half a roof, whenever it is replaced."
@@ -87,17 +98,30 @@
       "title": "Cost per year",
       "body": "Replacements by lifespan, repainting, work items from the inspection and running costs, in today’s kronor over the horizon you choose."
     },
-    "principles": "What it holds to",
+    "principles": "How Husvan counts",
     "principle": {
-      "unknown": "Unknown is not no. A listing that does not mention a pool does not make it a no.",
-      "disclosure": "Saying less does not make a house cheaper. Parts every house has are counted even when the documents leave them out.",
-      "sources": "Every value has a source: which document, which passage and how sure the reading is.",
-      "model": "The server interprets no documents and calls no AI. Nothing in Husvan is built for a particular model, so a better AI gives better answers without anything being rebuilt."
+      "unknown": {
+        "title": "Features not mentioned stay unknown",
+        "body": "If the listing says nothing about a pool, that shows as unknown, and the house stays in the list when you filter on pools."
+      },
+      "disclosure": {
+        "title": "Parts every house has are always counted",
+        "body": "If the documents leave out the roof or the pipes, Husvan counts them from the year the house was built and marks the item as assumed. A house does not get cheaper because its listing says less."
+      },
+      "sources": {
+        "title": "Every value has a source",
+        "body": "You see which document it came from, which passage says it and how sure the reading is."
+      },
+      "model": {
+        "title": "Husvan interprets no documents",
+        "body": "Your Claude does that, and Husvan calls no AI itself. Husvan stores what you approve and calculates by fixed rules, so the same facts give the same total. Nothing is built for a particular model, so the answers improve as the models do."
+      }
     },
     "later": "Once the house is bought: maintenance plan and year wheel",
-    "laterBody": "The same house becomes the starting point for maintenance, with nothing moved and nothing for you to type in. Every part gets its checks by type, condition and location, and the year wheel lays them out month by month together with the inspection's remarks and the forecast's renewals. Even as a candidate you see the first year's checks and how many need a professional.",
+    "laterStatus": "Coming later",
+    "laterBody": "Maintenance starts from the same facts about the house, so you have nothing to type in again. Every part will get its checks by type, condition and location, and the year wheel will lay them out month by month together with the inspection’s remarks and the forecast’s renewals.",
     "wheel": {
-      "label": "Year wheel {year} · Videvägen 7, Boden",
+      "label": "Example: year wheel {year} · Videvägen 7, Boden",
       "sources": {
         "routine": "Routine",
         "inspection": "From the inspection",
@@ -119,62 +143,12 @@
         "gutters": "Clear gutters and downpipes",
         "outdoorTaps": "Shut off the outdoor taps",
         "smokeAlarms": "Test smoke alarms, change batteries"
-      },
-      "question": "Open question: is there a fireplace? A yes adds chimney sweeping and fire safety inspection, a no removes the question."
-    },
-    "check": {
-      "label": "Check",
-      "title": "Damp check in the crawl space",
-      "meta": "Every six months · Easy · Yourself",
-      "why": "The inspection remarked on damp in the crawl space. That is why it is every six months instead of once a year, until the work is done.",
-      "lookFor": "What to look for",
-      "items": {
-        "moisture": "Moisture content in the sill plate. Above 17% is a remark.",
-        "smell": "A smell of mould or earth when the hatch is opened.",
-        "stains": "White stains, discoloured wood or water on the plastic sheeting."
-      },
-      "result": "A remark becomes a work item and lowers the part's condition, so the forecast is recalculated.",
-      "notInspection": "A self-check does not replace an inspection."
-    },
-    "reminder": {
-      "label": "Claude, scheduled every morning",
-      "messages": {
-        "due": {
-          "text": "Good morning. The damp check in the crawl space is due in May, and in November the sill plate was at 15% at the north corner. It takes half an hour. Would you like to plan it in? Saturday morning is free in your calendar.",
-          "note": "today's and this month's items from the year wheel, with the latest log"
-        },
-        "yes": {
-          "text": "Yes, Saturday."
-        },
-        "planned": {
-          "text": "Booked for Saturday at 10, with what to look for. Bring the moisture meter and send a photo of it when you are done, and I will log it.",
-          "note": "item planned for Saturday; the calendar is your own connector in Claude"
-        },
-        "log": {
-          "files": "moisture-meter.jpg",
-          "text": "19% at the north corner, 14% at the other two."
-        },
-        "remark": {
-          "text": "That is above the 17% limit. The draft holds a remark, a work item to investigate the north corner and condition 2 instead of 3 for the crawl space. Once you approve it, the forecast is recalculated.",
-          "note": "the log as a draft with reading, work item and new condition"
-        }
       }
     },
-    "wheelPoints": {
-      "local": {
-        "title": "By your location",
-        "body": "Checks name a season, not a month. Snowmelt comes in April–May in Boden and in March in Malmö, and the wheel follows."
-      },
-      "calendar": {
-        "title": "Your Claude keeps track",
-        "body": "A scheduled task in Claude goes through the wheel every morning, tells you when something is due today or this month and asks whether you want to plan it in. If you prefer your calendar, you can subscribe to the wheel."
-      },
-      "history": {
-        "title": "The log becomes the house's history",
-        "body": "When selling, it backs up the disclosure questionnaire, and in an insurance claim it shows the house has been maintained."
-      }
-    },
-    "invite": "Invitation required"
+    "closing": {
+      "title": "Work out what the house costs before you bid",
+      "body": "Upload the listing in your Claude and see what the house costs year by year, compared with the other houses."
+    }
   },
   "login": {
     "title": "Sign in",

@@ -1,23 +1,34 @@
-import { headers } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
 import { AppBar, Box, Button, Toolbar } from '@mui/material'
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/session'
 import LanguageSwitch from './LanguageSwitch'
 import Logo from './Logo'
 import SignOutButton from './SignOutButton'
 
 export default async function AppHeader() {
   const t = await getTranslations('nav')
-  const session = await auth.api.getSession({ headers: await headers() })
+  const session = await getSession()
 
   return (
-    <AppBar position="static" color="default" elevation={0}>
+    <AppBar
+      position="static"
+      color="default"
+      elevation={0}
+      sx={{
+        bgcolor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider',
+      }}
+    >
       <Toolbar
+        component="nav"
+        aria-label={t('label')}
         sx={{
           gap: { xs: 1, sm: 2 },
           py: { xs: 1, sm: 0 },
           flexWrap: 'wrap',
-          '& .MuiButton-root': { whiteSpace: 'nowrap' },
+          '& .MuiButton-root': { whiteSpace: 'nowrap', minHeight: 44 },
+          '& .MuiToggleButton-root': { minHeight: 44, minWidth: 44 },
         }}
       >
         <Button href="/" color="inherit" sx={{ textTransform: 'none', ml: -1 }}>
