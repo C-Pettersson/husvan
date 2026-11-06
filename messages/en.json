@@ -14,6 +14,10 @@
     "profile": "Profile"
   },
   "home": {
+    "meta": {
+      "title": "What does the house cost over time? Compare before you buy | Husvan",
+      "description": "Your Claude reads the listing and the inspection, Husvan works out maintenance, running costs and replacements year by year. Compare houses on equal terms before you bid."
+    },
     "title": "What does the house cost over time?",
     "lead": "Your own Claude reads the listing and the inspection. Husvan keeps what is known about the house and works out maintenance, running costs and replacements, so you can compare the houses on equal terms.",
     "open": "Go to your houses",
