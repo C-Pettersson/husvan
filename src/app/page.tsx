@@ -507,13 +507,22 @@ export default async function HomePage() {
 
       <Box component="footer" sx={{ bgcolor: 'background.paper' }}>
         <PageContainer sx={{ py: 3 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            useFlexGap
+            spacing={1}
+            alignItems="center"
+          >
             <LogoMark sx={{ fontSize: 20 }} />
             <Typography variant="body2" color="text.secondary">
               © {new Date().getFullYear()} Husvan
             </Typography>
             <Link href="/privacy" variant="body2" sx={{ pl: 1 }}>
               {t('footerPrivacy')}
+            </Link>
+            <Link href="/tools" variant="body2" sx={{ pl: 1 }}>
+              {t('footerTools')}
             </Link>
           </Stack>
         </PageContainer>

@@ -61,7 +61,7 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | Drift | k3s på användarens VPS, styrt från `C:\projects\infra-gitops` med Argo CD, Kustomize, KSOPS och Kargo. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. Se "Leverans och drift". |
 | Lokal körning | `docker compose up -d postgres`, `yarn db:migrate`, `yarn db:seed`, `yarn import:bki`, `yarn import:scb`, `yarn import:bra` och `yarn dev`, som i brfjamforelse. Postgres 16 lyssnar på `localhost:5433` (5432 används av andra projekt); kopiera `.env.example` till `.env` och fyll i hemligheten och den seedade användaren. Compose får senare en valfri app-image för att testa containern; det är inte produktionsmiljön. |
 
-Skillnader mot brfjamforelse: ingen organisationsmodell, kvoter bara för att skydda driften, ingen egen AI-anropning, ingen publik yta utöver startsidan, integritetssidan och inloggningen. Det som inte behövs byggs inte.
+Skillnader mot brfjamforelse: ingen organisationsmodell, kvoter bara för att skydda driften, ingen egen AI-anropning, ingen publik yta utöver startsidan, integritetssidan, verktygssidan och inloggningen. Det som inte behövs byggs inte.
 
 ### Leverans och drift
 
@@ -110,7 +110,7 @@ Utgivaren (issuer) är `https://husvan.se/api/auth`. Underlag för WAF-regeln oc
 | `/api/auth/oauth2/token`, `/api/auth/jwks` | Anthropics servrar | WAF |
 | `/api/auth/oauth2/authorize`, `/login`, `/consent`, `/api/auth/sign-in/email`, `/api/auth/oauth2/consent`, `/api/auth/oauth2/public-client` | Användarens webbläsare | Access, senare Better Auths inloggning |
 | `/api/auth/sign-in/magic-link` (begär länk), `/api/auth/magic-link/verify` (länken i mejlet), `/admin`, `/api/trpc/admin.*` | Användarens webbläsare | Access, senare Better Auths inloggning. `verify` öppnas från mejlet och måste nås av användarens webbläsare, inte av Anthropics servrar |
-| Allt annat utom `/` och `/privacy` | Användarens webbläsare | Access, senare Better Auths inloggning |
+| Allt annat utom `/`, `/privacy` och `/tools` | Användarens webbläsare | Access, senare Better Auths inloggning |
 
 Claude Code ansluter från användarens egen dator, inte från Anthropics intervall, och stängs därför ute av WAF-regeln.
 
@@ -445,6 +445,7 @@ Webben läser genom samma kod som MCP-verktygen (`getHouse`, `analyseHouse`, `co
 | --- | --- |
 | `/` | Den publika startsidan: vad Husvan räknar och hur det används. Sektionen "När huset är köpt" är en kort förhandsvisning av underhållsläget, märkt "Kommer senare": årshjulet för exempelhuset Videvägen 7 i Boden. Märkningen tas bort och texten stäms av när milstolpe 8–10 är byggda. Sist på sidan står "Om Husvan": varför projektet finns, ambitionen och en länk till brfjamforelse.se. |
 | `/privacy` | Publik. Det GDPR artikel 13 kräver: vem som ansvarar, vilka uppgifter, varför, mottagare, lagringstid och rättigheter. Stäm av texten när en leverantör, en loggkälla eller vad som sparas ändras. Kontaktadressen ligger i `src/lib/contact.ts`. |
+| `/tools` | Publik. Alla MCP-verktyg på vanligt språk, grupperade efter vad de gör med användarens data: läser bara, blir ett utkast, sparas direkt. Texterna är skrivna för människor och är inte verktygens beskrivningar till Claude. Ett nytt verktyg läggs in i `src/app/tools/toolGroups.ts` och får en text på båda språken; `toolGroups.test.ts` går inte igenom annars, och inte heller om gruppen "läser bara" inte stämmer med `readOnlyHint` eller om ett skrivande verktyg inte har `destructiveHint: false`. |
 | `/profile` | Kräver inloggning. Rätta namnet, ladda ner allt och radera kontot; se "Radering och export". |
 | `/getting-started` | Kräver inloggning. Hur Husvan läggs till som egen koppling i Claude, med MCP-adressen från `getMcpResource()` och en kopieringsknapp. Menynamnen följer Anthropics hjälpartikel om custom connectors och stäms av mot den när Claude ändrar dem. |
 | `/houses` | Husen med pris, underhållsskuld och underhållsjusterat pris med spann. Filter på egenskaper döljer bara hus där svaret är nej och visar hus med okänt svar för sig. 2–6 hus markeras för jämförelse. |
