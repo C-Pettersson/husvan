@@ -1138,7 +1138,7 @@
       "signIn": "<b>Inloggning.</b> IP-adress och webbläsare för varje inloggad session, och vilken åtkomst du gett Claude. När ett inloggningsmejl skickas sparas en nycklad hash av mottagaradressen, så att antalet mejl till en adress kan begränsas.",
       "houses": "<b>Hus.</b> Adresser, fastighetsbeteckningar, värden och åtgärder för husen du lägger in, dina egna antaganden som lån och ränta, och sparade prognoser.",
       "documents": "<b>Dokument.</b> Filer och text från prospekt, besiktningsprotokoll och liknande, och Claudes tolkning av dem. De kan innehålla uppgifter om andra personer, till exempel säljare, mäklare och besiktningsmän.",
-      "visits": "<b>Besök.</b> Cloudflare Web Analytics räknar sidvisningar på hela sajten, också när du är inloggad: vilken sida, varifrån du kom, land, webbläsare, operativsystem, enhetstyp och hur snabbt sidan laddade. Delen av adressen efter frågetecknet sparas inte. Statistiken visas sammanställd, utan kakor och utan att enskilda besökare följs."
+      "visits": "<b>Besök.</b> Cloudflare räknar besök på hela sajten, också när du är inloggad. Det sker i Cloudflares nätverk, och med Web Analytics kan ett litet skript i sidan dessutom mäta hur snabbt den laddade. Statistiken visar vilken sida, varifrån du kom, land, webbläsare, operativsystem och enhetstyp, men inte delen av adressen efter frågetecknet. Den visas sammanställd, utan kakor och utan att enskilda besökare följs."
     },
     "why": {
       "title": "Varför",
