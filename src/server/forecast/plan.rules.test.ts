@@ -333,6 +333,127 @@ describe('parts assumed from other parts', () => {
   })
 })
 
+describe('an assumed part that may not be needed', () => {
+  const library = lib(
+    [
+      [
+        'drainage',
+        {
+          assumeUndocumented: true,
+          context: { foundation_type: 'foundation' },
+          assumedOnlyInHigh: { foundation_type: ['slab_on_ground'] },
+        },
+      ],
+    ],
+    [
+      profile({
+        type: 'drainage',
+        costUnit: 'HOUSE',
+        costLowSek: 1000,
+        costHighSek: 2000,
+      }),
+    ]
+  )
+  const drainage = (list: ComponentView[]) =>
+    planComponents(list, house, library, START).find(
+      (p) => p.type === 'drainage'
+    )!
+  const slab = comp('foundation', { foundation_type: 'slab_on_ground' })
+
+  it('costs something in high only, and says so', () => {
+    const p = drainage([slab])
+    expect(p.cost).toEqual({ low: 0, typical: 0, high: 2000 })
+    expect(p.flags.map((f) => f.code)).toContain('assumed_only_in_high')
+  })
+
+  it('costs in every scenario on another foundation, documented or answered', () => {
+    const cost = { low: 1000, typical: 1500, high: 2000 }
+    expect(
+      drainage([comp('foundation', { foundation_type: 'basement' })]).cost
+    ).toEqual(cost)
+    expect(drainage([slab, comp('drainage')]).cost).toEqual(cost)
+    const answered = withAnswer(
+      [slab],
+      { componentId: 'assumed:drainage', type: 'drainage' },
+      'installation_year',
+      2000
+    )
+    expect(drainage(answered).cost).toEqual(cost)
+  })
+})
+
+describe('renewing the sections of a sewer', () => {
+  const library = lib(
+    [
+      [
+        'sewer_pipes',
+        {
+          assumeUndocumented: true,
+          context: { foundation_type: 'foundation' },
+          assumeVariants: [
+            {
+              values: { section: 'under_slab' },
+              whenContext: { foundation_type: ['slab_on_ground'] },
+              plainValues: { section: 'indoor' },
+            },
+          ],
+          profileKeyOrder: ['renovation_method', 'section'],
+          cheaperRenewal: {
+            when: {},
+            match: { renovation_method: 'relined' },
+          },
+        },
+      ],
+    ],
+    [
+      profile({ type: 'sewer_pipes', costUnit: 'HOUSE' }),
+      profile({
+        type: 'sewer_pipes',
+        costUnit: 'HOUSE',
+        match: { section: 'under_slab' },
+      }),
+      ...[
+        [{}, 500],
+        [{ section: 'indoor' }, 100],
+        [{ section: 'under_slab' }, 200],
+      ].map(([match, cost]) =>
+        profile({
+          type: 'sewer_pipes',
+          costUnit: 'HOUSE',
+          match: {
+            renovation_method: 'relined',
+            ...(match as Record<string, string>),
+          },
+          costLowSek: cost as number,
+          costHighSek: cost as number,
+        })
+      ),
+    ]
+  )
+  const renewal = (foundation_type: string) =>
+    Object.fromEntries(
+      planComponents(
+        [comp('foundation', { foundation_type })],
+        house,
+        library,
+        START
+      )
+        .filter((p) => p.type === 'sewer_pipes')
+        .map((p) => [p.componentId, p.renewal?.cost.typical])
+    )
+
+  it('prices a slab house per section, so they add up to one job', () => {
+    expect(renewal('slab_on_ground')).toEqual({
+      'assumed:sewer_pipes': 100,
+      'assumed:sewer_pipes:section=under_slab': 200,
+    })
+  })
+
+  it('prices the single part of any other house as the whole', () => {
+    expect(renewal('basement')).toEqual({ 'assumed:sewer_pipes': 500 })
+  })
+})
+
 describe('quantities', () => {
   const facadeLib = lib(
     [['facade', { quantityPerLivingM2: 1 }]],

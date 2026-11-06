@@ -254,13 +254,16 @@ export const componentTypes: ComponentTypeDefinition[] = [
     // so the footprint's perimeter is used when floor_count is known.
     // Priced by the foundation type: a basement is dug deeper. A plinth or
     // stone foundation is not assumed to have drainage (Villaägarna: for a
-    // torpargrund, drainage is seldom the answer).
+    // torpargrund, drainage is seldom the answer). Around a slab it may be
+    // needed (Villaägarna) but is not a scheduled renewal of a part nobody
+    // has mentioned, so an assumed one counts in high only.
     forecastDefaults: {
       assumeUndocumented: true,
       quantityPerLivingM2: 0.35,
       quantityFromFootprint: { basis: 'perimeter', factor: 1 },
       context: { foundation_type: 'foundation' },
       assumeUnless: { foundation_type: ['plinth', 'stone_foundation'] },
+      assumedOnlyInHigh: { foundation_type: ['slab_on_ground'] },
       profileKeyOrder: ['foundation_type'],
     },
   },
@@ -615,7 +618,17 @@ export const componentTypes: ComponentTypeDefinition[] = [
     type: 'wood_stove',
     label: { sv: 'Kamin', en: 'Wood stove' },
     category: 'heating',
-    attributeSchema: { ...replaceable, ...modelName },
+    // A heavy soapstone stove stores heat, lasts far longer and costs more
+    // than a sheet steel or cast iron one (profile by material).
+    attributeSchema: {
+      material: choice('Material', 'Material', {
+        steel: ['Stål', 'Steel'],
+        cast_iron: ['Gjutjärn', 'Cast iron'],
+        soapstone: ['Täljsten', 'Soapstone'],
+      }),
+      ...replaceable,
+      ...modelName,
+    },
   },
   {
     type: 'chimney',
@@ -822,6 +835,7 @@ export const componentTypes: ComponentTypeDefinition[] = [
         {
           values: { section: 'under_slab' },
           whenContext: { foundation_type: ['slab_on_ground'] },
+          plainValues: { section: 'indoor' },
         },
       ],
       profileKeyOrder: ['renovation_method', 'material', 'section'],

@@ -434,8 +434,25 @@ export function planComponents(
   return all.flatMap((c) => {
     const defaults = library.defaults.get(c.type) ?? {}
     const context = contextOf(defaults)
+    const inContext = (rule: Record<string, string[]>) => {
+      const entries = Object.entries(rule)
+      return (
+        entries.length > 0 &&
+        entries.every(
+          ([key, values]) =>
+            context[key] !== undefined && values.includes(context[key])
+        )
+      )
+    }
+    // Beside a variant, the plain assumed part stands for the rest of the type.
+    const plainValues =
+      c.id === ASSUMED_PREFIX + c.type
+        ? defaults.assumeVariants?.find((v) => inContext(v.whenContext))
+            ?.plainValues
+        : undefined
     const attributes: Record<string, string> = {
       ...context,
+      ...plainValues,
       ...Object.fromEntries(
         c.values
           .filter((v) => typeof v.current.value === 'string')
@@ -665,7 +682,16 @@ export function planComponents(
     const index = profile.priceYear ? library.indexFactor(profile.priceYear) : 1
     if (!costs(profile.costLowSek, profile.costHighSek))
       flags.push(flag('profile_without_cost'))
-    const cost = costOf(profile, quantity)
+    // Nothing says the part is there or needed: it counts in high only. An
+    // answer about it (whatIf.ts) gives it a value and prices it as usual.
+    const onlyInHigh =
+      isAssumed &&
+      !c.values.length &&
+      inContext(defaults.assumedOnlyInHigh ?? {})
+    if (onlyInHigh) flags.push(flag('assumed_only_in_high'))
+    const fullCost = costOf(profile, quantity)
+    const cost =
+      onlyInHigh && fullCost ? { ...fullCost, low: 0, typical: 0 } : fullCost
 
     // A cheaper way to renew, when the attributes allow it and the part is
     // not already renewed that way. An unknown attribute does not rule it

@@ -127,6 +127,79 @@ describe('Yxgränd 6: the garage roof at top level', () => {
     ).toMatchObject({ assumed: true, profile: { section: 'under_slab' } })
     expect(plans.some((p) => p.type === 'hydronic_radiators')).toBe(false)
   })
+
+  it('counts the assumed drainage around its slab in high only', () => {
+    const { plans } = analyse('yxgrand-6')
+    const drainage = plans.find((p) => p.type === 'drainage')!
+    expect(drainage.cost).toMatchObject({ low: 0, typical: 0 })
+    expect(drainage.cost!.high).toBeGreaterThan(0)
+  })
+
+  it('relines the sewer per section, within a whole villa’s price', () => {
+    const { plans } = analyse('yxgrand-6')
+    const sum = plans
+      .filter((p) => p.type === 'sewer_pipes')
+      .reduce((t, p) => t + p.renewal!.cost.typical, 0)
+    expect(sum).toBe(210000)
+  })
+})
+
+describe('parts of about the same age', () => {
+  const typicalYears = (name: FixtureName, key: string) =>
+    analyse(name)
+      .forecast.items.find(
+        (i) => i.category === 'replacement' && i.key === key
+      )!
+      .typical.map((e) => e.year)
+
+  it('times the electrics of a 1965 and a 1967 house alike', () => {
+    expect(typicalYears('mjardgatan-1', 'electrical_installation')).toEqual([
+      2038,
+    ])
+    expect(typicalYears('yxgrand-6', 'electrical_installation')).toEqual([2038])
+  })
+
+  it('does not replace a 1996 house’s sauna the year after its inspection', () => {
+    expect(typicalYears('ytterviksvagen-30a', 'sauna')).toEqual([2032])
+  })
+})
+
+describe('a soapstone stove', () => {
+  it('lasts longer and costs more than a stove of unknown material', () => {
+    const { fixture, library } = analyse('yxgrand-6')
+    const stove = (material?: string): ComponentView => ({
+      id: 'stove',
+      type: 'wood_stove',
+      name: null,
+      draft: false,
+      values: material
+        ? [
+            {
+              key: 'material',
+              current: {
+                ...fixture.house.components[0].values[0].current,
+                key: 'material',
+                value: material,
+              },
+              alternatives: [],
+            },
+          ]
+        : [],
+      children: [],
+    })
+    const plan = (material?: string) =>
+      planComponents(
+        [stove(material)],
+        fixture.house.values,
+        library,
+        START
+      ).find((p) => p.componentId === 'stove')!
+    expect(plan().lifespan.typical).toBe(25)
+    expect(plan('soapstone').lifespan.typical).toBe(50)
+    expect(plan('soapstone').cost!.typical).toBeGreaterThan(
+      plan().cost!.typical
+    )
+  })
 })
 
 describe('all four houses', () => {
@@ -187,10 +260,10 @@ describe('all four houses', () => {
   // costs). A change here is a change in a rule or a profile: check it is
   // meant before updating.
   it.each([
-    ['yxgrand-6', 1980771, 1479802],
-    ['mjardgatan-1', 1805637, 1293252],
-    ['bredviksvagen-15', 1660790, 1602579],
-    ['ytterviksvagen-30a', 2004309, 1483957],
+    ['yxgrand-6', 1703771, 1202802],
+    ['mjardgatan-1', 1545637, 1033252],
+    ['bredviksvagen-15', 1650824, 1602579],
+    ['ytterviksvagen-30a', 1792048, 1246518],
   ] as const)('%s lands on its totals', (name, debt, total) => {
     const a = analyse(name)
     expect(Math.round(a.debt.total.typical)).toBe(debt)

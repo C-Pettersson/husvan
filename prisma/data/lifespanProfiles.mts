@@ -202,10 +202,18 @@ const profilesByAttribute: LifespanProfileDefinition[] = [
     lifespanTypicalYears: 45,
     lifespanMaxYears: 80,
     costLowSek: 1500,
-    costHighSek: 4500,
+    costHighSek: 3500,
     costUnit: 'M2',
     priceYear: 2026,
     sources: [
+      {
+        name: 'Offerta, Guide till takmaterial (prisläge 2025-2026)',
+        url: 'https://offerta.se/guider/bygg-och-renovering/guide-till-takmaterial',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [800, 3000],
+        note: 'Profilerad 800-1 500, falsad 1 500-3 000, incl. material, labour, demolition and scaffolding; well below the contractors’ own pages, so the low end is not used',
+      },
       {
         name: 'Villaägarna, När behöver du byta tak? (2025-03-27)',
         url: 'https://www.villaagarna.se/radgivning-och-tips/utomhus/tak/nar-behover-du-byta-tak/',
@@ -1884,6 +1892,52 @@ const profilesByAttribute: LifespanProfileDefinition[] = [
       },
     ],
   },
+  // A heavy, heat-storing soapstone stove. Researcher judgement on thin
+  // sources: no source measures its life, and the prices are stoves alone,
+  // undated or old. Cost = stove 45-120k + installation 15-30k.
+  {
+    type: 'wood_stove',
+    match: { material: 'soapstone' },
+    lifespanMinYears: 30,
+    lifespanTypicalYears: 50,
+    lifespanMaxYears: 80,
+    costLowSek: 60000,
+    costHighSek: 150000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Svenska Brasvärmeföreningen, Bra att veta vid köp av braskamin (2016)',
+        url: 'https://www.brasvarmeforeningen.se/wp-content/uploads/2016/09/160617_Broschyr-Bra-att-veta-vid-k%C3%B6p-av-braskamin_Final.pdf',
+        lifespanYears: 30,
+        costSek: null,
+        note: "'livslängd som lätt kan överstiga 30 år', for stoves in general; the floor here",
+      },
+      {
+        name: 'Byggahus, Täljstensugnar (forum)',
+        url: 'https://www.byggahus.se/forum/threads/taljstensugnar.47000/',
+        lifespanYears: null,
+        costSek: null,
+        note: 'A user: soapstone stoves can last for generations; no measured life',
+      },
+      {
+        name: 'Byggahus, Ska köpa täljstensugn (forum)',
+        url: 'https://www.byggahus.se/forum/threads/ska-kopa-taljstensugn-input-onskas.45701/',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [47500, 55900],
+        note: 'Tulikivi models, heavier ones cost more; old prices, installation not stated',
+      },
+      {
+        name: 'Offerta, Installation av kamin (2025-12-29)',
+        url: 'https://offerta.se/guider/bygg-och-renovering/vad-kostar-installation-av-kamin',
+        lifespanYears: null,
+        costSek: null,
+        costSekRange: [15000, 30000],
+        note: 'Installation in existing chimney; stove itself not priced',
+      },
+    ],
+  },
   // Cost = stove 10-35k + installation 10-20k (researcher sum), existing
   // chimney assumed. Brasvärmeföreningen recommends replacing for combustion
   // efficiency well before the stove is worn out.
@@ -2640,6 +2694,67 @@ const profilesByAttribute: LifespanProfileDefinition[] = [
         costSek: null,
         costSekRange: [60000, 200000],
         note: 'Relining per villa',
+      },
+    ],
+  },
+  // The profile above is a whole villa's relining. A house with its indoor
+  // pipes and the run under the slab as two sections pays per section, so
+  // that the two add up to a villa's total (Offerta 50-300k) and not to twice
+  // it. Same lifespans.
+  {
+    type: 'sewer_pipes',
+    match: {
+      renovation_method: 'relined',
+      section: 'indoor',
+    },
+    lifespanMinYears: 15,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 50,
+    costLowSek: 50000,
+    costHighSek: 150000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Offerta, Vad kostar relining (2026-04-17)',
+        url: 'https://offerta.se/guider/bygg-och-renovering/vad-kostar-relining',
+        lifespanYears: null,
+        lifespanYearsRange: [15, 50],
+        costSek: null,
+        costSekRange: [50000, 150000],
+        note: 'Kitchen and bathroom stacks; villa 50-300k total',
+      },
+    ],
+  },
+  {
+    type: 'sewer_pipes',
+    match: {
+      renovation_method: 'relined',
+      section: 'under_slab',
+    },
+    lifespanMinYears: 15,
+    lifespanTypicalYears: 30,
+    lifespanMaxYears: 50,
+    costLowSek: 80000,
+    costHighSek: 140000,
+    costUnit: 'EACH',
+    priceYear: 2026,
+    sources: [
+      {
+        name: 'Reliningbolaget, Relining av avlopp (2026-01)',
+        url: 'https://reliningbolaget.se/relining/avlopp',
+        lifespanYears: 50,
+        costSek: null,
+        costSekRange: [80000, 140000],
+        note: 'The main drain under the slab, 10-15 m, in 2-3 days; liner lasts at least 50 years; not possible with large settlements',
+      },
+      {
+        name: 'Offerta, Vad kostar relining (2026-04-17)',
+        url: 'https://offerta.se/guider/bygg-och-renovering/vad-kostar-relining',
+        lifespanYears: null,
+        lifespanYearsRange: [15, 50],
+        costSek: null,
+        note: 'Sprutmetod 15-20, strumpmetod 40-50; villa 50-300k total',
       },
     ],
   },
