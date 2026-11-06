@@ -115,6 +115,10 @@ export const forecastDefaultsSchema = z.object({
   // Not assumed when the context has one of these values, such as no
   // drainage on a plinth foundation.
   assumeUnless: z.record(keySchema, z.array(z.string()).min(1)).optional(),
+  // An assumed part that the context says may not be needed at all, such as
+  // drainage around a slab on ground: it costs something in high only, until
+  // the documents or an answer mention it.
+  assumedOnlyInHigh: z.record(keySchema, z.array(z.string()).min(1)).optional(),
   // A house often has several, such as bathrooms: each one says how many,
   // so the reader can weigh urgency.
   oneOfSeveral: z.boolean().optional(),
@@ -153,12 +157,14 @@ export const forecastDefaultsSchema = z.object({
   // Further assumed parts of the type with given choice values, when the
   // context says so and no documented part of the type has those values:
   // the sewer section under the slab of a house on a slab on ground. They
-  // come in addition to assumeUndocumented's plain part.
+  // come in addition to assumeUndocumented's plain part, which then stands
+  // for the rest and is priced with plainValues: the indoor section.
   assumeVariants: z
     .array(
       z.object({
         values: z.record(keySchema, z.string()),
         whenContext: z.record(keySchema, z.array(z.string()).min(1)),
+        plainValues: z.record(keySchema, z.string()).optional(),
       })
     )
     .min(1)
@@ -322,21 +328,26 @@ export function validateLibrary(
       if (!byType.get(from)?.attributeSchema[key])
         errors.push(`${t.type}: context ${key} not an attribute of ${from}`)
     }
-    for (const [key, values] of Object.entries(
-      t.forecastDefaults?.assumeUnless ?? {}
-    )) {
-      const from = context[key]
-      const attr = from ? byType.get(from)?.attributeSchema[key] : undefined
-      if (!attr) errors.push(`${t.type}: assumeUnless ${key} is not context`)
-      else
-        for (const value of values)
-          if (attr.datatype !== 'choice' || !(value in attr.options))
-            errors.push(
-              `${t.type}: assumeUnless names ${key}=${value}, not a choice option`
-            )
+    for (const rule of ['assumeUnless', 'assumedOnlyInHigh'] as const) {
+      for (const [key, values] of Object.entries(
+        t.forecastDefaults?.[rule] ?? {}
+      )) {
+        const from = context[key]
+        const attr = from ? byType.get(from)?.attributeSchema[key] : undefined
+        if (!attr) errors.push(`${t.type}: ${rule} ${key} is not context`)
+        else
+          for (const value of values)
+            if (attr.datatype !== 'choice' || !(value in attr.options))
+              errors.push(
+                `${t.type}: ${rule} names ${key}=${value}, not a choice option`
+              )
+      }
     }
     for (const variant of t.forecastDefaults?.assumeVariants ?? []) {
-      for (const [key, value] of Object.entries(variant.values)) {
+      for (const [key, value] of Object.entries({
+        ...variant.values,
+        ...variant.plainValues,
+      })) {
         const attr = t.attributeSchema[key]
         if (attr?.datatype !== 'choice' || !(value in attr.options))
           errors.push(

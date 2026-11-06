@@ -404,6 +404,133 @@ describe('schedule', () => {
     expect(run.replacements.map((r) => r.year)).toEqual([2026, 2066])
   })
 
+  it('never replaces a younger part before an older one in the same state', () => {
+    // Lifespan 40; 20 % of it is 8 years from the start year.
+    const when = (year: number) =>
+      schedule(
+        plan(comp('roof_covering', { installation_year: year, area: 100 })),
+        'typical',
+        START,
+        START + 49,
+        undefined,
+        START + 8
+      )
+    expect(when(1985).replacements[0].year).toBe(2034)
+    expect(when(1985).overdueReplacement).toBe(true)
+    // Reaching its lifespan this year or next, but not before the older part.
+    for (const year of [1986, 1987]) {
+      expect(when(year).replacements[0].year).toBe(2034)
+      expect(when(year).dueSoon).toBe(true)
+      expect(when(year).overdueReplacement).toBe(false)
+    }
+    // Further out it follows its own lifespan.
+    expect(when(1995).replacements[0].year).toBe(2035)
+    expect(when(1995).dueSoon).toBe(false)
+  })
+
+  it('does not hold back a part in poor condition or with a replacement item', () => {
+    const soon = plan(
+      comp('roof_covering', {
+        installation_year: 1987,
+        area: 100,
+        condition: 1,
+      })
+    )
+    expect(
+      schedule(soon, 'typical', START, START + 49, undefined, START + 8)
+        .replacements[0].year
+    ).toBe(2027)
+    const p = plan(
+      comp('roof_covering', { installation_year: 1987, area: 100 })
+    )
+    expect(
+      schedule(
+        p,
+        'typical',
+        START,
+        START + 49,
+        { year: 2027, cost: 1000 },
+        START + 8
+      ).replacements[0].year
+    ).toBe(2027)
+  })
+
+  it('lets the last paint serve its interval before the replacement', () => {
+    // Lifespan 40, repainted every 10 in typical.
+    const facade = (installation_year: number, last_painted_year: number) =>
+      plan(comp('facade', { area: 100, installation_year, last_painted_year }))
+    const recent = schedule(
+      facade(1964, 2024),
+      'typical',
+      START,
+      START + 14,
+      undefined,
+      START + 4
+    )
+    expect(recent.replacements.map((r) => r.year)).toEqual([2034])
+    expect(recent.heldByPaint).toBe(true)
+    expect(recent.repaints).toEqual([])
+    // An overdue repaint is done, and the replacement waits for it.
+    const overdue = schedule(facade(1994, 2013), 'typical', START, START + 14)
+    expect(overdue.repaints.map((r) => r.year)).toEqual([2026])
+    expect(overdue.overdueRepaint).toBe(true)
+    expect(overdue.replacements.map((r) => r.year)).toEqual([2036])
+    expect(overdue.heldByPaint).toBe(true)
+  })
+
+  it('skips a repaint shortly before a replacement, also past the horizon', () => {
+    const run = schedule(
+      plan(
+        comp('facade', {
+          area: 100,
+          installation_year: 2001,
+          last_painted_year: 2026,
+        })
+      ),
+      'typical',
+      START,
+      START + 14
+    )
+    // Due 2036, replaced 2041: five years is within half the interval.
+    expect(run.repaints).toEqual([])
+    expect(run.repaintSkipped).toBe(true)
+    expect(run.heldByPaint).toBe(false)
+  })
+
+  it('does not paint an old facade about to be replaced', () => {
+    const run = schedule(
+      plan(comp('facade', { area: 100, installation_year: 1964 })),
+      'typical',
+      START,
+      START + 14,
+      undefined,
+      START + 4
+    )
+    expect(run.replacements[0].year).toBe(2030)
+    expect(run.repaints.map((r) => r.year)).toEqual([2040])
+    expect(run.overdueRepaint).toBe(false)
+  })
+
+  it('does not let paint hold back a part with a serious finding', () => {
+    const run = schedule(
+      plan(
+        comp('facade', {
+          area: 100,
+          installation_year: 1964,
+          last_painted_year: 2024,
+        })
+      ),
+      'typical',
+      START,
+      START + 14,
+      undefined,
+      START,
+      false
+    )
+    expect(run.replacements[0].year).toBe(START)
+    expect(run.heldByPaint).toBe(false)
+  })
+
   it('repaints between replacements and restarts after one', () => {
     const p = plan(
       comp('facade', {
@@ -513,8 +640,8 @@ describe('computeForecast', () => {
   })
 
   it('flags a repaint whose range crosses because a replacement resets it', () => {
-    // Typical replaces the facade in 2030 and so repaints once before the
-    // horizon ends in 2039; low replaces it in 2040 and repaints twice.
+    // Typical replaces the facade in 2030 and so skips the overdue repaint;
+    // low replaces it in 2040, repaints in 2026 and skips the one in 2038.
     const facade = comp('facade', {
       installation_year: 1990,
       last_painted_year: 2014,
@@ -530,7 +657,7 @@ describe('computeForecast', () => {
       capital: null,
     })
     const repaint = f.items.find((i) => i.category === 'repaint')!
-    expect(repaint.total).toEqual({ low: 80000, typical: 40000, high: 40000 })
+    expect(repaint.total).toEqual({ low: 40000, typical: 0, high: 40000 })
     expect(repaint.flags.map((x) => x.code)).toContain('scenarios_cross')
     expect(f.items.find((i) => i.category === 'replacement')!.basis).toBe(
       'documented'

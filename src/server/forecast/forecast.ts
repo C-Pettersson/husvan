@@ -178,6 +178,11 @@ type Event = { year: number; sek: number }
 export const renewsCheaper = (plan: ComponentPlan, s: Scenario) =>
   plan.renewal !== null && s !== 'high'
 
+// A repaint this close before a replacement is not done, as a share of the
+// repaint interval. Nobody paints what is about to be replaced; further ahead
+// the paint is worth it, and the replacement waits until it has served.
+const REPAINT_SKIP_SHARE = 0.5
+
 // Replacement and repaint years of one component in one scenario.
 export function schedule(
   plan: ComponentPlan,
@@ -185,14 +190,22 @@ export function schedule(
   startYear: number,
   endYear: number,
   forced?: { year: number; cost: number | null },
-  // Where a replacement already past its lifespan goes.
-  overdue = startYear
+  // Where a replacement past its lifespan goes, and the earliest place for
+  // one reaching it later, so that a younger part is never replaced before
+  // an older one in the same state.
+  overdue = startYear,
+  // Whether paint may hold back the replacement; not with a serious finding.
+  holdForPaint = true
 ) {
   const replacements: Event[] = []
   const repaints: Event[] = []
   let overdueReplacement = false
   let overdueRepaint = false
+  let dueSoon = false
+  let heldByPaint = false
+  let repaintSkipped = false
 
+  const timed = !forced && !plan.soon
   let next = forced
     ? forced.year
     : plan.soon
@@ -203,6 +216,23 @@ export function schedule(
   if (next < startYear) {
     next = overdue
     overdueReplacement = true
+  } else if (timed && next < overdue) {
+    next = overdue
+    dueSoon = true
+  }
+  // The last paint before the replacement has to have served its interval.
+  if (plan.repaint && timed && holdForPaint) {
+    const interval = plan.repaint.interval[s]
+    let painted = plan.repaint.lastPainted[s]
+    for (;;) {
+      const due = Math.max(painted + interval, startYear)
+      if (next - due <= interval * REPAINT_SKIP_SHARE) break
+      painted = due
+    }
+    if (painted + interval > next) {
+      next = painted + interval
+      heldByPaint = true
+    }
   }
   const cheaper = renewsCheaper(plan, s) ? plan.renewal : null
   let first = true
@@ -220,10 +250,8 @@ export function schedule(
     const { interval, cost, lastPainted } = plan.repaint
     let painted = lastPainted[s]
     let due = painted + interval[s]
-    if (due < startYear) {
-      due = startYear
-      overdueRepaint = true
-    }
+    const late = due < startYear
+    if (late) due = startYear
     while (due <= endYear) {
       // A replacement before the repaint comes painted.
       const replaced = replacements.find(
@@ -234,12 +262,29 @@ export function schedule(
         due = painted + interval[s]
         continue
       }
+      // `next` is by now the first replacement past the horizon.
+      const coming = replacements.find((r) => r.year > due)?.year ?? next
+      if (coming - due <= interval[s] * REPAINT_SKIP_SHARE) {
+        repaintSkipped = true
+        painted = coming
+        due = painted + interval[s]
+        continue
+      }
+      if (late && due === startYear) overdueRepaint = true
       repaints.push({ year: due, sek: cost[s] })
       painted = due
       due += interval[s]
     }
   }
-  return { replacements, repaints, overdueReplacement, overdueRepaint }
+  return {
+    replacements,
+    repaints,
+    overdueReplacement,
+    overdueRepaint,
+    dueSoon,
+    heldByPaint,
+    repaintSkipped,
+  }
 }
 
 export function computeForecast(input: ForecastInput): Forecast {
@@ -289,7 +334,8 @@ export function computeForecast(input: ForecastInput): Forecast {
         startYear,
         endYear,
         forced,
-        overdueYear(plan, seen, s, startYear)
+        overdueYear(plan, seen, s, startYear),
+        seen !== 'flagged'
       )
     })
     const base = {
@@ -310,6 +356,10 @@ export function computeForecast(input: ForecastInput): Forecast {
               : 'overdue_unjudged'
         )
       )
+    if (runs.typical.dueSoon)
+      flags.push(flag(seen === 'ok' ? 'due_soon_seen_ok' : 'due_soon_unjudged'))
+    if (runs.typical.heldByPaint) flags.push(flag('held_by_paint'))
+    if (runs.typical.repaintSkipped) flags.push(flag('repaint_skipped'))
     if (w)
       flags.push(flag('timed_by_work_item', { description: w.description }))
     if (input.inspected && hasUnratedFinding(plan, input.workItems))

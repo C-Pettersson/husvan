@@ -60,6 +60,14 @@ const ENGLISH = {
     'past its lifespan, but the inspection saw it without a serious finding; given part of a lifespan more',
   overdue_unjudged: () =>
     'past its lifespan and not judged by an inspection; replaced within the coming years, in high at once',
+  due_soon_seen_ok: () =>
+    'nearly at the end of its lifespan, but the inspection saw it without a serious finding; timed no earlier than an older part in the same state',
+  due_soon_unjudged: () =>
+    'nearly at the end of its lifespan and not judged by an inspection; timed no earlier than an older part in the same state',
+  held_by_paint: () => 'the replacement waits until the last paint has served',
+  repaint_skipped: () => 'no repaint shortly before the replacement',
+  assumed_only_in_high: () =>
+    'may not be needed on this foundation; counted only in high until the documents mention it',
   timed_by_work_item: (p: Params) => `timed by work item: ${p.description}`,
   replacement_not_costed: () => 'replacement not costed',
   cheaper_renewal: (p: Params) =>
