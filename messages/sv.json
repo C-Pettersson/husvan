@@ -4,6 +4,7 @@
     "description": "Förstå vad ett hus kostar över tid."
   },
   "nav": {
+    "label": "Huvudmeny",
     "houses": "Hus",
     "gettingStarted": "Kom igång",
     "signIn": "Logga in",
@@ -13,11 +14,21 @@
   },
   "home": {
     "title": "Vad kostar huset över tid?",
-    "lead": "Husvan är husets minne. Din egen AI läser prospekt och besiktning, Husvan sparar det som är känt om huset och räknar på underhåll, drift och förnyelse, så att du kan jämföra husen på samma villkor.",
+    "lead": "Din egen Claude läser prospekt och besiktning. Husvan sparar det som är känt om huset och räknar på underhåll, drift och förnyelse, så att du kan jämföra husen på samma villkor.",
     "open": "Till dina hus",
     "signIn": "Logga in",
-    "split": "Tänkandet hos din AI, minnet hos Husvan",
-    "splitLead": "AI-modellerna blir bättre hela tiden. Husvan blir bättre med dem, eftersom det som kräver omdöme görs av din AI och det som ska bestå ligger hos Husvan.",
+    "access": "Inbjudan krävs, och du behöver ett Claude-konto.",
+    "hero": {
+      "label": "Exempel: två hus, samma räkning",
+      "houseA": "Videvägen 7",
+      "houseB": "Lingonstigen",
+      "price": "Pris",
+      "amount": "+{amount, number} kr",
+      "summary": "{measure}: {house} är {amount, number} kr dyrare",
+      "takeaway": "Lingonstigen har nytt tak och nyare rör. Skillnaden sitter nästan helt i taket och krypgrunden, så det är dem du frågar mäklaren om."
+    },
+    "flow": "Från prospekt till jämförelse",
+    "flowLead": "Du laddar upp underlaget och frågar i din egen Claude. Claude läser och tolkar. Husvan sparar det du godkänner och räknar på det.",
     "chat": {
       "label": "Exempel på ett samtal",
       "you": "Du",
@@ -43,14 +54,14 @@
           "text": "Vad kostar huset per år de närmaste 15 åren?"
         },
         "forecast": {
-          "text": "Runt 74 000 kr om året i dagens kronor, med ett spann från 58 000 till 96 000. Det mesta är drift. Den största enskilda posten är taket, som närmar sig slutet av sin livslängd. Spannet är brett för att ventilationens ålder saknas. Står den i energideklarationen?",
+          "text": "Runt <b>74 000 kr om året</b> i dagens kronor, med ett spann från 58 000 till 96 000. Det mesta är drift. Den största enskilda posten är taket, som närmar sig slutet av sin livslängd. Spannet är brett för att ventilationens ålder saknas. Står den i energideklarationen?",
           "note": "prognos efter fasta regler, med en lista över det som saknas"
         },
         "compare": {
           "text": "Hur står det sig mot huset på Lingonstigen?"
         },
         "comparison": {
-          "text": "Lingonstigen kostar 400 000 kr mer, men har nytt tak och nyare rör. Räknar man in underhållsskulden blir Videvägen 120 000 kr dyrare. Skillnaden sitter nästan helt i taket och krypgrunden, så det är dem jag skulle fråga mäklaren om.",
+          "text": "<b>Lingonstigen kostar 400 000 kr mer</b>, men har nytt tak och nyare rör. Räknar man in underhållsskulden blir <b>Videvägen 120 000 kr dyrare</b>. Skillnaden sitter nästan helt i taket och krypgrunden, så det är dem jag skulle fråga mäklaren om.",
           "note": "underhållsjusterat pris för båda husen, post för post"
         }
       }
@@ -59,7 +70,7 @@
     "steps": {
       "connect": {
         "title": "Koppla Husvan till Claude",
-        "body": "Husvan är en koppling i din egen Claude. Där sker allt läsande och tolkande."
+        "body": "Du behöver ett Claude-konto. Där lägger du till Husvan som koppling, och där sker allt läsande och tolkande."
       },
       "upload": {
         "title": "Ladda upp underlaget i chatten",
@@ -74,7 +85,7 @@
         "body": "Fråga Claude om kostnad per år, underhållsskuld och underhållsjusterat pris. Svaren bygger på Husvans siffror, med ett spann från låg till hög."
       }
     },
-    "measures": "Vad den räknar",
+    "measures": "Vad Husvan räknar ut",
     "debt": {
       "title": "Underhållsskuld",
       "body": "Hur mycket av varje del som redan är förbrukad, i kronor. Ett tak halvvägs genom sin livslängd är en halv takkostnad, oavsett när det byts."
@@ -87,17 +98,30 @@
       "title": "Kostnad per år",
       "body": "Förnyelse enligt livslängd, ommålning, åtgärder från besiktningen och driften, i dagens kronor över den horisont du väljer."
     },
-    "principles": "Det den håller fast vid",
+    "principles": "Så räknar Husvan",
     "principle": {
-      "unknown": "Okänt är inte nej. Att prospektet inte nämner en pool gör den inte till nej.",
-      "disclosure": "Att säga mindre gör inte ett hus billigare. Delar som alla hus har räknas med även när underlaget inte nämner dem.",
-      "sources": "Varje värde har en källa: vilket dokument, vilken mening och hur säker läsningen är.",
-      "model": "Servern tolkar inga dokument och anropar ingen AI. Inget i Husvan är byggt för en viss modell, så en bättre AI ger bättre svar utan att något byggs om."
+      "unknown": {
+        "title": "Egenskaper som inte nämns står som okända",
+        "body": "Säger prospektet inget om pool står det som okänt, och huset ligger kvar i listan när du filtrerar på pool."
+      },
+      "disclosure": {
+        "title": "Delar som alla hus har räknas alltid med",
+        "body": "Nämner underlaget inte taket eller rören räknar Husvan med dem från byggåret och märker posten som antagen. Ett hus blir alltså inte billigare för att prospektet säger mindre."
+      },
+      "sources": {
+        "title": "Varje värde har en källa",
+        "body": "Du ser vilket dokument det kommer från, vilken mening det står i och hur säker läsningen är."
+      },
+      "model": {
+        "title": "Husvan tolkar inga dokument",
+        "body": "Det gör din Claude, och Husvan anropar ingen AI själv. Husvan sparar det du godkänner och räknar efter fasta regler, så samma uppgifter ger samma summa. Inget är byggt för en viss modell, så svaren blir bättre när modellerna blir det."
+      }
     },
     "later": "När huset är köpt: underhållsplan och årshjul",
-    "laterBody": "Samma hus blir utgångspunkt för underhållet, utan att något flyttas och utan att du skriver in något. Varje del får sina kontroller efter typ, skick och ort, och årshjulet lägger ut dem månad för månad tillsammans med besiktningens anmärkningar och prognosens förnyelser. Redan som kandidat ser du första årets kontroller och hur många som kräver fackman.",
+    "laterStatus": "Kommer senare",
+    "laterBody": "Underhållet utgår från samma uppgifter om huset, så du behöver inte skriva in något på nytt. Varje del ska få sina kontroller efter typ, skick och ort, och årshjulet ska lägga ut dem månad för månad tillsammans med besiktningens anmärkningar och prognosens förnyelser.",
     "wheel": {
-      "label": "Årshjul {year} · Videvägen 7, Boden",
+      "label": "Exempel: årshjul {year} · Videvägen 7, Boden",
       "sources": {
         "routine": "Rutin",
         "inspection": "Från besiktningen",
@@ -119,62 +143,12 @@
         "gutters": "Rensa hängrännor och stuprör",
         "outdoorTaps": "Stäng av utekranarna",
         "smokeAlarms": "Testa brandvarnarna, byt batterier"
-      },
-      "question": "Öppen fråga: finns det en eldstad? Ett ja lägger till sotning och brandskyddskontroll, ett nej tar bort frågan."
-    },
-    "check": {
-      "label": "Kontroll",
-      "title": "Fuktkontroll i krypgrunden",
-      "meta": "Var sjätte månad · Lätt · Du själv",
-      "why": "Besiktningen anmärkte på fukt i krypgrunden. Därför var sjätte månad i stället för en gång om året, tills åtgärden är gjord.",
-      "lookFor": "Det här letar du efter",
-      "items": {
-        "moisture": "Fuktkvoten i syllen. Över 17 % är en anmärkning.",
-        "smell": "Lukt av mögel eller jord när luckan öppnas.",
-        "stains": "Vita fläckar, missfärgat trä eller vatten på plasten."
-      },
-      "result": "En anmärkning blir en åtgärd och sänker delens skick, så att prognosen räknas om.",
-      "notInspection": "Egenkontroll ersätter inte en besiktning."
-    },
-    "reminder": {
-      "label": "Claude, schemalagd varje morgon",
-      "messages": {
-        "due": {
-          "text": "God morgon. Fuktkontrollen i krypgrunden ska göras i maj, och i november låg syllen på 15 % vid norra hörnet. Den tar en halvtimme. Vill du planera in den? Lördag förmiddag är ledig i din kalender.",
-          "note": "dagens och månadens poster ur årshjulet, med senaste loggen"
-        },
-        "yes": {
-          "text": "Ja, lördag."
-        },
-        "planned": {
-          "text": "Inlagt lördag kl. 10, med vad du ska titta efter. Ta med fuktmätaren och skicka en bild på den när du är klar, så loggar jag det.",
-          "note": "posten planerad till lördag; kalendern är din egen koppling i Claude"
-        },
-        "log": {
-          "files": "fuktmätare.jpg",
-          "text": "19 % vid norra hörnet, 14 % på de andra två."
-        },
-        "remark": {
-          "text": "Det är över gränsen på 17 %. I utkastet ligger en anmärkning, en åtgärd att undersöka norra hörnet och skick 2 i stället för 3 på krypgrunden. Godkänner du det räknas prognosen om.",
-          "note": "loggen som utkast med mätvärde, åtgärd och nytt skick"
-        }
       }
     },
-    "wheelPoints": {
-      "local": {
-        "title": "Efter din ort",
-        "body": "Kontrollerna anger säsong, inte månad. Snösmältningen kommer i april–maj i Boden och i mars i Malmö, och hjulet följer med."
-      },
-      "calendar": {
-        "title": "Din Claude håller koll",
-        "body": "En schemalagd uppgift i Claude går igenom hjulet varje morgon, säger till när något ska göras i dag eller den här månaden och frågar om du vill planera in det. Vill du hellre ha det i kalendern går hjulet att prenumerera på."
-      },
-      "history": {
-        "title": "Loggen blir husets historik",
-        "body": "Vid försäljning är den underlag för frågelistan, och vid ett försäkringsärende visar den att underhållet är skött."
-      }
-    },
-    "invite": "Inbjudan krävs"
+    "closing": {
+      "title": "Räkna på huset innan du lägger bud",
+      "body": "Ladda upp prospektet i din Claude och se vad huset kostar år för år, jämfört med de andra husen."
+    }
   },
   "login": {
     "title": "Logga in",
