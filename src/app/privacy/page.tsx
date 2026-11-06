@@ -9,7 +9,10 @@ const UPDATED = new Date('2026-11-06T12:00:00Z')
 
 const SECTIONS = [
   { key: 'who' },
-  { key: 'data', items: ['account', 'signIn', 'houses', 'documents'] },
+  {
+    key: 'data',
+    items: ['account', 'signIn', 'houses', 'documents', 'visits'],
+  },
   { key: 'why' },
   {
     key: 'recipients',

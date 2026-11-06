@@ -1137,22 +1137,23 @@
       "account": "<b>Konto.</b> E-postadress, namn och när kontot skapades. Din adress står på en lista över vilka som får logga in, dit en administratör lagt den eller dit den kommer när du skapar ett konto.",
       "signIn": "<b>Inloggning.</b> IP-adress och webbläsare för varje inloggad session, och vilken åtkomst du gett Claude. När ett inloggningsmejl skickas sparas en nycklad hash av mottagaradressen, så att antalet mejl till en adress kan begränsas.",
       "houses": "<b>Hus.</b> Adresser, fastighetsbeteckningar, värden och åtgärder för husen du lägger in, dina egna antaganden som lån och ränta, och sparade prognoser.",
-      "documents": "<b>Dokument.</b> Filer och text från prospekt, besiktningsprotokoll och liknande, och Claudes tolkning av dem. De kan innehålla uppgifter om andra personer, till exempel säljare, mäklare och besiktningsmän."
+      "documents": "<b>Dokument.</b> Filer och text från prospekt, besiktningsprotokoll och liknande, och Claudes tolkning av dem. De kan innehålla uppgifter om andra personer, till exempel säljare, mäklare och besiktningsmän.",
+      "visits": "<b>Besök.</b> Cloudflare Web Analytics räknar sidvisningar på hela sajten, också när du är inloggad: vilken sida, varifrån du kom, land, webbläsare, operativsystem, enhetstyp och hur snabbt sidan laddade. Delen av adressen efter frågetecknet sparas inte. Statistiken visas sammanställd, utan kakor och utan att enskilda besökare följs."
     },
     "why": {
       "title": "Varför",
-      "body": "Uppgifterna behövs för att du ska kunna använda Husvan, med avtal som rättslig grund (artikel 6.1 b i GDPR). IP-adress, tekniska loggar, loggen över inloggningsmejl och spärrade adresser används för att skydda tjänsten mot missbruk, med berättigat intresse som grund (artikel 6.1 f). Uppgifterna säljs inte och används inte för reklam, och Husvan har ingen webbanalys. Inga automatiserade beslut fattas om dig."
+      "body": "Uppgifterna behövs för att du ska kunna använda Husvan, med avtal som rättslig grund (artikel 6.1 b i GDPR). IP-adress, tekniska loggar, loggen över inloggningsmejl och spärrade adresser används för att skydda tjänsten mot missbruk, med berättigat intresse som grund (artikel 6.1 f). Besöksstatistiken används för att se hur sajten används och hur snabbt den laddar, på samma grund. Uppgifterna säljs inte och används inte för reklam. Inga automatiserade beslut fattas om dig."
     },
     "recipients": {
       "title": "Vilka som hanterar uppgifterna",
       "hosting": "<b>Driftleverantör.</b> Appen och databasen körs på en VPS i Sverige.",
-      "cloudflare": "<b>Cloudflare.</b> Vidarebefordrar och skyddar trafiken till sajten, lagrar originalfilerna, skickar inloggningsmejlen och kontrollerar inloggningsformuläret. Cloudflare är ett amerikanskt bolag. Överföring utanför EU/EES sker med stöd av EU-kommissionens standardavtalsklausuler.",
+      "cloudflare": "<b>Cloudflare.</b> Vidarebefordrar och skyddar trafiken till sajten, mäter besök, lagrar originalfilerna, skickar inloggningsmejlen och kontrollerar inloggningsformuläret. Cloudflare är ett amerikanskt bolag. Överföring utanför EU/EES sker med stöd av EU-kommissionens standardavtalsklausuler.",
       "grafana": "<b>Grafana Cloud.</b> Tar emot databasserverns tekniska loggar för drift och felsökning.",
       "claude": "<b>Claude.</b> Husvan skickar inget till någon AI på eget initiativ. När du kopplat Husvan till din Claude hämtar och skriver Claude uppgifter på din begäran. Det du laddar upp eller skriver i chatten behandlas i ditt eget Claude-konto, enligt Anthropics villkor."
     },
     "retention": {
       "title": "Hur länge",
-      "body": "Uppgifterna sparas så länge du har kvar kontot. När du raderar kontot tas de bort direkt ur databasen och fillagringen. Inloggningssessioner löper ut av sig själva, loggen över inloggningsmejl rensas efter två dygn och tekniska loggar gallras automatiskt. En adress som en administratör spärrat sparas så länge spärren gäller, annars skulle den kunna registreras igen."
+      "body": "Uppgifterna sparas så länge du har kvar kontot. När du raderar kontot tas de bort direkt ur databasen och fillagringen. Inloggningssessioner löper ut av sig själva, loggen över inloggningsmejl rensas efter två dygn och tekniska loggar gallras automatiskt. Besöksstatistiken finns hos Cloudflare, som gallrar den enligt sina egna rutiner, och den tas inte bort när du raderar kontot. En adress som en administratör spärrat sparas så länge spärren gäller, annars skulle den kunna registreras igen."
     },
     "rights": {
       "title": "Dina rättigheter",
@@ -1168,7 +1169,7 @@
     },
     "cookies": {
       "title": "Kakor",
-      "body": "Husvan använder en kaka för inloggningen och en för valt språk. Båda behövs för att sidan ska fungera, så ingen samtyckesruta visas. På inloggningssidan kontrollerar Cloudflare Turnstile att det är en människa som loggar in."
+      "body": "Husvan använder en kaka för inloggningen och en för valt språk. Båda behövs för att sidan ska fungera, och besöksstatistiken använder inga kakor, så ingen samtyckesruta visas. På inloggningssidan kontrollerar Cloudflare Turnstile att det är en människa som loggar in."
     }
   }
 }
