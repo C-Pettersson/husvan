@@ -1024,25 +1024,25 @@
   },
   "tools": {
     "title": "Vad Claude kan göra i Husvan",
-    "metaDescription": "Alla verktyg din Claude får när du kopplar in Husvan: vad som bara läses, vad som blir ett utkast och vad som sparas direkt.",
+    "metaDescription": "Alla verktyg din Claude får när du kopplar in Husvan: verktyg som bara läser, verktyg som kräver ditt godkännande och verktyg som sparar utan godkännande.",
     "lead": "När du kopplar Husvan till din Claude får den de här {count, number} verktygen. Claude läser dina dokument och väljer verktyg. Husvan sparar, kontrollerar och räknar.",
     "groups": {
       "read": {
-        "title": "Läser bara",
-        "body": "Visar det som redan finns och ändrar ingenting."
+        "title": "Verktyg som bara läser",
+        "body": "De här verktygen visar sparade uppgifter. De ändrar inget."
       },
       "draft": {
-        "title": "Blir ett utkast du godkänner",
-        "body": "Det Claude läst ut hamnar i ett utkast. Utkastet ändrar inget i dina hus förrän det är godkänt."
+        "title": "Verktyg som kräver ditt godkännande",
+        "body": "Claude lägger ändringar i ett utkast. Dina hus ändras först när du godkänner utkastet."
       },
       "direct": {
-        "title": "Sparas direkt",
-        "body": "Det här sparas utan utkast: husets adress, dokument som underlag, siffror från annonsen, dina egna val och prognoserna."
+        "title": "Verktyg som sparar utan godkännande",
+        "body": "Husvan sparar de här uppgifterna direkt: husets adress, dokument, annonsuppgifter, dina egna val och prognoser."
       }
     },
     "list": {
       "list_houses": {
-        "title": "Lista husen",
+        "title": "Visa alla hus",
         "body": "Alla dina hus med status, pris, nyckeltal, flaggade risker och öppna utkast."
       },
       "get_house": {
@@ -1058,11 +1058,11 @@
         "body": "Filen du laddade upp, till exempel besiktningen som pdf eller ett foto på taket."
       },
       "type_library": {
-        "title": "Typbiblioteket",
+        "title": "Visa kända husdelar",
         "body": "Vilka husdelar Husvan känner till och vilka uppgifter Claude ska leta efter i dokumenten. Samma för alla och utan något om dina hus."
       },
       "open_questions": {
-        "title": "Öppna frågor",
+        "title": "Visa öppna frågor",
         "body": "Det analysen inte vet än och hur mycket varje svar kan flytta den. Underlag för en checklista inför visningen."
       },
       "compare": {
@@ -1078,7 +1078,7 @@
         "body": "Åtgärder som behöver göras, från en besiktning, en annons eller dig."
       },
       "answer_questions": {
-        "title": "Svara på frågor",
+        "title": "Svara på öppna frågor",
         "body": "Dina svar på de öppna frågorna om ett hus."
       },
       "edit_draft": {
@@ -1086,12 +1086,12 @@
         "body": "Tar bort eller lägger till rader i ett öppet utkast, när du vill ha det mesta men inte allt."
       },
       "confirm_changes": {
-        "title": "Godkänn eller avslå",
+        "title": "Godkänn eller avslå ett utkast",
         "body": "Avgör ett utkast. Det godkända syns i huset, det avslagna sparas men visas aldrig. Claude är instruerad att bara göra det när du har sagt till i chatten och sett vad utkastet innehåller."
       },
       "create_house": {
         "title": "Lägg till ett hus",
-        "body": "Adress, kommun och fastighetsbeteckning sparas direkt. Övriga uppgifter blir ett utkast du godkänner."
+        "body": "Husvan sparar adress, kommun och fastighetsbeteckning direkt. Övriga uppgifter läggs i ett utkast som du måste godkänna."
       },
       "save_document": {
         "title": "Spara ett dokument",
@@ -1106,16 +1106,16 @@
         "body": "Dina egna val för prognosen, för ett hus eller alla, som du har gjort i chatten."
       },
       "forecast": {
-        "title": "Räkna prognos",
+        "title": "Beräkna en prognos",
         "body": "Kostnad per år och post med spann, underhållsskuld och underhållsjusterat pris. Prognosen sparas, så att du kan se hur bedömningen ändras. Provräkningar sparas inte."
       },
       "mark_library_review": {
-        "title": "Markera genomläsning",
+        "title": "Markera dokument som omlästa",
         "body": "Noterar att dokumenten lästs om mot nya typer i biblioteket utan att något tillkom. Inget om huset ändras."
       }
     },
     "notes": {
-      "title": "Bra att veta",
+      "title": "Begränsningar",
       "account": "Claude kommer bara åt husen på kontot du loggar in med.",
       "noDelete": "Inget verktyg raderar något. Ett felaktigt värde ersätts eller återkallas, och avslagna utkast blir kvar utan att visas.",
       "interpretation": "Husvan läser inga annonser och anropar ingen AI. All tolkning görs av din egen Claude, och det verktygen svarar hamnar i din chatt där."
