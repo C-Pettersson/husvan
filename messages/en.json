@@ -1021,14 +1021,14 @@
     },
     "data": {
       "title": "What is stored",
-      "account": "<b>Account.</b> Email address, name and when the account was created. An administrator adds your address to the list of who may sign in, before you first sign in.",
-      "signIn": "<b>Sign-in.</b> IP address and browser for each signed-in session, and the access you have given Claude.",
+      "account": "<b>Account.</b> Email address, name and when the account was created. Your address is on a list of who may sign in, put there by an administrator or when you create an account.",
+      "signIn": "<b>Sign-in.</b> IP address and browser for each signed-in session, and the access you have given Claude. When a login mail is sent, a keyed hash of the recipient’s address is stored, so that the number of mails to an address can be limited.",
       "houses": "<b>Houses.</b> Addresses, property designations, values and work items for the houses you add, your own assumptions such as loan and interest rate, and saved forecasts.",
       "documents": "<b>Documents.</b> Files and text from listings, inspection reports and the like, and Claude’s interpretation of them. They may contain details about other people, such as sellers, brokers and inspectors."
     },
     "why": {
       "title": "Why",
-      "body": "The data is needed for you to use Husvan, with contract as the legal basis (GDPR article 6(1)(b)). IP addresses and technical logs are also used to protect the service against abuse, with legitimate interest as the basis (article 6(1)(f)). The data is not sold or used for advertising, and Husvan has no web analytics. No automated decisions are made about you."
+      "body": "The data is needed for you to use Husvan, with contract as the legal basis (GDPR article 6(1)(b)). IP addresses, technical logs, the log of login mail and blocked addresses are used to protect the service against abuse, with legitimate interest as the basis (article 6(1)(f)). The data is not sold or used for advertising, and Husvan has no web analytics. No automated decisions are made about you."
     },
     "recipients": {
       "title": "Who handles the data",
@@ -1039,7 +1039,7 @@
     },
     "retention": {
       "title": "For how long",
-      "body": "The data is kept for as long as you have your account. When you delete the account it is removed from the database and the file storage at once. Sign-in sessions expire on their own, and technical logs are purged automatically."
+      "body": "The data is kept for as long as you have your account. When you delete the account it is removed from the database and the file storage at once. Sign-in sessions expire on their own, the log of login mail is cleared after two days, and technical logs are purged automatically. An address blocked by an administrator is kept for as long as the block applies, or it could be registered again."
     },
     "rights": {
       "title": "Your rights",
@@ -1051,7 +1051,7 @@
     },
     "erasure": {
       "title": "When you delete the account",
-      "body": "The account, houses, documents, original files, drafts, forecasts, assumptions and Claude’s access are gone, and this cannot be undone. What exists outside Husvan is not affected: your chats in Claude and files you have already downloaded."
+      "body": "The account, houses, documents, original files, drafts, forecasts, assumptions and Claude’s access are gone, and this cannot be undone. The log of login mail clears itself within two days. What exists outside Husvan is not affected: your chats in Claude and files you have already downloaded."
     },
     "cookies": {
       "title": "Cookies",

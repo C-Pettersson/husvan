@@ -61,7 +61,7 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | Drift | k3s på användarens VPS, styrt från `C:\projects\infra-gitops` med Argo CD, Kustomize, KSOPS och Kargo. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. Se "Leverans och drift". |
 | Lokal körning | `docker compose up -d postgres`, `yarn db:migrate`, `yarn db:seed`, `yarn import:bki`, `yarn import:scb`, `yarn import:bra` och `yarn dev`, som i brfjamforelse. Postgres 16 lyssnar på `localhost:5433` (5432 används av andra projekt); kopiera `.env.example` till `.env` och fyll i hemligheten och den seedade användaren. Compose får senare en valfri app-image för att testa containern; det är inte produktionsmiljön. |
 
-Skillnader mot brfjamforelse: ingen organisationsmodell, kvoter bara för att skydda driften, ingen egen AI-anropning, ingen publik yta utöver startsidan och inloggningen. Det som inte behövs byggs inte.
+Skillnader mot brfjamforelse: ingen organisationsmodell, kvoter bara för att skydda driften, ingen egen AI-anropning, ingen publik yta utöver startsidan, integritetssidan och inloggningen. Det som inte behövs byggs inte.
 
 ### Leverans och drift
 
@@ -471,7 +471,8 @@ Nya komponenter skapas inte på webben i version 1; det gör Claude med `propose
 **Radering** (`account.delete`, `src/server/users/deleteAccount.ts`) kräver att användaren skriver sin e-postadress. Filerna i R2 tas bort först, sedan alla rader i en transaktion, inklusive adressen på listan över vilka som får logga in och väntande inloggningslänkar. Den ordningen gör att ett fel kan köras om: en fil utan rad går aldrig att hitta igen, men rader utan fil stör bara tills raderingen körs igen.
 
 - **Sista administratören** kan inte radera sig själv. Någon måste kunna sköta listan, och `db:seed:add` skapar ändå ägaren igen vid nästa release.
-- **Claude.** Refresh-token och samtycken försvinner. Ett redan utfärdat JWT gäller tills det går ut eftersom MCP-routen bara kontrollerar signaturen, men verktygen filtrerar på ägare, så det läser inget, och skrivningar stoppas av främmande nycklar mot den borttagna användaren.
+- **Claude.** Refresh-token och samtycken försvinner, och ett redan utfärdat JWT får `403` eftersom `isUserBlocked` i MCP-routen inte längre hittar användaren.
+- **Adressen.** Raden i `allowed_email` tas bort, så med öppen registrering kan adressen skapa ett nytt, tomt konto. En spärrad adress kan inte radera sig, eftersom den inte kan logga in; raden blir kvar med `blockedAt` och begäran går via kontaktadressen. Hashen i `login_mail` tas inte bort vid radering, så att en radering inte nollställer mejlgränsen; den rensas efter två dygn.
 - **Ny data med ägare.** En tabell med personuppgifter måste kunna kopplas till en användare och läggas till i både export och radering. `House.owner` och `Assumption.owner` är `Restrict`, så att en rad som glömts stoppar raderingen i stället för att bli kvar utan ägare. Standardantaganden för alla hus (`Assumption` utan hus) har därför `ownerId`; de gällde tidigare alla användare.
 - **Utanför Husvan.** Chattar i användarens Claude och redan nedladdade filer når vi inte, och det står på `/privacy`.
 

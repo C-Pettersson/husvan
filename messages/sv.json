@@ -1021,14 +1021,14 @@
     },
     "data": {
       "title": "Vilka uppgifter som sparas",
-      "account": "<b>Konto.</b> E-postadress, namn och när kontot skapades. En administratör lägger in din adress på listan över vilka som får logga in, innan du loggar in första gången.",
-      "signIn": "<b>Inloggning.</b> IP-adress och webbläsare för varje inloggad session, och vilken åtkomst du gett Claude.",
+      "account": "<b>Konto.</b> E-postadress, namn och när kontot skapades. Din adress står på en lista över vilka som får logga in, dit en administratör lagt den eller dit den kommer när du skapar ett konto.",
+      "signIn": "<b>Inloggning.</b> IP-adress och webbläsare för varje inloggad session, och vilken åtkomst du gett Claude. När ett inloggningsmejl skickas sparas en nycklad hash av mottagaradressen, så att antalet mejl till en adress kan begränsas.",
       "houses": "<b>Hus.</b> Adresser, fastighetsbeteckningar, värden och åtgärder för husen du lägger in, dina egna antaganden som lån och ränta, och sparade prognoser.",
       "documents": "<b>Dokument.</b> Filer och text från prospekt, besiktningsprotokoll och liknande, och Claudes tolkning av dem. De kan innehålla uppgifter om andra personer, till exempel säljare, mäklare och besiktningsmän."
     },
     "why": {
       "title": "Varför",
-      "body": "Uppgifterna behövs för att du ska kunna använda Husvan, med avtal som rättslig grund (artikel 6.1 b i GDPR). IP-adress och tekniska loggar används också för att skydda tjänsten mot missbruk, med berättigat intresse som grund (artikel 6.1 f). Uppgifterna säljs inte och används inte för reklam, och Husvan har ingen webbanalys. Inga automatiserade beslut fattas om dig."
+      "body": "Uppgifterna behövs för att du ska kunna använda Husvan, med avtal som rättslig grund (artikel 6.1 b i GDPR). IP-adress, tekniska loggar, loggen över inloggningsmejl och spärrade adresser används för att skydda tjänsten mot missbruk, med berättigat intresse som grund (artikel 6.1 f). Uppgifterna säljs inte och används inte för reklam, och Husvan har ingen webbanalys. Inga automatiserade beslut fattas om dig."
     },
     "recipients": {
       "title": "Vilka som hanterar uppgifterna",
@@ -1039,7 +1039,7 @@
     },
     "retention": {
       "title": "Hur länge",
-      "body": "Uppgifterna sparas så länge du har kvar kontot. När du raderar kontot tas de bort direkt ur databasen och fillagringen. Inloggningssessioner löper ut av sig själva och tekniska loggar gallras automatiskt."
+      "body": "Uppgifterna sparas så länge du har kvar kontot. När du raderar kontot tas de bort direkt ur databasen och fillagringen. Inloggningssessioner löper ut av sig själva, loggen över inloggningsmejl rensas efter två dygn och tekniska loggar gallras automatiskt. En adress som en administratör spärrat sparas så länge spärren gäller, annars skulle den kunna registreras igen."
     },
     "rights": {
       "title": "Dina rättigheter",
@@ -1051,7 +1051,7 @@
     },
     "erasure": {
       "title": "När du raderar kontot",
-      "body": "Konto, hus, dokument, originalfiler, utkast, prognoser, antaganden och Claudes åtkomst försvinner, och raderingen går inte att ångra. Det som finns utanför Husvan påverkas inte: dina chattar i Claude och filer du redan laddat ner."
+      "body": "Konto, hus, dokument, originalfiler, utkast, prognoser, antaganden och Claudes åtkomst försvinner, och raderingen går inte att ångra. Loggen över inloggningsmejl rensas av sig själv inom två dygn. Det som finns utanför Husvan påverkas inte: dina chattar i Claude och filer du redan laddat ner."
     },
     "cookies": {
       "title": "Kakor",
