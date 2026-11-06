@@ -153,6 +153,7 @@
       "body": "Upload the listing in your Claude and see what the house costs year by year, compared with the other houses."
     },
     "footerPrivacy": "Privacy",
+    "footerTools": "What Claude can do",
     "about": {
       "title": "About Husvan",
       "origin": "Husvan was built to teach me how to run an AI-first project, and to help me in my own search for a dream house. Expect things to change quite a lot. I may have got it completely wrong how to build something like this.",
@@ -179,7 +180,8 @@
     "linkFailed": "The link could not be sent. Try again.",
     "linkInvalid": "The link is invalid or has expired. Ask for a new one.",
     "failed": "Wrong email or password.",
-    "privacy": "How your data is handled"
+    "privacy": "How your data is handled",
+    "tools": "What Claude can do in Husvan"
   },
   "consent": {
     "title": "Grant access",
@@ -1010,6 +1012,108 @@
       "deletedBody": "Your details and files are removed from Husvan. To remove the connector from Claude as well, do so in Claude’s settings.",
       "toHome": "To the start page"
     }
+  },
+  "tools": {
+    "title": "What Claude can do in Husvan",
+    "metaDescription": "Every tool your Claude gets when you connect Husvan: what is only read, what becomes a draft and what is saved directly.",
+    "lead": "When you connect Husvan to your Claude, it gets these {count, number} tools. Claude reads your documents and chooses the tools. Husvan stores, checks and calculates.",
+    "groups": {
+      "read": {
+        "title": "Only reads",
+        "body": "Shows what is already there and changes nothing."
+      },
+      "draft": {
+        "title": "Becomes a draft you approve",
+        "body": "What Claude has read goes into a draft. The draft changes nothing in your houses until it is approved."
+      },
+      "direct": {
+        "title": "Saved directly",
+        "body": "These are saved without a draft: the house’s address, documents as evidence, figures from the listing, your own choices and the forecasts."
+      }
+    },
+    "list": {
+      "list_houses": {
+        "title": "List houses",
+        "body": "All your houses with status, price, key figures, flagged risks and open drafts."
+      },
+      "get_house": {
+        "title": "Show a house",
+        "body": "Everything approved about a house: values with their source, parts, risks, area statistics, work items and documents. It can also show an open draft, or the house as it stood on a given date."
+      },
+      "get_document": {
+        "title": "Show a document",
+        "body": "A saved document: details about it, the full text and Claude’s earlier interpretation."
+      },
+      "get_document_file": {
+        "title": "Fetch the original file",
+        "body": "The file you uploaded, such as the inspection report as a PDF or a photo of the roof."
+      },
+      "type_library": {
+        "title": "Type library",
+        "body": "Which house parts Husvan knows and what Claude should look for in the documents. The same for everyone, with nothing about your houses."
+      },
+      "open_questions": {
+        "title": "Open questions",
+        "body": "What the analysis does not know yet and how much each answer could move it. The basis for a checklist before a viewing."
+      },
+      "compare": {
+        "title": "Compare houses",
+        "body": "Several houses side by side with price, maintenance debt and maintenance-adjusted price, cheapest first."
+      },
+      "propose_changes": {
+        "title": "Propose changes",
+        "body": "New parts, values and work items from the documents, and corrections of what is already approved."
+      },
+      "add_work_item": {
+        "title": "Add work items",
+        "body": "Work that needs doing, from an inspection, a listing or you."
+      },
+      "answer_questions": {
+        "title": "Answer questions",
+        "body": "Your answers to the open questions about a house."
+      },
+      "edit_draft": {
+        "title": "Correct a draft",
+        "body": "Removes or adds rows in an open draft, when you want most of it but not all."
+      },
+      "confirm_changes": {
+        "title": "Approve or reject",
+        "body": "Decides a draft. What is approved shows on the house; what is rejected stays stored but is never shown. Claude is instructed to do this only when you have said so in the chat and seen what the draft contains."
+      },
+      "create_house": {
+        "title": "Add a house",
+        "body": "Address, municipality and property designation are saved directly. Other details become a draft you approve."
+      },
+      "save_document": {
+        "title": "Save a document",
+        "body": "The document’s full text, details about it and Claude’s interpretation, unchanged. A document is evidence and changes no values on the house."
+      },
+      "update_listing": {
+        "title": "Update listing details",
+        "body": "Sale status, asking price, highest bid and final price for a house you follow, and the house’s status once the sale is over."
+      },
+      "set_assumption": {
+        "title": "Save assumptions",
+        "body": "Your own choices for the forecast, for one house or all, made in the chat."
+      },
+      "forecast": {
+        "title": "Calculate a forecast",
+        "body": "Cost per year and item with a range, maintenance debt and maintenance-adjusted price. The forecast is saved, so that you can see how the assessment changes. What-if calculations are not saved."
+      },
+      "mark_library_review": {
+        "title": "Mark a review",
+        "body": "Notes that the documents were re-read against new types in the library and nothing was added. Nothing about the house changes."
+      }
+    },
+    "notes": {
+      "title": "Good to know",
+      "account": "Claude can only reach the houses on the account you sign in with.",
+      "noDelete": "No tool deletes anything. A wrong value is replaced or retracted, and rejected drafts stay stored without being shown.",
+      "interpretation": "Husvan reads no listings and calls no AI. All interpretation is done by your own Claude, and what the tools answer ends up in your chat there."
+    },
+    "connect": "The tools become available once you have added Husvan as a custom connector in your Claude and signed in.",
+    "getStarted": "Get started",
+    "privacy": "How your data is handled"
   },
   "privacy": {
     "title": "Privacy",

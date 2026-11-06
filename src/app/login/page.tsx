@@ -39,6 +39,9 @@ export default async function LoginPage() {
         <Typography variant="body2" sx={{ mt: 3 }}>
           <Link href="/privacy">{t('privacy')}</Link>
         </Typography>
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          <Link href="/tools">{t('tools')}</Link>
+        </Typography>
       </Paper>
     </Container>
   )
