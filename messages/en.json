@@ -1132,22 +1132,23 @@
       "account": "<b>Account.</b> Email address, name and when the account was created. Your address is on a list of who may sign in, put there by an administrator or when you create an account.",
       "signIn": "<b>Sign-in.</b> IP address and browser for each signed-in session, and the access you have given Claude. When a login mail is sent, a keyed hash of the recipient’s address is stored, so that the number of mails to an address can be limited.",
       "houses": "<b>Houses.</b> Addresses, property designations, values and work items for the houses you add, your own assumptions such as loan and interest rate, and saved forecasts.",
-      "documents": "<b>Documents.</b> Files and text from listings, inspection reports and the like, and Claude’s interpretation of them. They may contain details about other people, such as sellers, brokers and inspectors."
+      "documents": "<b>Documents.</b> Files and text from listings, inspection reports and the like, and Claude’s interpretation of them. They may contain details about other people, such as sellers, brokers and inspectors.",
+      "visits": "<b>Visits.</b> Cloudflare Web Analytics counts page views across the whole site, including when you are signed in: which page, where you came from, country, browser, operating system, device type and how quickly the page loaded. The part of the address after the question mark is not stored. The statistics are shown in aggregate, without cookies and without following individual visitors."
     },
     "why": {
       "title": "Why",
-      "body": "The data is needed for you to use Husvan, with contract as the legal basis (GDPR article 6(1)(b)). IP addresses, technical logs, the log of login mail and blocked addresses are used to protect the service against abuse, with legitimate interest as the basis (article 6(1)(f)). The data is not sold or used for advertising, and Husvan has no web analytics. No automated decisions are made about you."
+      "body": "The data is needed for you to use Husvan, with contract as the legal basis (GDPR article 6(1)(b)). IP addresses, technical logs, the log of login mail and blocked addresses are used to protect the service against abuse, with legitimate interest as the basis (article 6(1)(f)). The visit statistics are used to see how the site is used and how quickly it loads, on the same basis. The data is not sold or used for advertising. No automated decisions are made about you."
     },
     "recipients": {
       "title": "Who handles the data",
       "hosting": "<b>Hosting provider.</b> The app and the database run on a VPS in Sweden.",
-      "cloudflare": "<b>Cloudflare.</b> Forwards and protects traffic to the site, stores the original files, sends the login mail and checks the login form. Cloudflare is a US company. Transfers outside the EU/EEA rely on the European Commission’s standard contractual clauses.",
+      "cloudflare": "<b>Cloudflare.</b> Forwards and protects traffic to the site, measures visits, stores the original files, sends the login mail and checks the login form. Cloudflare is a US company. Transfers outside the EU/EEA rely on the European Commission’s standard contractual clauses.",
       "grafana": "<b>Grafana Cloud.</b> Receives the database server’s technical logs for operations and troubleshooting.",
       "claude": "<b>Claude.</b> Husvan sends nothing to any AI on its own initiative. Once you have connected Husvan to your Claude, Claude reads and writes data at your request. What you upload or write in the chat is handled in your own Claude account, under Anthropic’s terms."
     },
     "retention": {
       "title": "For how long",
-      "body": "The data is kept for as long as you have your account. When you delete the account it is removed from the database and the file storage at once. Sign-in sessions expire on their own, the log of login mail is cleared after two days, and technical logs are purged automatically. An address blocked by an administrator is kept for as long as the block applies, or it could be registered again."
+      "body": "The data is kept for as long as you have your account. When you delete the account it is removed from the database and the file storage at once. Sign-in sessions expire on their own, the log of login mail is cleared after two days, and technical logs are purged automatically. The visit statistics are held by Cloudflare, which purges them under its own routines, and they are not removed when you delete your account. An address blocked by an administrator is kept for as long as the block applies, or it could be registered again."
     },
     "rights": {
       "title": "Your rights",
@@ -1163,7 +1164,7 @@
     },
     "cookies": {
       "title": "Cookies",
-      "body": "Husvan uses one cookie for signing in and one for the chosen language. Both are needed for the site to work, so no consent banner is shown. On the login page, Cloudflare Turnstile checks that a human is signing in."
+      "body": "Husvan uses one cookie for signing in and one for the chosen language. Both are needed for the site to work, and the visit statistics use no cookies, so no consent banner is shown. On the login page, Cloudflare Turnstile checks that a human is signing in."
     }
   }
 }
