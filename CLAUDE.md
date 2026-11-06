@@ -131,13 +131,16 @@ Cloudflare skyddar bara mot anonym trafik. Det ser vem som skickar en begäran, 
 
 **Spärra.** Att spärra en adress på `/admin` loggar ut användaren och tar bort Claudes token. Raden i `allowed_email` blir kvar med `blockedAt`, annars skulle öppen registrering släppa in adressen igen. Spärren gäller också länkar och koder som redan skickats (`session.create` i `src/lib/auth.ts`) och Claudes redan utfärdade JWT (`isUserBlocked` i MCP-routen). Husen finns kvar. Ett konto utan rad i `allowed_email` räknas som spärrat, eftersom varje nytt konto får en rad när det skapas.
 
-**Regler i Cloudflare.** De ligger i panelen, inte i något repo, och läggs in innan registreringen öppnas. Hur många regler som får plats beror på planen. Prioritetsordning:
+**Regler i Cloudflare.** De ligger i panelen, inte i något repo, och läggs in innan registreringen öppnas. Två regler, skrivna för Free-planen, som tillåter fem egna regler och en rate limit:
 
-1. **Rate limit per IP** på `/api/auth/sign-in/magic-link` och `/api/auth/sign-in/email-otp`, till exempel 10 per minut. Blockera.
-2. **Uppladdningens storlek:** blockera `POST` till `/api/houses/*/documents` med `Content-Length` över 26 MB. Appen vägrar också, men först efter att begäran nått klustret.
-3. **Managed Challenge** på `/login` och `/api/auth/sign-in/*` för trafik utanför Norden. Aldrig på sökvägarna som anropas av Anthropics servrar, eftersom de inte kan lösa en utmaning.
-4. **Rate limit per IP** på `/api/trpc/*` för inloggade webbanvändare, till exempel 300 per minut.
-5. **Bot Fight Mode**, om det inte stör kopplingen. Provinloggning från Claude efter att det slagits på.
+| Regel | Uttryck | Åtgärd |
+| --- | --- | --- |
+| Egen regel "Inloggning utanför Norden" | `(http.request.uri.path eq "/login" or starts_with(http.request.uri.path, "/api/auth/sign-in/")) and not ip.src.country in {"SE" "NO" "DK" "FI" "IS"}` | Managed Challenge |
+| Rate limit "Inloggningsförsök" | `http.request.uri.path in {"/api/auth/sign-in/magic-link" "/api/auth/sign-in/email-otp" "/api/auth/sign-in/email"}` | Block, per IP: 4 begäran på 10 sekunder, i 10 sekunder (Free-planens enda period) |
+
+Utmaningen får aldrig omfatta sökvägarna som anropas av Anthropics servrar, eftersom de inte kan lösa den. Free-planens rate limit är kort; den längre gränsen per IP står appen för (se tabellen ovan).
+
+Medvetet utelämnat: **Bot Fight Mode**, som gäller hela domänen, inte kan undantas med egna regler och kan utmana API-trafik, alltså Claudes anrop till MCP-routen. **Uppladdningens storlek**, eftersom `http.request.body.size` kräver Enterprise och appen redan vägrar på `Content-Length`. **Rate limit på `/api/trpc/*`**, eftersom Free bara har en regel; den läggs till med Pro, som har två.
 
 Access får inte ligga framför `husvan.se` när registreringen är öppen.
 
