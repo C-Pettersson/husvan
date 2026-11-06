@@ -51,6 +51,11 @@ export default async function AppHeader() {
         )}
         <Box sx={{ flexGrow: 1 }} />
         <LanguageSwitch />
+        {session && (
+          <Button href="/profile" color="inherit">
+            {t('profile')}
+          </Button>
+        )}
         {session ? (
           <SignOutButton />
         ) : (

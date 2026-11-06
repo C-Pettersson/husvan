@@ -10,7 +10,8 @@
     "signIn": "Logga in",
     "signOut": "Logga ut",
     "language": "Språk",
-    "users": "Användare"
+    "users": "Användare",
+    "profile": "Profil"
   },
   "home": {
     "title": "Vad kostar huset över tid?",
@@ -148,6 +149,13 @@
     "closing": {
       "title": "Räkna på huset innan du lägger bud",
       "body": "Ladda upp prospektet i din Claude och se vad huset kostar år för år, jämfört med de andra husen."
+    },
+    "footerPrivacy": "Integritet",
+    "about": {
+      "title": "Om Husvan",
+      "origin": "Husvan togs fram för att lära mig hur man gör ett AI-first-projekt, och för att underlätta mitt eget sökande efter drömhuset. Räkna med att saker kan ändras rätt kraftigt. Det kan vara helt fel tänkt från min sida hur man bygger något sådant här.",
+      "ambition": "Ambitionen är att Husvan ska fungera som ett komplement till valfri AI-modell, så att du kan kommunicera med ditt hus och dess behov, och få tips, råd och uppmaningar tillbaka om sådant som behöver åtgärdas och hanteras. Lite av en digital fastighetsförvaltare, som utvecklas tillsammans med AI:ns framgång.",
+      "brf": "Är du på jakt efter en bostadsrätt kan du se mitt projekt för just det: <link>brfjamforelse.se</link>."
     }
   },
   "login": {
@@ -166,7 +174,8 @@
     "sendAgain": "Skicka ett nytt mejl",
     "linkFailed": "Det gick inte att skicka länken. Försök igen.",
     "linkInvalid": "Länken är ogiltig eller har gått ut. Be om en ny.",
-    "failed": "Fel e-post eller lösenord."
+    "failed": "Fel e-post eller lösenord.",
+    "privacy": "Så behandlas dina uppgifter"
   },
   "consent": {
     "title": "Ge åtkomst",
@@ -945,5 +954,87 @@
     "separate_building_part_at_top_level": "{type} \"{name}\" ligger på toppnivå men hör enligt namnet till ett garage eller en komplementbyggnad, så den tar en andel av husets uppskattade yta; flytta den under byggnaden med egen yta",
     "building_without_parts": "{type} \"{name}\" har inget tak under sig; en byggnad prissätts genom sina delar, så den kostar inget i prognosen",
     "building_parts_assumed": "{type} \"{name}\" har inget tak under sig; prognosen antar ett ur byggnadens yta, så registrera det underlaget säger"
+  },
+  "profile": {
+    "title": "Profil",
+    "intro": "Här rättar du dina uppgifter, hämtar en kopia av dem eller raderar allt. Läs mer om hur <privacy>Husvan behandlar dina uppgifter</privacy>.",
+    "account": {
+      "title": "Konto",
+      "email": "E-postadress",
+      "emailHelp": "Adressen är din inloggning. Vill du byta den, skriv till <mail>{contact}</mail>.",
+      "name": "Namn",
+      "save": "Spara",
+      "saved": "Namnet är sparat.",
+      "saveFailed": "Det gick inte att spara namnet.",
+      "createdAt": "Kontot skapades {date}."
+    },
+    "data": {
+      "title": "Dina data",
+      "summary": "Sparat: {houses} hus och {documents} dokument.",
+      "body": "Du får allt som är sparat om dig i en ZIP-fil: uppgifterna som JSON och originalfilerna. Även utkast och värden du tagit bort följer med. Det kan ta en stund om du har många dokument.",
+      "export": "Ladda ner mina data"
+    },
+    "delete": {
+      "title": "Radera konto",
+      "body": "Kontot, alla hus, dokument, originalfiler och prognoser tas bort för gott, och Claude kommer inte längre åt något. Din adress tas bort från listan över vilka som får logga in. Det går inte att ångra, så hämta gärna en kopia först.",
+      "button": "Radera mitt konto",
+      "lastAdmin": "Du är den enda administratören. Någon måste kunna sköta listan över vilka som får logga in, så kontot går inte att radera här.",
+      "dialogTitle": "Radera kontot för gott?",
+      "dialogBody": "{houses} hus och {documents} dokument tas bort och det går inte att ångra. Skriv {email} för att bekräfta.",
+      "confirmLabel": "Din e-postadress",
+      "cancel": "Avbryt",
+      "confirm": "Radera allt",
+      "failed": "Det gick inte att radera kontot. Dina uppgifter finns kvar i databasen, men några originalfiler kan vara borttagna. Försök igen.",
+      "deletedTitle": "Kontot är raderat",
+      "deletedBody": "Dina uppgifter och filer är borttagna ur Husvan. Vill du också ta bort kopplingen i Claude gör du det i Claudes inställningar.",
+      "toHome": "Till startsidan"
+    }
+  },
+  "privacy": {
+    "title": "Integritet",
+    "lead": "Så behandlar Husvan dina personuppgifter. Husvan är ett litet privat projekt och sparar det som behövs för att verktyget ska fungera.",
+    "updated": "Senast ändrad {date}",
+    "who": {
+      "title": "Vem som ansvarar",
+      "body": "Husvan drivs som ett hobbyprojekt av en privatperson, som är personuppgiftsansvarig. Frågor om dina uppgifter skickar du till <mail>{contact}</mail>."
+    },
+    "data": {
+      "title": "Vilka uppgifter som sparas",
+      "account": "<b>Konto.</b> E-postadress, namn och när kontot skapades. En administratör lägger in din adress på listan över vilka som får logga in, innan du loggar in första gången.",
+      "signIn": "<b>Inloggning.</b> IP-adress och webbläsare för varje inloggad session, och vilken åtkomst du gett Claude.",
+      "houses": "<b>Hus.</b> Adresser, fastighetsbeteckningar, värden och åtgärder för husen du lägger in, dina egna antaganden som lån och ränta, och sparade prognoser.",
+      "documents": "<b>Dokument.</b> Filer och text från prospekt, besiktningsprotokoll och liknande, och Claudes tolkning av dem. De kan innehålla uppgifter om andra personer, till exempel säljare, mäklare och besiktningsmän."
+    },
+    "why": {
+      "title": "Varför",
+      "body": "Uppgifterna behövs för att du ska kunna använda Husvan, med avtal som rättslig grund (artikel 6.1 b i GDPR). IP-adress och tekniska loggar används också för att skydda tjänsten mot missbruk, med berättigat intresse som grund (artikel 6.1 f). Uppgifterna säljs inte och används inte för reklam, och Husvan har ingen webbanalys. Inga automatiserade beslut fattas om dig."
+    },
+    "recipients": {
+      "title": "Vilka som hanterar uppgifterna",
+      "hosting": "<b>Driftleverantör.</b> Appen och databasen körs på en VPS i Sverige.",
+      "cloudflare": "<b>Cloudflare.</b> Vidarebefordrar och skyddar trafiken till sajten, lagrar originalfilerna, skickar inloggningsmejlen och kontrollerar inloggningsformuläret. Cloudflare är ett amerikanskt bolag. Överföring utanför EU/EES sker med stöd av EU-kommissionens standardavtalsklausuler.",
+      "grafana": "<b>Grafana Cloud.</b> Tar emot databasserverns tekniska loggar för drift och felsökning.",
+      "claude": "<b>Claude.</b> Husvan skickar inget till någon AI på eget initiativ. När du kopplat Husvan till din Claude hämtar och skriver Claude uppgifter på din begäran. Det du laddar upp eller skriver i chatten behandlas i ditt eget Claude-konto, enligt Anthropics villkor."
+    },
+    "retention": {
+      "title": "Hur länge",
+      "body": "Uppgifterna sparas så länge du har kvar kontot. När du raderar kontot tas de bort direkt ur databasen och fillagringen. Inloggningssessioner löper ut av sig själva och tekniska loggar gallras automatiskt."
+    },
+    "rights": {
+      "title": "Dina rättigheter",
+      "access": "<b>Kopia och flytt.</b> På <profile>profilsidan</profile> hämtar du allt som är sparat i en ZIP-fil, med uppgifterna som JSON och originalfilerna.",
+      "rectify": "<b>Rättelse.</b> Namnet ändrar du på profilsidan och uppgifter om ett hus på husets sida eller via Claude. Vill du byta e-postadress, skriv till <mail>{contact}</mail>.",
+      "erase": "<b>Radering.</b> Du raderar kontot själv på profilsidan.",
+      "other": "<b>Begränsning och invändning.</b> Du har också rätt att begära att behandlingen begränsas och att invända mot den. Skriv till <mail>{contact}</mail>.",
+      "complaint": "<b>Klagomål.</b> Anser du att uppgifterna hanteras fel kan du klaga hos <imy>Integritetsskyddsmyndigheten (IMY)</imy>."
+    },
+    "erasure": {
+      "title": "När du raderar kontot",
+      "body": "Konto, hus, dokument, originalfiler, utkast, prognoser, antaganden och Claudes åtkomst försvinner, och raderingen går inte att ångra. Det som finns utanför Husvan påverkas inte: dina chattar i Claude och filer du redan laddat ner."
+    },
+    "cookies": {
+      "title": "Kakor",
+      "body": "Husvan använder en kaka för inloggningen och en för valt språk. Båda behövs för att sidan ska fungera, så ingen samtyckesruta visas. På inloggningssidan kontrollerar Cloudflare Turnstile att det är en människa som loggar in."
+    }
   }
 }

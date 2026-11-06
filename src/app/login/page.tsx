@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
-import { Container, Paper, Typography } from '@mui/material'
+import { Container, Link, Paper, Typography } from '@mui/material'
 import LoginForm from './LoginForm'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,6 +26,9 @@ export default async function LoginPage() {
         <Suspense>
           <LoginForm turnstileSiteKey={turnstileSiteKey} />
         </Suspense>
+        <Typography variant="body2" sx={{ mt: 3 }}>
+          <Link href="/privacy">{t('privacy')}</Link>
+        </Typography>
       </Paper>
     </Container>
   )

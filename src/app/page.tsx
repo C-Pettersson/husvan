@@ -4,6 +4,7 @@ import {
   Button,
   Chip,
   Container,
+  Link,
   Paper,
   Stack,
   Typography,
@@ -443,6 +444,26 @@ export default async function HomePage() {
           </Box>
         </Section>
 
+        <Section title={t('about.title')}>
+          <Stack spacing={2} sx={{ maxWidth: '65ch' }}>
+            <Typography>{t('about.origin')}</Typography>
+            <Typography>{t('about.ambition')}</Typography>
+            <Typography>
+              {t.rich('about.brf', {
+                link: (chunks) => (
+                  <Link
+                    href="https://brfjamforelse.se/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </Typography>
+          </Stack>
+        </Section>
+
         <Box
           component="section"
           sx={{
@@ -481,6 +502,9 @@ export default async function HomePage() {
             <Typography variant="body2" color="text.secondary">
               © {new Date().getFullYear()} Husvan
             </Typography>
+            <Link href="/privacy" variant="body2" sx={{ pl: 1 }}>
+              {t('footerPrivacy')}
+            </Link>
           </Stack>
         </PageContainer>
       </Box>

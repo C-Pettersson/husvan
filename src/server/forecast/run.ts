@@ -136,16 +136,16 @@ export type ResolvedAssumptions = {
   source: Record<string, 'house' | 'all_houses' | 'default' | 'this_forecast'>
 }
 
-// The newest approved assumption per key for the house, else for all
-// houses, else the defaults (CLAUDE.md, "Regler för beräkningen").
+// The newest approved assumption per key for the house, else for all the
+// owner's houses, else the defaults (CLAUDE.md, "Regler för beräkningen").
 export async function resolveAssumptions(
   prisma: PrismaClient,
-  houseId: string,
+  { ownerId, houseId }: { ownerId: string; houseId: string },
   now = new Date()
 ): Promise<ResolvedAssumptions> {
   const rows = await prisma.assumption.findMany({
     where: {
-      OR: [{ houseId }, { houseId: null }],
+      OR: [{ houseId }, { houseId: null, ownerId }],
       changeset: { status: 'APPROVED' },
     },
     orderBy: { createdAt: 'asc' },
@@ -198,7 +198,7 @@ export async function analyseHouse(
     components: tried.components,
     values: tried.houseValues,
   }
-  const resolved = await resolveAssumptions(prisma, houseId)
+  const resolved = await resolveAssumptions(prisma, { ownerId, houseId })
   const a = { ...resolved.values, ...overrides }
   for (const k of Object.keys(overrides ?? {}))
     resolved.source[k] = 'this_forecast'

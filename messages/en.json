@@ -10,7 +10,8 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "language": "Language",
-    "users": "Users"
+    "users": "Users",
+    "profile": "Profile"
   },
   "home": {
     "title": "What does the house cost over time?",
@@ -148,6 +149,13 @@
     "closing": {
       "title": "Work out what the house costs before you bid",
       "body": "Upload the listing in your Claude and see what the house costs year by year, compared with the other houses."
+    },
+    "footerPrivacy": "Privacy",
+    "about": {
+      "title": "About Husvan",
+      "origin": "Husvan was built to teach me how to run an AI-first project, and to help me in my own search for a dream house. Expect things to change quite a lot. I may have got it completely wrong how to build something like this.",
+      "ambition": "The ambition is for Husvan to work as a complement to any AI model of your choice, so that you can communicate with your house and its needs, and get tips, advice and reminders back about things that need fixing and taking care of. A bit of a digital property manager, one that develops along with the success of AI.",
+      "brf": "If you are looking for a housing cooperative flat, have a look at my project for exactly that: <link>brfjamforelse.se</link>."
     }
   },
   "login": {
@@ -166,7 +174,8 @@
     "sendAgain": "Send a new email",
     "linkFailed": "The link could not be sent. Try again.",
     "linkInvalid": "The link is invalid or has expired. Ask for a new one.",
-    "failed": "Wrong email or password."
+    "failed": "Wrong email or password.",
+    "privacy": "How your data is handled"
   },
   "consent": {
     "title": "Grant access",
@@ -945,5 +954,87 @@
     "separate_building_part_at_top_level": "{type} \"{name}\" sits at top level but by its name belongs to a garage or an outbuilding, so it takes a share of the house’s estimated area; move it under that building with its own area",
     "building_without_parts": "{type} \"{name}\" has no roof under it; a building is priced through its parts, so it costs nothing in the forecast",
     "building_parts_assumed": "{type} \"{name}\" has no roof under it; the forecast assumes one from the building's area, so register what the documents say"
+  },
+  "profile": {
+    "title": "Profile",
+    "intro": "Correct your details, take a copy of them or erase everything here. Read more about how <privacy>Husvan handles your data</privacy>.",
+    "account": {
+      "title": "Account",
+      "email": "Email address",
+      "emailHelp": "The address is your login. To change it, write to <mail>{contact}</mail>.",
+      "name": "Name",
+      "save": "Save",
+      "saved": "The name is saved.",
+      "saveFailed": "The name could not be saved.",
+      "createdAt": "Account created {date}."
+    },
+    "data": {
+      "title": "Your data",
+      "summary": "Stored: {houses, plural, one {# house} other {# houses}} and {documents, plural, one {# document} other {# documents}}.",
+      "body": "You get everything stored about you in a ZIP file: the details as JSON and the original files. Drafts and values you removed are included too. It may take a while if you have many documents.",
+      "export": "Download my data"
+    },
+    "delete": {
+      "title": "Delete account",
+      "body": "The account and all houses, documents, original files and forecasts are removed for good, and Claude can no longer reach anything. Your address is removed from the list of who may sign in. This cannot be undone, so consider taking a copy first.",
+      "button": "Delete my account",
+      "lastAdmin": "You are the only administrator. Someone has to manage the list of who may sign in, so the account cannot be deleted here.",
+      "dialogTitle": "Delete the account for good?",
+      "dialogBody": "{houses, plural, one {# house} other {# houses}} and {documents, plural, one {# document} other {# documents}} will be removed, and this cannot be undone. Type {email} to confirm.",
+      "confirmLabel": "Your email address",
+      "cancel": "Cancel",
+      "confirm": "Delete everything",
+      "failed": "The account could not be deleted. Your details are still in the database, but some original files may be gone. Please try again.",
+      "deletedTitle": "The account is deleted",
+      "deletedBody": "Your details and files are removed from Husvan. To remove the connector from Claude as well, do so in Claude’s settings.",
+      "toHome": "To the start page"
+    }
+  },
+  "privacy": {
+    "title": "Privacy",
+    "lead": "How Husvan handles your personal data. Husvan is a small private project and stores what the tool needs to work.",
+    "updated": "Last changed {date}",
+    "who": {
+      "title": "Who is responsible",
+      "body": "Husvan is run as a hobby project by a private individual, who is the data controller. Send questions about your data to <mail>{contact}</mail>."
+    },
+    "data": {
+      "title": "What is stored",
+      "account": "<b>Account.</b> Email address, name and when the account was created. An administrator adds your address to the list of who may sign in, before you first sign in.",
+      "signIn": "<b>Sign-in.</b> IP address and browser for each signed-in session, and the access you have given Claude.",
+      "houses": "<b>Houses.</b> Addresses, property designations, values and work items for the houses you add, your own assumptions such as loan and interest rate, and saved forecasts.",
+      "documents": "<b>Documents.</b> Files and text from listings, inspection reports and the like, and Claude’s interpretation of them. They may contain details about other people, such as sellers, brokers and inspectors."
+    },
+    "why": {
+      "title": "Why",
+      "body": "The data is needed for you to use Husvan, with contract as the legal basis (GDPR article 6(1)(b)). IP addresses and technical logs are also used to protect the service against abuse, with legitimate interest as the basis (article 6(1)(f)). The data is not sold or used for advertising, and Husvan has no web analytics. No automated decisions are made about you."
+    },
+    "recipients": {
+      "title": "Who handles the data",
+      "hosting": "<b>Hosting provider.</b> The app and the database run on a VPS in Sweden.",
+      "cloudflare": "<b>Cloudflare.</b> Forwards and protects traffic to the site, stores the original files, sends the login mail and checks the login form. Cloudflare is a US company. Transfers outside the EU/EEA rely on the European Commission’s standard contractual clauses.",
+      "grafana": "<b>Grafana Cloud.</b> Receives the database server’s technical logs for operations and troubleshooting.",
+      "claude": "<b>Claude.</b> Husvan sends nothing to any AI on its own initiative. Once you have connected Husvan to your Claude, Claude reads and writes data at your request. What you upload or write in the chat is handled in your own Claude account, under Anthropic’s terms."
+    },
+    "retention": {
+      "title": "For how long",
+      "body": "The data is kept for as long as you have your account. When you delete the account it is removed from the database and the file storage at once. Sign-in sessions expire on their own, and technical logs are purged automatically."
+    },
+    "rights": {
+      "title": "Your rights",
+      "access": "<b>Copy and portability.</b> On the <profile>profile page</profile> you can download everything stored in a ZIP file, with the details as JSON and the original files.",
+      "rectify": "<b>Rectification.</b> You change your name on the profile page, and details about a house on the house’s page or through Claude. To change your email address, write to <mail>{contact}</mail>.",
+      "erase": "<b>Erasure.</b> You delete the account yourself on the profile page.",
+      "other": "<b>Restriction and objection.</b> You also have the right to ask for processing to be restricted and to object to it. Write to <mail>{contact}</mail>.",
+      "complaint": "<b>Complaints.</b> If you think your data is handled wrongly, you can complain to the Swedish supervisory authority, <imy>IMY</imy>."
+    },
+    "erasure": {
+      "title": "When you delete the account",
+      "body": "The account, houses, documents, original files, drafts, forecasts, assumptions and Claude’s access are gone, and this cannot be undone. What exists outside Husvan is not affected: your chats in Claude and files you have already downloaded."
+    },
+    "cookies": {
+      "title": "Cookies",
+      "body": "Husvan uses one cookie for signing in and one for the chosen language. Both are needed for the site to work, so no consent banner is shown. On the login page, Cloudflare Turnstile checks that a human is signing in."
+    }
   }
 }
