@@ -1,12 +1,22 @@
 import { describe, expect, it, vi } from 'vitest'
 import { deliverMagicLink, magicLinkMail } from './magicLink'
 
-function prismaWith(allowed: string[]) {
+function prismaWith(allowed: string[], { sentThisHour = 0 } = {}) {
   return {
     allowedEmail: {
       findUnique: vi.fn(async ({ where }: { where: { email: string } }) =>
-        allowed.includes(where.email) ? { email: where.email } : null
+        allowed.includes(where.email) ? { blockedAt: null } : null
       ),
+    },
+    user: {
+      findUnique: vi.fn(async () => null),
+      count: vi.fn(async () => 0),
+    },
+    signupSettings: { findUnique: vi.fn(async () => null) },
+    loginMail: {
+      count: vi.fn(async () => sentThisHour),
+      create: vi.fn(async () => ({})),
+      deleteMany: vi.fn(async () => ({ count: 0 })),
     },
   } as never
 }
@@ -31,6 +41,28 @@ describe('deliverMagicLink', () => {
     expect(result).toBe('not_allowed')
     expect(mailer).not.toHaveBeenCalled()
     expect(createCode).not.toHaveBeenCalled()
+  })
+
+  it('sends no mail and issues no code past the limit for a recipient', async () => {
+    const mailer = vi.fn()
+    const issue = vi.fn(async () => code)
+    const result = await deliverMagicLink(
+      {
+        prisma: prismaWith(['owner@example.com'], { sentThisHour: 5 }),
+        mailer,
+        createCode: issue,
+        log,
+      },
+      {
+        email: 'owner@example.com',
+        url: link,
+        locale: 'sv',
+        expiresInMinutes: 10,
+      }
+    )
+    expect(result).toBe('rate_limited')
+    expect(mailer).not.toHaveBeenCalled()
+    expect(issue).not.toHaveBeenCalled()
   })
 
   it('matches the allowlist regardless of case', async () => {

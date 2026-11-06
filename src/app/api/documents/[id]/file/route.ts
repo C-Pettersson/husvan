@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { ALLOWED_TYPES } from '@/server/houses/uploadDocument'
 import { getObject, StorageNotConfigured } from '@/server/storage/s3'
 
 // The original file of one of the owner's documents, streamed from storage.
@@ -33,13 +34,15 @@ export async function GET(
     if (!object.ok || !object.body)
       return NextResponse.json({ error: 'storage' }, { status: 502 })
     const name = doc.filename ?? 'document'
+    // save_document takes any mime as stated, and it wins over the uploaded
+    // file's, so the type is checked here: text/html must not run on this origin.
+    const shown = doc.mime !== null && ALLOWED_TYPES.includes(doc.mime)
     return new Response(object.body, {
       headers: {
-        'content-type': doc.mime ?? 'application/octet-stream',
-        'content-disposition': `inline; filename="${name.replace(/[^\x20-\x7e]|"/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`,
+        'content-type': shown ? doc.mime! : 'application/octet-stream',
+        'content-disposition': `${shown ? 'inline' : 'attachment'}; filename="${name.replace(/[^\x20-\x7e]|"/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`,
         'cache-control': 'private, no-store',
-        // Only PDFs, images and text are accepted on upload; nosniff keeps
-        // the browser from reading a file as anything else.
+        // nosniff keeps the browser from reading a file as anything else.
         'x-content-type-options': 'nosniff',
       },
     })

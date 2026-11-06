@@ -18,6 +18,8 @@
     "open": "Go to your houses",
     "signIn": "Sign in",
     "access": "Invitation required, and you need a Claude account.",
+    "accessOpen": "You need a Claude account.",
+    "accessPaused": "New accounts are temporarily closed. You need a Claude account.",
     "hero": {
       "label": "Example: two houses, the same sums",
       "houseA": "Videvägen 7",
@@ -153,6 +155,8 @@
   "login": {
     "title": "Sign in",
     "intro": "Enter your email address and we will send you an email with a link and a code that sign you in.",
+    "introOpen": "Enter your email address and we will send you an email with a link and a code that sign you in. If you are new, you get an account the first time you sign in.",
+    "signupPaused": "New accounts are temporarily closed. If you already have an account, you can sign in as usual.",
     "email": "Email",
     "password": "Password",
     "sendLink": "Send sign-in link",
@@ -224,10 +228,26 @@
   },
   "admin": {
     "title": "Users",
-    "intro": "Addresses that may sign in. A new address gets its own account the first time it follows a sign-in link. Removing an address signs that user out and ends Claude's access; the houses stay.",
+    "intro": "Addresses that may sign in. A new address gets its own account the first time it follows a sign-in link. Blocking an address signs that user out and ends Claude's access; the houses stay.",
+    "signup": {
+      "title": "Open signup",
+      "hint": "When open, anyone gets an account with their email address, up to the limit below. When closed, only the addresses in the list can sign in. Existing users are not affected.",
+      "toggle": "Allow new accounts without an invitation",
+      "accountsPerDay": "New accounts per day",
+      "save": "Save",
+      "saveFailed": "The setting could not be saved.",
+      "status": {
+        "invite_only": "Closed. Only the addresses in the list can sign in.",
+        "open": "Open. {accounts} of {cap} new accounts in the last 24 hours.",
+        "paused": "Paused until the limit clears: {accounts} of {cap} new accounts and {mails} mails to new addresses in the last 24 hours."
+      }
+    },
     "email": "Email address",
     "add": "Add",
-    "remove": "Remove",
+    "remove": "Block",
+    "allowAgain": "Allow again",
+    "blocked": "Blocked {date}",
+    "blockedChip": "Blocked",
     "you": "You",
     "admin": "Administrator",
     "lastSeen": "Last signed in {date}",
@@ -904,6 +924,7 @@
     "error": {
       "type": "That file type is not accepted. Upload a PDF, an image or a text file.",
       "too_large": "The file is larger than 25 MB.",
+      "quota": "Your account has reached its limit for documents or stored files.",
       "other_house": "The same file already belongs to another house.",
       "hash_mismatch": "This is not the file Claude saved for the document.",
       "already_uploaded": "The document already has a file.",

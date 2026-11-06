@@ -5,6 +5,7 @@
 import type { Prisma, PrismaClient, ValueSource } from '@prisma/client'
 import { HOUSE_KEYS } from '@/server/library/houseKeys'
 import type { AttributeDefinition } from '@/server/library/schema'
+import { observationQuotaProblem } from '@/server/users/quota'
 import {
   corrections,
   validateChanges,
@@ -368,6 +369,8 @@ export async function proposeChanges(
   })
   if (!house)
     return { ok: false, errors: [`No house with id ${houseId}.`], warnings: [] }
+  const overQuota = await observationQuotaProblem(prisma, ownerId)
+  if (overQuota) return { ok: false, errors: [overQuota], warnings: [] }
   if (draftId) {
     const draft = await prisma.changeset.findFirst({
       where: { id: draftId, houseId, status: 'DRAFT' },

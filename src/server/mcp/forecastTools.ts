@@ -15,6 +15,7 @@ import { flagText } from '@/server/forecast/flags'
 import { analyseHouse, type Analysis } from '@/server/forecast/run'
 import { whatIfInput } from '@/server/forecast/whatIf'
 import { assumptionValues } from '@/server/houses/assumptions'
+import { mayKeepForecast } from '@/server/users/quota'
 import { result, toolError } from './result'
 
 // Not part of the forecast yet; said with every answer so Claude does not
@@ -152,9 +153,9 @@ export function registerForecastTools(
         select: { calculatedAt: true, result: true },
       })
       // A scenario or a draft is not an assessment of the house as it is;
-      // it is not saved.
+      // it is not saved. Neither is one past the account's limit.
       const saved =
-        a.whatIf || draftId
+        a.whatIf || draftId || !(await mayKeepForecast(prisma, userId, houseId))
           ? null
           : await prisma.forecast.create({
               data: {

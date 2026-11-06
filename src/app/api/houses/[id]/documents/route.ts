@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
-import { uploadDocument } from '@/server/houses/uploadDocument'
+import { MAX_BYTES, uploadDocument } from '@/server/houses/uploadDocument'
 import { StorageNotConfigured } from '@/server/storage/s3'
+
+// Room for the multipart boundaries and the other form fields.
+const MULTIPART_OVERHEAD = 64 * 1024
 
 const fields = z.object({
   documentId: z.uuid().optional(),
@@ -37,6 +40,13 @@ export async function POST(
   const { id } = await params
   if (!z.uuid().safeParse(id).success)
     return NextResponse.json({ error: 'not_found' }, { status: 404 })
+
+  // formData() holds the whole body in memory, so a stated size over the limit
+  // is refused first. A browser always states it; without it, Cloudflare's own
+  // limit on the request size is what remains.
+  const stated = Number(request.headers.get('content-length') ?? 0)
+  if (stated > MAX_BYTES + MULTIPART_OVERHEAD)
+    return NextResponse.json({ error: 'too_large' }, { status: 413 })
 
   const form = await request.formData()
   const file = form.get('file')
