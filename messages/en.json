@@ -1138,7 +1138,7 @@
       "signIn": "<b>Sign-in.</b> IP address and browser for each signed-in session, and the access you have given Claude. When a login mail is sent, a keyed hash of the recipient’s address is stored, so that the number of mails to an address can be limited.",
       "houses": "<b>Houses.</b> Addresses, property designations, values and work items for the houses you add, your own assumptions such as loan and interest rate, and saved forecasts.",
       "documents": "<b>Documents.</b> Files and text from listings, inspection reports and the like, and Claude’s interpretation of them. They may contain details about other people, such as sellers, brokers and inspectors.",
-      "visits": "<b>Visits.</b> Cloudflare Web Analytics counts page views across the whole site, including when you are signed in: which page, where you came from, country, browser, operating system, device type and how quickly the page loaded. The part of the address after the question mark is not stored. The statistics are shown in aggregate, without cookies and without following individual visitors."
+      "visits": "<b>Visits.</b> Cloudflare counts visits across the whole site, including when you are signed in. This happens in Cloudflare’s network, and with Web Analytics a small script in the page can also measure how quickly it loaded. The statistics show which page, where you came from, country, browser, operating system and device type, but not the part of the address after the question mark. They are shown in aggregate, without cookies and without following individual visitors."
     },
     "why": {
       "title": "Why",
