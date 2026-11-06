@@ -18,6 +18,8 @@
     "open": "Till dina hus",
     "signIn": "Logga in",
     "access": "Inbjudan krävs, och du behöver ett Claude-konto.",
+    "accessOpen": "Du behöver ett Claude-konto.",
+    "accessPaused": "Nya konton är tillfälligt stängda. Du behöver ett Claude-konto.",
     "hero": {
       "label": "Exempel: två hus, samma räkning",
       "houseA": "Videvägen 7",
@@ -153,6 +155,8 @@
   "login": {
     "title": "Logga in",
     "intro": "Skriv din e-postadress så skickar vi ett mejl med en länk och en kod som loggar in dig.",
+    "introOpen": "Skriv din e-postadress så skickar vi ett mejl med en länk och en kod som loggar in dig. Är du ny får du ett konto första gången du loggar in.",
+    "signupPaused": "Nya konton är tillfälligt stängda. Har du redan ett konto kan du logga in som vanligt.",
     "email": "E-post",
     "password": "Lösenord",
     "sendLink": "Skicka inloggningslänk",
@@ -224,10 +228,26 @@
   },
   "admin": {
     "title": "Användare",
-    "intro": "Adresser som får logga in. En ny adress får ett eget konto första gången den följer en inloggningslänk. Tar du bort en adress loggas användaren ut och Claudes åtkomst upphör; husen finns kvar.",
+    "intro": "Adresser som får logga in. En ny adress får ett eget konto första gången den följer en inloggningslänk. Spärrar du en adress loggas användaren ut och Claudes åtkomst upphör; husen finns kvar.",
+    "signup": {
+      "title": "Öppen registrering",
+      "hint": "Öppen får vem som helst ett konto med sin e-postadress, upp till gränsen nedan. Stängd kan bara adresserna i listan logga in. Befintliga användare påverkas inte.",
+      "toggle": "Tillåt nya konton utan inbjudan",
+      "accountsPerDay": "Nya konton per dygn",
+      "save": "Spara",
+      "saveFailed": "Det gick inte att spara inställningen.",
+      "status": {
+        "invite_only": "Stängd. Bara adresserna i listan kan logga in.",
+        "open": "Öppen. {accounts} av {cap} nya konton det senaste dygnet.",
+        "paused": "Pausad till nästa dygn: gränsen är nådd. {accounts} av {cap} nya konton och {mails} mejl till nya adresser det senaste dygnet."
+      }
+    },
     "email": "E-postadress",
     "add": "Lägg till",
-    "remove": "Ta bort",
+    "remove": "Spärra",
+    "allowAgain": "Tillåt igen",
+    "blocked": "Spärrad {date}",
+    "blockedChip": "Spärrad",
     "you": "Du",
     "admin": "Administratör",
     "lastSeen": "Senast inloggad {date}",
@@ -904,6 +924,7 @@
     "error": {
       "type": "Filtypen tas inte emot. Ladda upp en PDF, en bild eller en textfil.",
       "too_large": "Filen är större än 25 MB.",
+      "quota": "Ditt konto har nått gränsen för antal dokument eller lagrade filer.",
       "other_house": "Samma fil hör redan till ett annat hus.",
       "hash_mismatch": "Filen är inte den som Claude sparade för dokumentet.",
       "already_uploaded": "Dokumentet har redan en fil.",

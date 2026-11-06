@@ -5,9 +5,25 @@ import {
   listAllowedEmails,
   revokeEmail,
 } from '@/server/users/allowlist'
+import {
+  MAX_ACCOUNTS_PER_DAY,
+  setSignupSettings,
+  signupState,
+} from '@/server/users/signup'
 import { adminProcedure, createTRPCRouter } from '../trpc'
 
 export const adminRouter = createTRPCRouter({
+  signup: adminProcedure.query(({ ctx }) => signupState(ctx.prisma)),
+
+  setSignup: adminProcedure
+    .input(
+      z.object({
+        open: z.boolean(),
+        accountsPerDay: z.number().int().min(0).max(MAX_ACCOUNTS_PER_DAY),
+      })
+    )
+    .mutation(({ ctx, input }) => setSignupSettings(ctx.prisma, input)),
+
   allowedEmails: adminProcedure.query(({ ctx }) =>
     listAllowedEmails(ctx.prisma)
   ),

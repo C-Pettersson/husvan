@@ -8,6 +8,11 @@ import type {
   PrismaClient,
   ValueSource,
 } from '@prisma/client'
+import { documentQuotaProblem } from '@/server/users/quota'
+
+// The tool's schema limits fullText; an interpretation can be any JSON, so its
+// size is checked here. Far more than a reading of any real document needs.
+export const MAX_INTERPRETATION_CHARS = 500_000
 
 export type SaveDocumentInput = {
   houseId: string
@@ -27,6 +32,7 @@ export type SaveDocumentInput = {
   // Who saved it: Claude through MCP, or the user uploading a file.
   source?: ValueSource
   storagePath?: string
+  sizeBytes?: number
 }
 
 export type SaveDocumentResult =
@@ -77,6 +83,16 @@ export async function saveDocument(
   })
   if (!house) return { ok: false, error: `No house with id ${doc.houseId}.` }
 
+  const interpretationChars =
+    doc.interpretation === undefined
+      ? 0
+      : JSON.stringify(doc.interpretation).length
+  if (interpretationChars > MAX_INTERPRETATION_CHARS)
+    return {
+      ok: false,
+      error: `The interpretation is too long: at most ${MAX_INTERPRETATION_CHARS} characters.`,
+    }
+
   // Saving the same listing or file again returns the first copy, so a
   // repeated call cannot fork the evidence.
   if (doc.documentId) {
@@ -94,7 +110,9 @@ export async function saveDocument(
     where: {
       OR: [
         ...(doc.documentId ? [{ id: doc.documentId }] : []),
-        ...(doc.sha256 ? [{ sha256: doc.sha256 }] : []),
+        // This owner's houses only: another person's copy of the same file is
+        // theirs, and whether one exists is none of this user's business.
+        ...(doc.sha256 ? [{ sha256: doc.sha256, house: { ownerId } }] : []),
         ...(doc.sourceUrl
           ? [{ houseId: doc.houseId, type: doc.type, sourceUrl: doc.sourceUrl }]
           : []),
@@ -119,6 +137,17 @@ export async function saveDocument(
         error: 'A document with this sha256 belongs to another house.',
       }
     const filled = backfill(same, doc)
+    const fillsText = filled.includes('fullText')
+    const fillsInterpretation = filled.includes('interpretation')
+    if (fillsText || fillsInterpretation) {
+      const problem = await documentQuotaProblem(prisma, ownerId, {
+        isNew: false,
+        addedChars:
+          (fillsText ? (doc.fullText?.length ?? 0) : 0) +
+          (fillsInterpretation ? interpretationChars : 0),
+      })
+      if (problem) return { ok: false, error: problem }
+    }
     if (filled.length)
       await prisma.document.update({
         where: { id: same.id },
@@ -131,6 +160,12 @@ export async function saveDocument(
       })
     return { ok: true, documentId: same.id, alreadySaved: true, filled }
   }
+
+  const problem = await documentQuotaProblem(prisma, ownerId, {
+    isNew: true,
+    addedChars: (doc.fullText?.length ?? 0) + interpretationChars,
+  })
+  if (problem) return { ok: false, error: problem }
 
   const created = await prisma.$transaction(async (tx) => {
     const changeset = await tx.changeset.create({
@@ -156,6 +191,7 @@ export async function saveDocument(
         documentDate: doc.documentDate ? new Date(doc.documentDate) : null,
         amountSek: doc.amountSek ?? null,
         storagePath: doc.storagePath ?? null,
+        sizeBytes: doc.sizeBytes ?? null,
         changesetId: changeset.id,
       },
       select: { id: true },

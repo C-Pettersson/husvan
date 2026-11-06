@@ -2,6 +2,7 @@
 // directly, as the anchor documents and drafts hang on; values given with it
 // go into a draft.
 import type { PrismaClient } from '@prisma/client'
+import { houseQuotaProblem } from '@/server/users/quota'
 import { validateChanges, type ValueInput, emptyChanges } from './changes'
 import { externalIdsOf, loadExternalIds, matchesExternalId } from './externalId'
 import { insertChanges, loadLibrary, type Written } from './proposeChanges'
@@ -94,6 +95,9 @@ export async function createHouse(
       ],
       existingHouseId: duplicate.id,
     }
+
+  const overQuota = await houseQuotaProblem(prisma, ownerId)
+  if (overQuota) return { ok: false, errors: [overQuota] }
 
   if (municipalityCode) {
     const known = await prisma.municipality.findMany({

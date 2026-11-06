@@ -14,10 +14,10 @@ import {
   Stack,
   TextField,
 } from '@mui/material'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import BlockIcon from '@mui/icons-material/Block'
 import { trpc } from '@/lib/trpc'
 
-// The allowlist: who may request a login link. Removing an address also ends
+// The allowlist: who may request a login link. Blocking an address also ends
 // that user's sessions and Claude's tokens; the admin's own address stays.
 export default function AllowedEmails({ selfEmail }: { selfEmail: string }) {
   const t = useTranslations('admin')
@@ -88,14 +88,22 @@ export default function AllowedEmails({ selfEmail }: { selfEmail: string }) {
                 key={entry.email}
                 divider
                 secondaryAction={
-                  isSelf ? null : (
+                  isSelf ? null : entry.blockedAt ? (
+                    <Button
+                      size="small"
+                      disabled={add.isPending}
+                      onClick={() => add.mutate({ email: entry.email })}
+                    >
+                      {t('allowAgain')}
+                    </Button>
+                  ) : (
                     <IconButton
                       edge="end"
                       aria-label={t('remove')}
                       disabled={remove.isPending}
                       onClick={() => remove.mutate({ email: entry.email })}
                     >
-                      <DeleteOutlineIcon />
+                      <BlockIcon />
                     </IconButton>
                   )
                 }
@@ -113,14 +121,23 @@ export default function AllowedEmails({ selfEmail }: { selfEmail: string }) {
                       {entry.user?.role === 'ADMIN' && (
                         <Chip size="small" label={t('admin')} />
                       )}
+                      {entry.blockedAt && (
+                        <Chip
+                          size="small"
+                          color="warning"
+                          label={t('blockedChip')}
+                        />
+                      )}
                     </Stack>
                   }
                   secondary={
-                    entry.user
-                      ? entry.user.lastSeenAt
-                        ? t('lastSeen', { date: date(entry.user.lastSeenAt) })
-                        : t('signedUp')
-                      : t('neverSignedIn', { date: date(entry.createdAt) })
+                    entry.blockedAt
+                      ? t('blocked', { date: date(entry.blockedAt) })
+                      : entry.user
+                        ? entry.user.lastSeenAt
+                          ? t('lastSeen', { date: date(entry.user.lastSeenAt) })
+                          : t('signedUp')
+                        : t('neverSignedIn', { date: date(entry.createdAt) })
                   }
                 />
               </ListItem>

@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { Container, Typography } from '@mui/material'
+import { Container, Stack, Typography } from '@mui/material'
 import { auth } from '@/lib/auth'
 import AllowedEmails from './AllowedEmails'
+import SignupSettings from './SignupSettings'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('admin')
@@ -25,7 +26,10 @@ export default async function AdminPage() {
       <Typography color="text.secondary" sx={{ mb: 3 }}>
         {t('intro')}
       </Typography>
-      <AllowedEmails selfEmail={session.user.email} />
+      <Stack spacing={3}>
+        <SignupSettings />
+        <AllowedEmails selfEmail={session.user.email} />
+      </Stack>
     </Container>
   )
 }
