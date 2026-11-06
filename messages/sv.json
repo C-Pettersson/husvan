@@ -14,6 +14,10 @@
     "profile": "Profil"
   },
   "home": {
+    "meta": {
+      "title": "Vad kostar huset över tid? Jämför hus före köp | Husvan",
+      "description": "Din Claude läser prospekt och besiktning, Husvan räknar på underhåll, drift och förnyelse år för år. Jämför husen på samma villkor innan du lägger bud."
+    },
     "title": "Vad kostar huset över tid?",
     "lead": "Din egen Claude läser prospekt och besiktning. Husvan sparar det som är känt om huset och räknar på underhåll, drift och förnyelse, så att du kan jämföra husen på samma villkor.",
     "open": "Till dina hus",

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { getFormatter, getTranslations } from 'next-intl/server'
 import {
   Box,
@@ -12,6 +13,7 @@ import {
 import { LogoMark } from '@/components/Logo'
 import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { getSiteUrl } from '@/lib/siteUrl'
 import { signupState } from '@/server/users/signup'
 
 // The differences in the example conversation, in kronor. Only the difference
@@ -69,6 +71,7 @@ const WHEEL_SOURCES = {
   own: { color: '#6b6a66', shape: 'ring' },
 } as const
 
+const SITE_NAME = 'Husvan'
 const PAGE_WIDTH = 1080
 const VISUALLY_HIDDEN = {
   position: 'absolute',
@@ -79,6 +82,26 @@ const VISUALLY_HIDDEN = {
   whiteSpace: 'nowrap',
 } as const
 const BOLD = { b: (chunks: React.ReactNode) => <b>{chunks}</b> }
+
+// The title is absolute: the layout's template does not apply to a page in the
+// layout's own segment, and this one already carries the name.
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('home.meta')
+  const title = t('title')
+  const description = t('description')
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical: '/' },
+    openGraph: {
+      type: 'website',
+      url: '/',
+      siteName: SITE_NAME,
+      title,
+      description,
+    },
+  }
+}
 
 // The public start page. Everything else requires sign-in.
 export default async function HomePage() {
@@ -102,6 +125,18 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Tells Google which name to show for the site in search results. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: SITE_NAME,
+            url: `${getSiteUrl()}/`,
+          }).replace(/</g, '\\u003c'),
+        }}
+      />
       <Box component="main" sx={{ '& p': { textWrap: 'pretty' } }}>
         <PageContainer sx={{ py: { xs: 5, md: 10 } }}>
           <Box

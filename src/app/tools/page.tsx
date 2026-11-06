@@ -7,7 +7,11 @@ const NOTES = ['account', 'noDelete', 'interpretation'] as const
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('tools')
-  return { title: t('title'), description: t('metaDescription') }
+  return {
+    title: t('title'),
+    description: t('metaDescription'),
+    alternates: { canonical: '/tools' },
+  }
 }
 
 // Public, so that someone can see what Claude may read and change before

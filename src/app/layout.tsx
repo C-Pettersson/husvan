@@ -4,10 +4,12 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import Providers from '@/components/Providers'
 import AppHeader from '@/components/AppHeader'
 import type { Locale } from '@/i18n/locales'
+import { getSiteUrl } from '@/lib/siteUrl'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta')
   return {
+    metadataBase: new URL(getSiteUrl()),
     title: { default: t('title'), template: `%s | ${t('title')}` },
     description: t('description'),
   }

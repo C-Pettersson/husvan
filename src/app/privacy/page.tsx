@@ -26,7 +26,7 @@ const SECTIONS = [
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('privacy')
-  return { title: t('title') }
+  return { title: t('title'), alternates: { canonical: '/privacy' } }
 }
 
 // What GDPR article 13 asks to be told. Public, so that it can be read before
