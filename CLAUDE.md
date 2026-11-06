@@ -35,9 +35,9 @@ När huset är köpt kan en AI-agent sköta det löpande, som en förvaltare: h�
 
 ## Hur verktyget används
 
-Det är ett personligt verktyg för en användare i version 1. Allt arbete sker i användarens egen Claude:
+Varje användare har sina egna hus och arbetar i sin egen Claude:
 
-1. Användaren lägger till Husvans MCP-server som egen koppling (custom connector) i Claude och loggar in med OAuth. Inloggningen sker med en länk som mejlas till en adress på allowlisten; ägaren lägger till fler adresser på `/admin`.
+1. Användaren lägger till Husvans MCP-server som egen koppling (custom connector) i Claude och loggar in med OAuth. Inloggningen sker med en länk som mejlas till adressen. Ägaren lägger till adresser på `/admin` eller öppnar registreringen där, se "Öppen registrering och missbruk".
 2. Användaren laddar upp prospekt, besiktningsprotokoll och energideklaration i chatten.
 3. Claude läser dokumenten och skickar ett utkast med hus, komponenter och värden till MCP-servern.
 4. Användaren godkänner utkastet. Först då syns något.
@@ -56,12 +56,12 @@ Samma stack som `C:\projects\brfjamforelse`, så att kod och vanor kan återanv�
 | Databas | Postgres 16 via Prisma 6. Schemat är `prisma/schema.prisma`, migrationer under `prisma/migrations/`. |
 | API för webben | tRPC 11 med React Query och Zod. Inga REST-endpoints för appdata. |
 | MCP | Officiella TypeScript-SDK:t v2 (`@modelcontextprotocol/server`), Streamable HTTP, route `src/app/api/mcp/route.ts`. Verktygen ligger i `src/server/mcp/`. |
-| Autentisering | **Better Auth** med pluginen `mcp` (OAuth 2.1-auktoriseringsserver i samma app), `cimd`, `jwt`, `magicLink` och `captcha`. Ersätter NextAuth, som inte kan agera auktoriseringsserver. Inloggning med **inloggningslänk via e-post** till adresser på en allowlist (tabellen `allowed_email`, hanteras på `/admin` av en användare med `role = ADMIN`); registrering avstängd, ett användarkonto skapas första gången en tillåten adress följer en länk. Ägaren seedas som `ADMIN` med ett valfritt lösenord som reserv. Länken skickas över SMTP genom Cloudflare Email Service (`src/server/mail/`), formuläret skyddas av Cloudflare Turnstile. `mcp` och `cimd` är egna paket (`@better-auth/mcp`, `@better-auth/cimd`) byggda på `@better-auth/oauth-provider`; `jwt`, `magicLink` och `captcha` kommer från `better-auth/plugins`. Konfigurationen ligger i `src/lib/auth.ts`. |
+| Autentisering | **Better Auth** med pluginen `mcp` (OAuth 2.1-auktoriseringsserver i samma app), `cimd`, `jwt`, `magicLink` och `captcha`. Ersätter NextAuth, som inte kan agera auktoriseringsserver. Inloggning med **inloggningslänk via e-post** till adresser på en allowlist (tabellen `allowed_email`, hanteras på `/admin` av en användare med `role = ADMIN`) och, när en admin öppnat registreringen, till nya adresser upp till en gräns per dygn. Better Auths egen registrering med lösenord är avstängd; ett användarkonto skapas första gången en tillåten adress följer en länk. Ägaren seedas som `ADMIN` med ett valfritt lösenord som reserv. Länken skickas över SMTP genom Cloudflare Email Service (`src/server/mail/`), formuläret skyddas av Cloudflare Turnstile. `mcp` och `cimd` är egna paket (`@better-auth/mcp`, `@better-auth/cimd`) byggda på `@better-auth/oauth-provider`; `jwt`, `magicLink` och `captcha` kommer från `better-auth/plugins`. Konfigurationen ligger i `src/lib/auth.ts`. |
 | Test | Vitest. |
 | Drift | k3s på användarens VPS, styrt från `C:\projects\infra-gitops` med Argo CD, Kustomize, KSOPS och Kargo. `husvan.se` för webben, MCP på `https://husvan.se/api/mcp`. En värd, så att `/.well-known/*` och MCP-sökvägen delar ursprung. Se "Leverans och drift". |
 | Lokal körning | `docker compose up -d postgres`, `yarn db:migrate`, `yarn db:seed`, `yarn import:bki`, `yarn import:scb`, `yarn import:bra` och `yarn dev`, som i brfjamforelse. Postgres 16 lyssnar på `localhost:5433` (5432 används av andra projekt); kopiera `.env.example` till `.env` och fyll i hemligheten och den seedade användaren. Compose får senare en valfri app-image för att testa containern; det är inte produktionsmiljön. |
 
-Skillnader mot brfjamforelse: ingen organisationsmodell, inga kvoter, ingen egen AI-anropning, ingen publik yta utöver startsidan. Det som inte behövs byggs inte.
+Skillnader mot brfjamforelse: ingen organisationsmodell, kvoter bara för att skydda driften, ingen egen AI-anropning, ingen publik yta utöver startsidan och inloggningen. Det som inte behövs byggs inte.
 
 ### Leverans och drift
 
@@ -113,6 +113,36 @@ Utgivaren (issuer) är `https://husvan.se/api/auth`. Underlag för WAF-regeln oc
 | Allt annat utom `/` och `/privacy` | Användarens webbläsare | Access, senare Better Auths inloggning |
 
 Claude Code ansluter från användarens egen dator, inte från Anthropics intervall, och stängs därför ute av WAF-regeln.
+
+#### Öppen registrering och missbruk
+
+Registreringen är stängd tills en admin öppnar den på `/admin`. Inställningen ligger i tabellen `signup_settings`, inte i Secret, så att den gäller direkt och kan stängas utan omstart. Öppen får en ny adress ett inloggningsmejl och ett konto utan inbjudan (`src/server/users/signup.ts`). Befintliga användare påverkas aldrig av läget.
+
+Cloudflare skyddar bara mot anonym trafik. Det ser vem som skickar en begäran, inte vem mejlet går till, och alla Claudes anrop kommer från Anthropics intervall, så en gräns per IP på MCP-routen skulle strypa alla användare samtidigt. Därför ligger gränserna för inloggade användare i appen:
+
+| Gräns | Värde | Var |
+| --- | --- | --- |
+| Nya konton | 10 per dygn, ändras på `/admin` | `signup.ts`. Nådd gräns pausar registreringen, och startsidan och inloggningen säger det till alla, inte per adress, så att ingen kan se vilka adresser som har konto. |
+| Mejl till nya adresser | 5 per tillåtet nytt konto per dygn | `signup.ts`. Begränsar vad någon kan skicka genom att ta sig förbi Turnstile. Slut på budget pausar registreringen, inget annat. |
+| Mejl per mottagare | 5 per timme, 20 per dygn | `signup.ts`, tabellen `login_mail`. Mottagaren lagras som nycklad hash utan `+tagg`, och raderna tas bort efter två dygn. Gäller alla, så en angripare kan tillfälligt stoppa inloggningsmejl till en känd adress. Ägaren har lösenordet som reserv. |
+| Begäran per IP | Länk 5 och kod 10 per fem minuter | `rateLimit` i `src/lib/auth.ts`. Better Auth håller den i minnet och slår bara på den i produktion. |
+| MCP-anrop per användare | 120 per minut, 5 000 per dygn | `src/server/mcp/rateLimit.ts`, i minnet. Svarar `429`. |
+| Lagring per konto | 20 hus, 200 dokument, 1 GB filer, 20 miljoner tecken dokumenttext, 50 000 värden, 100 sparade prognoser per hus | `src/server/users/quota.ts`. Claude får skälet i verktygssvaret. Prognoser utöver gränsen besvaras men sparas inte. Administratörer har inga gränser. |
+
+**Spärra.** Att spärra en adress på `/admin` loggar ut användaren och tar bort Claudes token. Raden i `allowed_email` blir kvar med `blockedAt`, annars skulle öppen registrering släppa in adressen igen. Spärren gäller också länkar och koder som redan skickats (`session.create` i `src/lib/auth.ts`) och Claudes redan utfärdade JWT (`isUserBlocked` i MCP-routen). Husen finns kvar. Ett konto utan rad i `allowed_email` räknas som spärrat, eftersom varje nytt konto får en rad när det skapas.
+
+**Regler i Cloudflare.** De ligger i panelen, inte i något repo, och läggs in innan registreringen öppnas. Två regler, skrivna för Free-planen, som tillåter fem egna regler och en rate limit:
+
+| Regel | Uttryck | Åtgärd |
+| --- | --- | --- |
+| Egen regel "Inloggning utanför Norden" | `(http.request.uri.path eq "/login" or starts_with(http.request.uri.path, "/api/auth/sign-in/")) and not ip.src.country in {"SE" "NO" "DK" "FI" "IS"}` | Managed Challenge |
+| Rate limit "Inloggningsförsök" | `http.request.uri.path in {"/api/auth/sign-in/magic-link" "/api/auth/sign-in/email-otp" "/api/auth/sign-in/email"}` | Block, per IP: 4 begäran på 10 sekunder, i 10 sekunder (Free-planens enda period) |
+
+Utmaningen får aldrig omfatta sökvägarna som anropas av Anthropics servrar, eftersom de inte kan lösa den. Free-planens rate limit är kort; den längre gränsen per IP står appen för (se tabellen ovan).
+
+Medvetet utelämnat: **Bot Fight Mode**, som gäller hela domänen, inte kan undantas med egna regler och kan utmana API-trafik, alltså Claudes anrop till MCP-routen. **Uppladdningens storlek**, eftersom `http.request.body.size` kräver Enterprise och appen redan vägrar på `Content-Length`. **Rate limit på `/api/trpc/*`**, eftersom Free bara har en regel; den läggs till med Pro, som har två.
+
+Access får inte ligga framför `husvan.se` när registreringen är öppen.
 
 **Inloggningslänk och OAuth.** När `/oauth2/authorize` saknar session skickas användaren till `/login` med de ursprungliga parametrarna plus en signatur (`sig`, `exp`, `ba_*`). En lösenordsinloggning fortsätter auktoriseringen själv: klienten skickar med den signerade frågan och servern fortsätter i samma anrop. En inloggningslänk kan inte det, eftersom länken öppnas i ett nytt anrop utan frågan. Därför pekar länkens `callbackURL` tillbaka på `/api/auth/oauth2/authorize` med de ursprungliga parametrarna (utan signatur, `prompt` och `max_age`), så att auktoriseringen går vidare till samtycke och tillbaka till Claude när sessionen finns. Regeln ligger i `src/lib/oauthContinue.ts`. Länken måste öppnas i samma webbläsare som startade flödet, eftersom claude.ai kontrollerar `state` mot sin egen session.
 
@@ -432,7 +462,7 @@ Webben läser genom samma kod som MCP-verktygen (`getHouse`, `analyseHouse`, `co
 
 Nya komponenter skapas inte på webben i version 1; det gör Claude med `propose_changes`. Undantaget är svaret på en öppen fråga om en del som underlaget inte nämner, som lägger till delen med svaret som enda värde.
 
-**Originalfiler** laddas upp till `POST /api/houses/[id]/documents` (`uploadDocument` i `src/server/houses/uploadDocument.ts`) och visas via `GET /api/documents/[id]/file`. PDF, JPEG, PNG, WebP, HEIC och text, högst 25 MB. Filen kopplas till dokumentet med samma `sha256`, annars till dokumentet användaren valt (vägras om Claude angett en annan hash eller om dokumentet redan har en fil), annars blir den ett nytt dokument med källa `USER`. Samma fil igen gör ingenting. Objektnyckeln är `<STORAGE_PREFIX>houses/<husets id>/<sha256><filändelse>`. Servern läser inte filen; användaren ber Claude tolka den. Signeringen mot R2 (`src/server/storage/s3.ts`) är Signature V4 för hand, testad mot AWS:s exempel.
+**Originalfiler** laddas upp till `POST /api/houses/[id]/documents` (`uploadDocument` i `src/server/houses/uploadDocument.ts`) och visas via `GET /api/documents/[id]/file`. PDF, JPEG, PNG, WebP, HEIC och text, högst 25 MB. Filen kopplas till dokumentet med samma `sha256` bland ägarens egna dokument, annars till dokumentet användaren valt (vägras om Claude angett en annan hash eller om dokumentet redan har en fil), annars blir den ett nytt dokument med källa `USER`. Samma fil igen gör ingenting. En hash är unik per hus, inte globalt, eftersom två personer kan ha samma prospekt, och en annan användares kopia syns aldrig i svaret. Bara de tillåtna filtyperna visas i webbläsaren; ett dokument med en annan `mime`, som `save_document` tar emot som den anges, laddas ned i stället. Objektnyckeln är `<STORAGE_PREFIX>houses/<husets id>/<sha256><filändelse>`. Servern läser inte filen; användaren ber Claude tolka den. Signeringen mot R2 (`src/server/storage/s3.ts`) är Signature V4 för hand, testad mot AWS:s exempel.
 
 ### Radering och export
 
@@ -788,7 +818,7 @@ Underhållsläget (se "Underhållsläge: kontroller och årshjul") kommer däref
 
 ## Utanför version 1
 
-Flera användare, ChatGPT-app, fakturainkorg, egen påminnelseinfrastruktur (mejl, push), energikalkyl för fönsterbyten, delning, typskyltsigenkänning, händelser (service, reparation) utöver kontrolloggen och relationer mellan komponenter.
+ChatGPT-app, fakturainkorg, egen påminnelseinfrastruktur (mejl, push), energikalkyl för fönsterbyten, delning, typskyltsigenkänning, händelser (service, reparation) utöver kontrolloggen och relationer mellan komponenter.
 
 ## Öppna frågor
 

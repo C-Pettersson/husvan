@@ -6,6 +6,7 @@
 // the one change made to a document after it is saved.
 import type { DocumentType, PrismaClient } from '@prisma/client'
 import { objectKey, putObject, sha256Hex } from '@/server/storage/s3'
+import { documentQuotaProblem, fileQuotaProblem } from '@/server/users/quota'
 import { saveDocument } from './saveDocument'
 
 // PDFs, photos and plain text; a listing saved as a web page goes through
@@ -29,6 +30,7 @@ export type UploadResult =
         | 'not_found'
         | 'type'
         | 'too_large'
+        | 'quota'
         | 'other_house'
         | 'hash_mismatch'
         | 'already_uploaded'
@@ -63,8 +65,10 @@ export async function uploadDocument(
     return { ok: false, status: 413, error: 'too_large' }
 
   const sha256 = sha256Hex(file.bytes)
+  // This owner's houses only: another person's copy of the same file is theirs,
+  // and whether one exists is none of this user's business.
   const same = await prisma.document.findFirst({
-    where: { sha256 },
+    where: { sha256, house: { ownerId } },
     select: { id: true, houseId: true, storagePath: true },
   })
   if (same && same.houseId !== houseId)
@@ -88,6 +92,19 @@ export async function uploadDocument(
   if (same?.storagePath)
     return { ok: true, documentId: same.id, matched: 'sha256' }
 
+  // Before the file goes to storage, so a refusal leaves nothing behind.
+  const overQuota =
+    (await fileQuotaProblem(prisma, ownerId, {
+      addedBytes: file.bytes.byteLength,
+    })) ??
+    (target
+      ? null
+      : await documentQuotaProblem(prisma, ownerId, {
+          isNew: true,
+          addedChars: 0,
+        }))
+  if (overQuota) return { ok: false, status: 413, error: 'quota' }
+
   const key = objectKey(houseId, sha256, file.name)
   await putObject(key, file.bytes, file.mime, sha256)
 
@@ -100,6 +117,7 @@ export async function uploadDocument(
       where: { id: target.id },
       data: {
         storagePath: key,
+        sizeBytes: file.bytes.byteLength,
         sha256,
         filename: doc.filename ?? file.name,
         mime: doc.mime ?? file.mime,
@@ -122,6 +140,7 @@ export async function uploadDocument(
     sha256,
     source: 'USER',
     storagePath: key,
+    sizeBytes: file.bytes.byteLength,
   })
   if (!saved.ok) return { ok: false, status: 409, error: 'other_house' }
   return { ok: true, documentId: saved.documentId, matched: 'new' }

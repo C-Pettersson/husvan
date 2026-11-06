@@ -16,7 +16,12 @@ import { keySchema, type AttributeDefinition } from '@/server/library/schema'
 export const valueInput = z.object({
   key: keySchema,
   value: z
-    .union([z.string(), z.number(), z.boolean(), z.array(z.string())])
+    .union([
+      z.string().max(5000),
+      z.number(),
+      z.boolean(),
+      z.array(z.string().max(200)).max(100),
+    ])
     .describe(
       'Number, year, text, choice option key, true/false, ISO date, or a list of strings for absent_features.'
     ),
@@ -183,16 +188,18 @@ export const retireValueInput = z.object({
 export const changesShape = {
   houseValues: z
     .array(valueInput)
+    .max(200)
     .default([])
     .describe(
       'Values about the house itself; the keys are in type_library under houseKeys.'
     ),
-  components: z.array(componentInput).default([]),
+  components: z.array(componentInput).max(300).default([]),
   componentValues: z
     .array(componentValuesInput)
+    .max(300)
     .default([])
     .describe('New values for components that already exist.'),
-  workItems: z.array(workItemInput).default([]),
+  workItems: z.array(workItemInput).max(200).default([]),
   moveComponents: z
     .array(moveComponentInput)
     .default([])
@@ -393,6 +400,10 @@ export function validateChanges(
         errors.push(`${path}.replaces: ${c.replaces} is replaced twice`)
       replacing.add(c.replaces)
     }
+    if (c.documentId && !ctx.documents.has(c.documentId))
+      errors.push(
+        `${path}.documentId: no document ${c.documentId} on this house`
+      )
     if (libraryType) checkValues(c.values, path, c.type)
     declared.set(c.ref, c.type)
   })

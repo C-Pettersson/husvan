@@ -1,7 +1,7 @@
 // Delivers a login mail, or deliberately does nothing. Better Auth calls
-// sendMagicLink for any address, so the allowlist check lives here: an unknown
-// address gets no mail, no code and no error, and the form shows the same
-// neutral message either way.
+// sendMagicLink for any address, so the check of who may get one lives here
+// (src/server/users/signup.ts): an address that may not gets no mail, no code
+// and no error, and the form shows the same neutral message either way.
 //
 // The mail carries both a link and a six-digit code. The link signs in the
 // browser it is opened in; the code lets the mail be read on a phone and the
@@ -13,7 +13,7 @@ import { withFallback } from '@/i18n/withFallback'
 import sv from '../../../messages/sv.json'
 import en from '../../../messages/en.json'
 import type { Mailer } from '@/server/mail/sendMail'
-import { isEmailAllowed } from '@/server/users/allowlist'
+import { decideLoginMail, recordLoginMail } from '@/server/users/signup'
 
 export function resolveLocale(value: string | undefined): Locale {
   return isLocale(value) ? value : defaultLocale
@@ -98,10 +98,13 @@ export async function deliverMagicLink(
     createCode,
     log = console,
   }: {
-    prisma: Pick<PrismaClient, 'allowedEmail'>
+    prisma: Pick<
+      PrismaClient,
+      'allowedEmail' | 'user' | 'signupSettings' | 'loginMail'
+    >
     mailer: Mailer
-    // Issues the sign-in code for the address. Called only after the
-    // allowlist check, so no code exists for an address that may not sign in.
+    // Issues the sign-in code for the address. Called only after the check of
+    // who may get a mail, so no code exists for an address that may not sign in.
     createCode: (email: string) => Promise<string>
     log?: Pick<Console, 'info'>
   },
@@ -111,13 +114,16 @@ export async function deliverMagicLink(
     locale,
     expiresInMinutes,
   }: { email: string; url: string; locale: Locale; expiresInMinutes: number }
-): Promise<'sent' | 'not_allowed'> {
-  if (!(await isEmailAllowed(prisma, email))) {
-    log.info(`[auth] login link requested for an address not on the allowlist`)
-    return 'not_allowed'
+): Promise<'sent' | 'not_allowed' | 'rate_limited'> {
+  const decision = await decideLoginMail(prisma, email)
+  if (!decision.send) {
+    log.info(`[auth] no login mail sent: ${decision.reason}`)
+    return decision.reason
   }
   const code = await createCode(email)
   const mail = magicLinkMail({ url, code, locale, expiresInMinutes })
+  // Recorded first: a mail that fails halfway still counts against the limits.
+  await recordLoginMail(prisma, { email, newAddress: decision.newAddress })
   await mailer({ to: email, ...mail })
   return 'sent'
 }

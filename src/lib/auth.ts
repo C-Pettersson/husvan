@@ -11,14 +11,17 @@ import { getMcpResource, getSiteUrl } from '@/lib/siteUrl'
 import { LOCALE_COOKIE } from '@/i18n/locales'
 import { deliverMagicLink, resolveLocale } from '@/server/auth/magicLink'
 import { createMailer } from '@/server/mail/sendMail'
-import { isEmailAllowed } from '@/server/users/allowlist'
+import { isUserBlocked } from '@/server/users/allowlist'
+import { mayCreateAccount, rememberAccount } from '@/server/users/signup'
 import { TURNSTILE_ACTION } from '@/lib/turnstile'
 import { IP_ADDRESS_HEADERS } from '@/lib/clientIp'
 
 // Who may sign in is the allowlist (table allowed_email, managed on /admin by
-// an ADMIN). Sign-up is off; a user row is created the first time an allowed
-// address follows a login link. The seeded owner keeps an optional email and
-// password login as a fallback.
+// an ADMIN), plus new addresses when an admin has opened signup, up to a cap per
+// day (src/server/users/signup.ts). Better Auth's own sign-up with a password
+// stays off; a user row is created the first time a permitted address follows a
+// login link. The seeded owner keeps an optional email and password login as a
+// fallback.
 //
 // mcp() makes this app the OAuth 2.1 authorization server for the MCP route.
 // cimd() lets Claude identify itself with its published Client ID Metadata
@@ -80,6 +83,15 @@ export const auth = betterAuth({
     // these headers and no trustedProxies.
     ipAddress: { ipAddressHeaders: IP_ADDRESS_HEADERS },
   },
+  rateLimit: {
+    // Stricter than the defaults where a request costs a mail or guesses a code.
+    // Per IP and in memory, which holds with one replica. Cloudflare's rules on
+    // the same paths come first; see CLAUDE.md, "Framför klustret".
+    customRules: {
+      '/sign-in/magic-link': { window: 5 * 60, max: 5 },
+      '/sign-in/email-otp': { window: 5 * 60, max: 10 },
+    },
+  },
   user: {
     additionalFields: {
       // Mirrors the Prisma enum UserRole. input: false keeps it out of every
@@ -91,9 +103,25 @@ export const auth = betterAuth({
     user: {
       create: {
         // Second line of defence behind deliverMagicLink: no user row for an
-        // address that is not on the allowlist, whatever path got here.
+        // address that may not have one, whatever path got here.
         before: async (user) => {
-          if (!(await isEmailAllowed(prisma, user.email))) {
+          if (!(await mayCreateAccount(prisma, user.email))) {
+            throw new APIError('FORBIDDEN', {
+              message: 'This address is not allowed to sign in',
+            })
+          }
+        },
+        after: async (user) => {
+          await rememberAccount(prisma, user.email)
+        },
+      },
+    },
+    session: {
+      create: {
+        // A link or code sent before a block stays valid for ten minutes, and
+        // the password login checks nothing else.
+        before: async (session) => {
+          if (await isUserBlocked(prisma, session.userId)) {
             throw new APIError('FORBIDDEN', {
               message: 'This address is not allowed to sign in',
             })

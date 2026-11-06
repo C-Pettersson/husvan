@@ -10,7 +10,9 @@ import {
   Typography,
 } from '@mui/material'
 import { LogoMark } from '@/components/Logo'
+import prisma from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { signupState } from '@/server/users/signup'
 
 // The differences in the example conversation, in kronor. Only the difference
 // is drawn: the conversation never states the prices themselves.
@@ -83,11 +85,19 @@ export default async function HomePage() {
   const t = await getTranslations('home')
   const format = await getFormatter()
   const session = await getSession()
+  const signup = session ? null : (await signupState(prisma)).status
 
   const cta = {
     href: session ? '/houses' : '/login',
     label: session ? t('open') : t('signIn'),
-    access: session ? null : t('access'),
+    access:
+      signup === null
+        ? null
+        : signup === 'open'
+          ? t('accessOpen')
+          : signup === 'paused'
+            ? t('accessPaused')
+            : t('access'),
   }
 
   return (

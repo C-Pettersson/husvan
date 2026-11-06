@@ -58,17 +58,44 @@ enum UserRole {
   ADMIN
 }
 
-// Who may sign in. A login link is only ever sent to an address on this list,
-// and a user row is only created for one. Removing an address also ends that
-// user's sessions and Claude's tokens; the user's data stays.
+// Who may sign in. With signup closed a login link is only sent to an address
+// on this list; with signup open a new address gets a row when its account is
+// created. Blocking an address ends that user's sessions and Claude's tokens
+// and keeps the row with blockedAt set, so that open signup cannot let the
+// address back in. The user's data stays.
 model AllowedEmail {
-  email     String   @id
+  email     String    @id
   addedById String?
-  createdAt DateTime @default(now())
+  blockedAt DateTime?
+  createdAt DateTime  @default(now())
 
   addedBy User? @relation(fields: [addedById], references: [id], onDelete: SetNull)
 
   @@map("allowed_email")
+}
+
+// One row (id 1), absent until an admin saves it: signup is closed by default.
+model SignupSettings {
+  id             Int      @id @default(1)
+  open           Boolean  @default(false)
+  accountsPerDay Int      @default(10)
+  updatedAt      DateTime @updatedAt
+
+  @@map("signup_settings")
+}
+
+// A login mail that went out, for the limits in src/server/users/signup.ts.
+// The recipient is a keyed hash, since most of these may be addresses of people
+// without an account, and rows are removed after two days.
+model LoginMail {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  recipientHash String
+  newAddress    Boolean
+  createdAt     DateTime @default(now())
+
+  @@index([recipientHash, createdAt])
+  @@index([newAddress, createdAt])
+  @@map("login_mail")
 }
 
 model Session {
@@ -556,8 +583,9 @@ model Document {
   sourceUrl      String? // e.g. the listing URL
   filename       String?
   mime           String?
-  sha256         String?      @unique
+  sha256         String?
   storagePath    String? // null until the file is uploaded
+  sizeBytes      Int? // of the uploaded file; null on files from before quotas
   fullText       String?
   interpretation Json? // Claude's interpretation, stored unchanged
   documentDate   DateTime?    @db.Date
@@ -573,6 +601,8 @@ model Document {
   workItems    WorkItem[]
   components   Component[]
 
+  // Per house, not global: two people can hold the same listing.
+  @@unique([houseId, sha256])
   @@index([houseId])
 }
 
