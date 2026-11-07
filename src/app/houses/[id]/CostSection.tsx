@@ -84,10 +84,10 @@ export default function CostSection({ houseId }: { houseId: string }) {
       <Box
         sx={{
           display: 'grid',
-          gap: 2,
+          gap: { xs: 1.5, sm: 2 },
           gridTemplateColumns: {
-            xs: '1fr 1fr',
-            md: 'repeat(4, 1fr)',
+            xs: 'repeat(2, minmax(0, 1fr))',
+            md: 'repeat(4, minmax(0, 1fr))',
           },
         }}
       >
@@ -153,7 +153,16 @@ export default function CostSection({ houseId }: { houseId: string }) {
           value={view}
           onChange={(_, v) => v && setView(v)}
           aria-label={t('cost.view.label')}
-          sx={{ mb: 2, flexWrap: 'wrap' }}
+          // On a phone the two buttons share the width and wrap their text,
+          // instead of the group wrapping into a broken stack.
+          sx={{
+            mb: 2,
+            width: { xs: '100%', sm: 'auto' },
+            '& .MuiToggleButton-root': {
+              flex: { xs: 1, sm: 'none' },
+              lineHeight: 1.3,
+            },
+          }}
         >
           <ToggleButton value="paid">{t('cost.view.paid')}</ToggleButton>
           <ToggleButton value="spread">{t('cost.view.spread')}</ToggleButton>
@@ -215,35 +224,34 @@ export default function CostSection({ houseId }: { houseId: string }) {
         >
           {t('cost.debtByType')}
         </Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>{t('cost.part')}</TableCell>
-              <TableCell align="right">{t('cost.typical')}</TableCell>
-              <TableCell align="right">{t('cost.rangeLabel')}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {a.debtByType.map((d) => (
-              <TableRow key={d.type}>
-                <TableCell>
-                  {d.type === 'work_items'
-                    ? t('forecastCategory.work_item')
-                    : labels.typeLabel(d.type)}
-                  {gaps.assumedParts.some((p) => p.type === d.type) && (
-                    <AssumedChip />
-                  )}
-                </TableCell>
-                <TableCell align="right">
-                  {formatSek(d.typical, locale)}
-                </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  {formatSekRange(d, locale)}
+        <Box sx={{ overflowX: 'auto' }}>
+          <Table size="small" sx={compactCells}>
+            <TableHead>
+              <TableRow>
+                <TableCell>{t('cost.part')}</TableCell>
+                <TableCell align="right">{t('cost.typical')}</TableCell>
+                <TableCell align="right" sx={wideOnly}>
+                  {t('cost.rangeLabel')}
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {a.debtByType.map((d) => (
+                <TableRow key={d.type}>
+                  <TableCell>
+                    {d.type === 'work_items'
+                      ? t('forecastCategory.work_item')
+                      : labels.typeLabel(d.type)}
+                    {gaps.assumedParts.some((p) => p.type === d.type) && (
+                      <AssumedChip />
+                    )}
+                  </TableCell>
+                  <AmountCells range={d} />
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
       </Paper>
 
       <Paper variant="outlined" sx={{ p: 2 }}>
@@ -256,12 +264,14 @@ export default function CostSection({ houseId }: { houseId: string }) {
           {t('cost.items')}
         </Typography>
         <Box sx={{ overflowX: 'auto' }}>
-          <Table size="small">
+          <Table size="small" sx={compactCells}>
             <TableHead>
               <TableRow>
                 <TableCell>{t('cost.item')}</TableCell>
                 <TableCell align="right">{t('cost.typical')}</TableCell>
-                <TableCell align="right">{t('cost.rangeLabel')}</TableCell>
+                <TableCell align="right" sx={wideOnly}>
+                  {t('cost.rangeLabel')}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -272,7 +282,9 @@ export default function CostSection({ houseId }: { houseId: string }) {
                     : item.key
                 return (
                   <TableRow key={i}>
-                    <TableCell sx={{ verticalAlign: 'top' }}>
+                    <TableCell
+                      sx={{ verticalAlign: 'top', overflowWrap: 'anywhere' }}
+                    >
                       <Typography variant="body2" component="span">
                         {labels.itemLabel(item)}
                       </Typography>{' '}
@@ -289,7 +301,13 @@ export default function CostSection({ houseId }: { houseId: string }) {
                           size="small"
                           variant="outlined"
                           label={`${t('cost.renewedAs')} (${labels.matchText(item.renewedAs, type)})`}
-                          sx={{ ml: 1, my: 0.25, maxWidth: '100%' }}
+                          sx={{
+                            ml: 1,
+                            my: 0.25,
+                            maxWidth: '100%',
+                            height: 'auto',
+                            '& .MuiChip-label': { whiteSpace: 'normal' },
+                          }}
                         />
                       )}
                       {item.flags
@@ -310,15 +328,7 @@ export default function CostSection({ houseId }: { houseId: string }) {
                           </Typography>
                         ))}
                     </TableCell>
-                    <TableCell align="right" sx={{ verticalAlign: 'top' }}>
-                      {formatSek(item.total.typical, locale)}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ verticalAlign: 'top', whiteSpace: 'nowrap' }}
-                    >
-                      {formatSekRange(item.total, locale)}
-                    </TableCell>
+                    <AmountCells range={item.total} top />
                   </TableRow>
                 )
               })}
@@ -346,6 +356,42 @@ export default function CostSection({ houseId }: { houseId: string }) {
         </Typography>
       </Box>
     </Stack>
+  )
+}
+
+// Narrower cell padding on a phone, where 16 px each side of every cell
+// leaves little room for the text.
+const compactCells = { '& td, & th': { px: { xs: 1, sm: 2 } } }
+
+// The range gets its own column from the sm breakpoint; on a phone it goes
+// under the typical amount, so the amounts stay on screen.
+const wideOnly = { display: { xs: 'none', sm: 'table-cell' } }
+
+function AmountCells({ range, top }: { range: Range; top?: boolean }) {
+  const locale = useLocale()
+  const verticalAlign = top ? 'top' : undefined
+  return (
+    <>
+      <TableCell align="right" sx={{ verticalAlign }}>
+        <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+          {formatSek(range.typical, locale)}
+        </Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          component="div"
+          sx={{ display: { sm: 'none' }, whiteSpace: 'nowrap' }}
+        >
+          {formatSekRange(range, locale)}
+        </Typography>
+      </TableCell>
+      <TableCell
+        align="right"
+        sx={{ ...wideOnly, verticalAlign, whiteSpace: 'nowrap' }}
+      >
+        {formatSekRange(range, locale)}
+      </TableCell>
+    </>
   )
 }
 
@@ -387,7 +433,7 @@ function Tile({
     <Paper
       variant="outlined"
       sx={{
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         ...(strong && { borderColor: 'primary.main', borderWidth: 2 }),
       }}
     >

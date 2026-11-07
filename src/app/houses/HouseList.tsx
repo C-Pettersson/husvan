@@ -239,6 +239,7 @@ function HouseCard({
         <Stack
           direction="row"
           spacing={1}
+          rowGap={0.75}
           alignItems="center"
           flexWrap="wrap"
           useFlexGap
@@ -291,7 +292,7 @@ function HouseCard({
           )}
         </Stack>
         {(h.municipality || figures.length > 0) && (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
             {[h.municipality, ...figures].filter(Boolean).join(' · ')}
           </Typography>
         )}

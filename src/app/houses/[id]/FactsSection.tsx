@@ -133,7 +133,7 @@ export function AreaSection({ houseId }: { houseId: string }) {
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Box sx={{ overflowX: 'auto' }}>
-        <Table size="small">
+        <Table size="small" sx={{ '& td, & th': { px: { xs: 1, sm: 2 } } }}>
           <TableHead>
             <TableRow>
               <TableCell />

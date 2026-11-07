@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   Box,
@@ -33,8 +33,13 @@ type Year = {
   typicalByCategory: Partial<Record<string, number>>
 }
 
-const W = 640
+// The chart is drawn at the width it gets, so its text stays at 11 px; a
+// fixed viewBox scaled down to a phone made the axis labels about 5 px tall.
+const DEFAULT_W = 640
 const H = 220
+// Below this width a floating tooltip covers most of the chart, so the
+// hovered year is shown under it instead.
+const NARROW_W = 480
 const PAD = { top: 12, right: 8, bottom: 24, left: 56 }
 const GAP = 2
 
@@ -52,7 +57,23 @@ export default function YearChart({ years }: { years: Year[] }) {
   const locale = useLocale()
   const [hover, setHover] = useState<number | null>(null)
   const [table, setTable] = useState(false)
+  const [W, setW] = useState(DEFAULT_W)
+  const frame = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    const el = frame.current
+    if (!el) return
+    const initial = Math.round(el.getBoundingClientRect().width)
+    if (initial > 0) setW(initial)
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width)
+      if (width > 0) setW(width)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const narrow = W < NARROW_W
   const used = CATEGORIES.filter((c) =>
     years.some((y) => (y.typicalByCategory[c.key] ?? 0) > 0)
   )
@@ -63,7 +84,10 @@ export default function YearChart({ years }: { years: Year[] }) {
   const barW = Math.min(24, band * 0.7)
   const y = (v: number) => PAD.top + innerH - (v / max) * innerH
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * max)
-  const labelEvery = Math.ceil(years.length / 8)
+  // A year label is about 30 px wide; leave room between them.
+  const labelEvery = Math.ceil(
+    years.length / Math.max(2, Math.min(8, Math.floor(innerW / 48)))
+  )
   const shown = hover === null ? null : years[hover]
 
   return (
@@ -97,10 +121,11 @@ export default function YearChart({ years }: { years: Year[] }) {
         ))}
       </Stack>
 
-      <Box sx={{ position: 'relative' }}>
+      <Box ref={frame} sx={{ position: 'relative' }}>
         <svg
           viewBox={`0 0 ${W} ${H}`}
           width="100%"
+          height={H}
           role="img"
           aria-label={t('chartTitle')}
           style={{ display: 'block', overflow: 'visible' }}
@@ -190,23 +215,27 @@ export default function YearChart({ years }: { years: Year[] }) {
           <Box
             role="status"
             sx={{
-              position: 'absolute',
-              top: 0,
-              left: `${((PAD.left + (hover + 0.5) * band) / W) * 100}%`,
-              transform:
-                hover > years.length / 2
-                  ? 'translateX(calc(-100% - 12px))'
-                  : 'translateX(12px)',
+              ...(narrow
+                ? { mt: 1 }
+                : {
+                    position: 'absolute',
+                    top: 0,
+                    left: `${((PAD.left + (hover + 0.5) * band) / W) * 100}%`,
+                    transform:
+                      hover > years.length / 2
+                        ? 'translateX(calc(-100% - 12px))'
+                        : 'translateX(12px)',
+                    boxShadow: 2,
+                    minWidth: 180,
+                    zIndex: 1,
+                  }),
               bgcolor: 'background.paper',
               border: 1,
               borderColor: 'divider',
               borderRadius: 1,
-              boxShadow: 2,
               px: 1.5,
               py: 1,
               pointerEvents: 'none',
-              minWidth: 180,
-              zIndex: 1,
             }}
           >
             <Typography variant="subtitle2">{shown.year}</Typography>

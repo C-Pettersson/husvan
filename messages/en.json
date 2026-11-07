@@ -367,10 +367,14 @@
         "closed": "Closed"
       },
       "house_type": {
-        "detached": "Detached house"
+        "detached": "Detached house",
+        "semi_detached": "Semi-detached house",
+        "terraced": "Terraced house",
+        "linked": "Link-detached house"
       },
       "tenure": {
-        "freehold": "Freehold"
+        "freehold": "Freehold",
+        "site_leasehold": "Site leasehold"
       },
       "ventilation_type": {
         "natural_draft": "Natural draught"
