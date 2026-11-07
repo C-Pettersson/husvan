@@ -319,6 +319,15 @@ export default function HouseDetail({
           scrollButtons="auto"
           allowScrollButtonsMobile
           aria-label={t('houseDetail.tabsLabel')}
+          sx={{
+            // A disabled scroll arrow is invisible but kept its 40 px, which
+            // left a gap before the first tab on a phone.
+            '& .MuiTabs-scrollButtons.Mui-disabled': { width: 0 },
+            '& .MuiTab-root': {
+              minWidth: { xs: 0, sm: 90 },
+              px: { xs: 1.5, sm: 2 },
+            },
+          }}
         >
           {HOUSE_TABS.map((key) => (
             <Tab key={key} value={key} label={t(`houseDetail.tab.${key}`)} />

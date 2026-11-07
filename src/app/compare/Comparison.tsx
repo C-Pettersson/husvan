@@ -1,5 +1,6 @@
 'use client'
 
+import { createContext, useContext, useMemo, useRef } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   Alert,
@@ -39,6 +40,7 @@ export default function Comparison({ ids }: { ids: string[] }) {
   const locale = useLocale()
   const compare = trpc.house.compare.useQuery({ ids })
   const labels = useLabels(compare.data?.types ?? {})
+  const sync = useSyncScroll()
 
   if (compare.isPending) return <CircularProgress />
   if (compare.isError)
@@ -125,12 +127,17 @@ export default function Comparison({ ids }: { ids: string[] }) {
     return '–'
   }
 
+  const tableSx = houseTableSx(houses.length)
+  // With a fixed layout the header row sets the column widths for the table.
   const head = (
     <TableHead>
       <TableRow>
-        <TableCell />
+        <TableCell sx={{ width: LABEL_WIDTH }} />
         {houses.map((h) => (
-          <TableCell key={h.id} sx={{ minWidth: 140, verticalAlign: 'top' }}>
+          <TableCell
+            key={h.id}
+            sx={{ width: HOUSE_WIDTH, verticalAlign: 'top' }}
+          >
             <Link href={`/houses/${h.id}`} fontWeight={600} underline="hover">
               {h.address.split(',')[0]}
             </Link>
@@ -156,91 +163,98 @@ export default function Comparison({ ids }: { ids: string[] }) {
   )
 
   return (
-    <Stack spacing={4}>
-      <Typography color="text.secondary">{t('compare.sorted')}</Typography>
+    <SyncScroll.Provider value={sync}>
+      <Stack spacing={4}>
+        <Typography color="text.secondary">{t('compare.sorted')}</Typography>
 
-      <Panel>
-        <Table size="small">
-          {head}
-          <TableBody>
-            {row(t('cost.price'), (h) =>
-              h.price ? (
+        <Panel>
+          <Table size="small" sx={tableSx}>
+            {head}
+            <TableBody>
+              {row(t('cost.price'), (h) =>
+                h.price ? (
+                  <>
+                    <strong>{formatSek(h.price.sek, locale)}</strong>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      component="div"
+                    >
+                      {keyLabel(h.price.kind, { locale, t })}
+                    </Typography>
+                    {perM2(h.perLivingM2.price)}
+                  </>
+                ) : (
+                  t('cost.noPrice')
+                )
+              )}
+              {row(t('cost.debt'), (h) => range(h.maintenanceDebt))}
+              {row(t('cost.adjusted'), (h) => (
                 <>
-                  <strong>{formatSek(h.price.sek, locale)}</strong>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    component="div"
-                  >
-                    {keyLabel(h.price.kind, { locale, t })}
-                  </Typography>
-                  {perM2(h.perLivingM2.price)}
+                  {range(h.maintenanceAdjustedPrice)}
+                  {perM2(h.perLivingM2.maintenanceAdjustedPrice)}
                 </>
-              ) : (
-                t('cost.noPrice')
-              )
-            )}
-            {row(t('cost.debt'), (h) => range(h.maintenanceDebt))}
-            {row(t('cost.adjusted'), (h) => (
-              <>
-                {range(h.maintenanceAdjustedPrice)}
-                {perM2(h.perLivingM2.maintenanceAdjustedPrice)}
-              </>
-            ))}
-            {row(t('cost.perMonth'), (h) => (
-              <>
-                {range(h.forecastPerMonth, true)}
-                {perM2(h.perLivingM2.forecastPerMonth)}
-                {!h.runningCostsKnown && (
-                  <Typography variant="caption" color="warning.dark">
-                    {t('cost.gap.runningUnknown')}
-                  </Typography>
-                )}
-              </>
-            ))}
-            {row(t('compare.annualPerMonth'), (h) => (
-              <>
-                {range(h.annualCost.perMonth, true)}
-                {perM2(h.perLivingM2.annualPerMonth)}
-                {!h.runningCostsKnown && (
-                  <Typography variant="caption" color="warning.dark">
-                    {t('cost.gap.runningUnknown')}
-                  </Typography>
-                )}
-              </>
-            ))}
-            {row(t('cost.ratio'), (h) =>
-              h.priceToAssessedValue
-                ? numberFormat(locale).format(
-                    Math.round(h.priceToAssessedValue.ratio * 100) / 100
-                  )
-                : '–'
-            )}
-            {row(t('cost.gapsTitle'), (h) => (
-              <Typography variant="caption" component="div">
-                {[
-                  !h.gaps.inspected && `${t('compare.notInspected')}.`,
-                  h.gaps.assumedParts.length > 0 &&
-                    t('cost.gap.assumedParts', {
-                      parts: h.gaps.assumedParts
-                        .map((p) => labels.typeLabel(p.type))
-                        .join(', '),
-                    }),
-                  h.gaps.workItemsWithoutCost > 0 &&
-                    t('cost.gap.workItemsWithoutCost', {
-                      count: h.gaps.workItemsWithoutCost,
-                    }),
-                ]
-                  .filter(Boolean)
-                  .map((line) => (
-                    <div key={String(line)}>{line}</div>
-                  ))}
-              </Typography>
-            ))}
-          </TableBody>
-        </Table>
+              ))}
+              {row(t('cost.perMonth'), (h) => (
+                <>
+                  {range(h.forecastPerMonth, true)}
+                  {perM2(h.perLivingM2.forecastPerMonth)}
+                  {!h.runningCostsKnown && (
+                    <Typography variant="caption" color="warning.dark">
+                      {t('cost.gap.runningUnknown')}
+                    </Typography>
+                  )}
+                </>
+              ))}
+              {row(t('compare.annualPerMonth'), (h) => (
+                <>
+                  {range(h.annualCost.perMonth, true)}
+                  {perM2(h.perLivingM2.annualPerMonth)}
+                  {!h.runningCostsKnown && (
+                    <Typography variant="caption" color="warning.dark">
+                      {t('cost.gap.runningUnknown')}
+                    </Typography>
+                  )}
+                </>
+              ))}
+              {row(t('cost.ratio'), (h) =>
+                h.priceToAssessedValue
+                  ? numberFormat(locale).format(
+                      Math.round(h.priceToAssessedValue.ratio * 100) / 100
+                    )
+                  : '–'
+              )}
+              {row(t('cost.gapsTitle'), (h) => (
+                <Typography variant="caption" component="div">
+                  {[
+                    !h.gaps.inspected && `${t('compare.notInspected')}.`,
+                    h.gaps.assumedParts.length > 0 &&
+                      t('cost.gap.assumedParts', {
+                        parts: h.gaps.assumedParts
+                          .map((p) => labels.typeLabel(p.type))
+                          .join(', '),
+                      }),
+                    h.gaps.workItemsWithoutCost > 0 &&
+                      t('cost.gap.workItemsWithoutCost', {
+                        count: h.gaps.workItemsWithoutCost,
+                      }),
+                  ]
+                    .filter(Boolean)
+                    .map((line) => (
+                      <div key={String(line)}>{line}</div>
+                    ))}
+                </Typography>
+              ))}
+            </TableBody>
+          </Table>
+        </Panel>
+        {/* Outside the panel, so it does not scroll away with the houses. */}
         {unknownRunning.length > 0 && (
-          <Alert severity="warning" variant="outlined" sx={{ mt: 2 }}>
+          <Alert
+            severity="warning"
+            variant="outlined"
+            sx={{ mt: '16px !important' }}
+          >
             {t('compare.runningUnknownNote', {
               addresses: unknownRunning
                 .map((h) => h.address.split(',')[0])
@@ -248,247 +262,263 @@ export default function Comparison({ ids }: { ids: string[] }) {
             })}
           </Alert>
         )}
-      </Panel>
 
-      <Box>
-        <Heading>
-          {t('compare.againstFirst', { address: base.address.split(',')[0] })}
-        </Heading>
-        <Box
-          sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
-          }}
-        >
-          {c.againstFirst.map((d) => (
-            <Paper key={d.id} variant="outlined" sx={{ p: 2 }}>
-              <Typography variant="subtitle1" fontWeight={600}>
-                {d.address.split(',')[0]}
-              </Typography>
-              <Table size="small">
-                <TableBody>
-                  <TableRow>
-                    <TableCell>{t('compare.priceDiff')}</TableCell>
-                    <TableCell align="right">
-                      {d.price === null ? '–' : signed(d.price)}
-                    </TableCell>
-                  </TableRow>
-                  {d.debtByType.map((p) => (
-                    <TableRow key={p.type}>
-                      <TableCell sx={{ pl: 3, color: 'text.secondary' }}>
-                        {p.type === 'other'
-                          ? t('compare.other')
-                          : p.type === 'work_items'
-                            ? t('forecastCategory.work_item')
-                            : labels.typeLabel(p.type)}
-                      </TableCell>
-                      <TableCell align="right" sx={{ color: 'text.secondary' }}>
-                        {signed(p.sek)}
+        <Box>
+          <Heading>
+            {t('compare.againstFirst', { address: base.address.split(',')[0] })}
+          </Heading>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+            }}
+          >
+            {c.againstFirst.map((d) => (
+              <Paper key={d.id} variant="outlined" sx={{ p: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {d.address.split(',')[0]}
+                </Typography>
+                <Table size="small">
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>{t('compare.priceDiff')}</TableCell>
+                      <TableCell align="right">
+                        {d.price === null ? '–' : signed(d.price)}
                       </TableCell>
                     </TableRow>
-                  ))}
-                  <TableRow>
-                    <TableCell>{t('compare.debtDiff')}</TableCell>
-                    <TableCell align="right">{signed(d.debt)}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>
-                      {t('compare.adjustedDiff')}
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>
-                      {d.adjustedPrice === null ? '–' : signed(d.adjustedPrice)}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </Paper>
-          ))}
-        </Box>
-      </Box>
-
-      <Box>
-        <Heading>{t('compare.findings')}</Heading>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {t('compare.findingsNote')}
-        </Typography>
-        <Panel>
-          <Table size="small">
-            {head}
-            <TableBody>
-              {c.inspectionFindings.map((f) => (
-                <TableRow key={f.componentType}>
-                  <TableCell
-                    component="th"
-                    scope="row"
-                    sx={{ color: 'text.secondary' }}
-                  >
-                    {f.componentType === 'house'
-                      ? t('compare.wholeHouse')
-                      : labels.typeLabel(f.componentType)}
-                  </TableCell>
-                  {f.byHouse.map((cell, i) => (
-                    <TableCell key={houses[i].id} sx={{ verticalAlign: 'top' }}>
-                      {cell === null ? (
-                        <Typography variant="body2" color="warning.dark">
-                          {t('compare.notInspected')}
-                        </Typography>
-                      ) : cell.items === 0 ? (
-                        t('compare.noFindings')
-                      ) : (
-                        <>
-                          {t('compare.findingsCell', { items: cell.items })}
-                          {cell.typicalSek > 0 &&
-                            ` · ${formatSekShort(cell.typicalSek, locale)}`}
-                          {cell.unpriced > 0 && (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              component="div"
-                            >
-                              {t('compare.unpriced', { count: cell.unpriced })}
-                            </Typography>
-                          )}
-                        </>
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Panel>
-      </Box>
-
-      <Box>
-        <Heading>{t('compare.largest')}</Heading>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {t('compare.largestNote')}
-        </Typography>
-        <Panel>
-          <Table size="small">
-            {head}
-            <TableBody>
-              {c.largestForecastDifferences.map((d) => (
-                <TableRow key={d.item}>
-                  <TableCell
-                    component="th"
-                    scope="row"
-                    sx={{ color: 'text.secondary' }}
-                  >
-                    {itemLabel(d.item)}
-                  </TableCell>
-                  {d.sek.map((sek, i) => (
-                    <TableCell key={houses[i].id} sx={{ verticalAlign: 'top' }}>
-                      {sek === null ? (
-                        <Typography variant="body2" color="warning.dark">
-                          {t('compare.unknown')}
-                        </Typography>
-                      ) : (
-                        formatSek(sek, locale)
-                      )}
-                      {!PLAIN_BASIS.includes(d.basis[i]) && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          component="div"
+                    {d.debtByType.map((p) => (
+                      <TableRow key={p.type}>
+                        <TableCell sx={{ pl: 3, color: 'text.secondary' }}>
+                          {p.type === 'other'
+                            ? t('compare.other')
+                            : p.type === 'work_items'
+                              ? t('forecastCategory.work_item')
+                              : labels.typeLabel(p.type)}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{ color: 'text.secondary' }}
                         >
-                          {t(`compare.basis.${d.basis[i]}`)}
-                        </Typography>
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Panel>
-      </Box>
-
-      <Box>
-        <Heading>{t('compare.features')}</Heading>
-        <Panel>
-          <Table size="small">
-            {head}
-            <TableBody>
-              {Object.keys(base.features).map((f) => (
-                <TableRow key={f}>
-                  <TableCell
-                    component="th"
-                    scope="row"
-                    sx={{ color: 'text.secondary' }}
-                  >
-                    {t(`feature.${f}`)}
-                  </TableCell>
-                  {houses.map((h) => {
-                    const answer = (h.features as Record<string, string>)[f]
-                    return (
-                      <TableCell
-                        key={h.id}
-                        sx={{
-                          color:
-                            answer === 'unknown' ? 'text.secondary' : undefined,
-                        }}
-                      >
-                        {t(`featureAnswer.${answer}`)}
+                          {signed(p.sek)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow>
+                      <TableCell>{t('compare.debtDiff')}</TableCell>
+                      <TableCell align="right">{signed(d.debt)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        {t('compare.adjustedDiff')}
                       </TableCell>
-                    )
-                  })}
-                </TableRow>
-              ))}
-              {row(t('compare.risks'), (h) =>
-                h.risks.length === 0
-                  ? '–'
-                  : h.risks.map((r, i) => (
-                      <Typography key={i} variant="body2">
-                        {t(`risk.${r.kind}`)}
-                        {r.kind !== 'radon' && `: ${labels.typeLabel(r.type)}`}
-                      </Typography>
-                    ))
-              )}
-            </TableBody>
-          </Table>
-        </Panel>
-      </Box>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>
+                        {d.adjustedPrice === null
+                          ? '–'
+                          : signed(d.adjustedPrice)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </Paper>
+            ))}
+          </Box>
+        </Box>
 
-      <Box>
-        <Heading>{t('compare.area')}</Heading>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {t('area.note')}
-        </Typography>
-        <Panel>
-          {areaKeys.length === 0 ? (
-            <Typography color="text.secondary">
-              {t('compare.noArea')}
-            </Typography>
-          ) : (
-            <Table size="small">
+        <Box>
+          <Heading>{t('compare.findings')}</Heading>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('compare.findingsNote')}
+          </Typography>
+          <Panel>
+            <Table size="small" sx={tableSx}>
               {head}
               <TableBody>
-                {areaKeys.map((key) => (
-                  <TableRow key={key}>
+                {c.inspectionFindings.map((f) => (
+                  <TableRow key={f.componentType}>
                     <TableCell
                       component="th"
                       scope="row"
                       sx={{ color: 'text.secondary' }}
                     >
-                      {t.has(`area.key.${key}`) ? t(`area.key.${key}`) : key}
+                      {f.componentType === 'house'
+                        ? t('compare.wholeHouse')
+                        : labels.typeLabel(f.componentType)}
                     </TableCell>
-                    {houses.map((h) => (
-                      <TableCell key={h.id}>{areaCell(h, key)}</TableCell>
+                    {f.byHouse.map((cell, i) => (
+                      <TableCell
+                        key={houses[i].id}
+                        sx={{ verticalAlign: 'top' }}
+                      >
+                        {cell === null ? (
+                          <Typography variant="body2" color="warning.dark">
+                            {t('compare.notInspected')}
+                          </Typography>
+                        ) : cell.items === 0 ? (
+                          t('compare.noFindings')
+                        ) : (
+                          <>
+                            {t('compare.findingsCell', { items: cell.items })}
+                            {cell.typicalSek > 0 &&
+                              ` · ${formatSekShort(cell.typicalSek, locale)}`}
+                            {cell.unpriced > 0 && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                component="div"
+                              >
+                                {t('compare.unpriced', {
+                                  count: cell.unpriced,
+                                })}
+                              </Typography>
+                            )}
+                          </>
+                        )}
+                      </TableCell>
                     ))}
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          )}
-        </Panel>
-      </Box>
+          </Panel>
+        </Box>
 
-      <Typography variant="caption" color="text.secondary">
-        {t('cost.notModelled')}
-      </Typography>
-    </Stack>
+        <Box>
+          <Heading>{t('compare.largest')}</Heading>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('compare.largestNote')}
+          </Typography>
+          <Panel>
+            <Table size="small" sx={tableSx}>
+              {head}
+              <TableBody>
+                {c.largestForecastDifferences.map((d) => (
+                  <TableRow key={d.item}>
+                    <TableCell
+                      component="th"
+                      scope="row"
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {itemLabel(d.item)}
+                    </TableCell>
+                    {d.sek.map((sek, i) => (
+                      <TableCell
+                        key={houses[i].id}
+                        sx={{ verticalAlign: 'top' }}
+                      >
+                        {sek === null ? (
+                          <Typography variant="body2" color="warning.dark">
+                            {t('compare.unknown')}
+                          </Typography>
+                        ) : (
+                          formatSek(sek, locale)
+                        )}
+                        {!PLAIN_BASIS.includes(d.basis[i]) && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            component="div"
+                          >
+                            {t(`compare.basis.${d.basis[i]}`)}
+                          </Typography>
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Panel>
+        </Box>
+
+        <Box>
+          <Heading>{t('compare.features')}</Heading>
+          <Panel>
+            <Table size="small" sx={tableSx}>
+              {head}
+              <TableBody>
+                {Object.keys(base.features).map((f) => (
+                  <TableRow key={f}>
+                    <TableCell
+                      component="th"
+                      scope="row"
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {t(`feature.${f}`)}
+                    </TableCell>
+                    {houses.map((h) => {
+                      const answer = (h.features as Record<string, string>)[f]
+                      return (
+                        <TableCell
+                          key={h.id}
+                          sx={{
+                            color:
+                              answer === 'unknown'
+                                ? 'text.secondary'
+                                : undefined,
+                          }}
+                        >
+                          {t(`featureAnswer.${answer}`)}
+                        </TableCell>
+                      )
+                    })}
+                  </TableRow>
+                ))}
+                {row(t('compare.risks'), (h) =>
+                  h.risks.length === 0
+                    ? '–'
+                    : h.risks.map((r, i) => (
+                        <Typography key={i} variant="body2">
+                          {t(`risk.${r.kind}`)}
+                          {r.kind !== 'radon' &&
+                            `: ${labels.typeLabel(r.type)}`}
+                        </Typography>
+                      ))
+                )}
+              </TableBody>
+            </Table>
+          </Panel>
+        </Box>
+
+        <Box>
+          <Heading>{t('compare.area')}</Heading>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('area.note')}
+          </Typography>
+          <Panel>
+            {areaKeys.length === 0 ? (
+              <Typography color="text.secondary" sx={{ px: EDGE }}>
+                {t('compare.noArea')}
+              </Typography>
+            ) : (
+              <Table size="small" sx={tableSx}>
+                {head}
+                <TableBody>
+                  {areaKeys.map((key) => (
+                    <TableRow key={key}>
+                      <TableCell
+                        component="th"
+                        scope="row"
+                        sx={{ color: 'text.secondary' }}
+                      >
+                        {t.has(`area.key.${key}`) ? t(`area.key.${key}`) : key}
+                      </TableCell>
+                      {houses.map((h) => (
+                        <TableCell key={h.id}>{areaCell(h, key)}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Panel>
+        </Box>
+
+        <Typography variant="caption" color="text.secondary">
+          {t('cost.notModelled')}
+        </Typography>
+      </Stack>
+    </SyncScroll.Provider>
   )
 }
 
@@ -500,9 +530,76 @@ function Heading({ children }: { children: React.ReactNode }) {
   )
 }
 
+// Every house table has the same column widths, and scrolling one sideways
+// scrolls the others, so on a phone a house stays in the same column all the
+// way down the page.
+const SyncScroll = createContext<{
+  register: (el: HTMLElement | null) => () => void
+  onScroll: (e: React.UIEvent<HTMLElement>) => void
+} | null>(null)
+
+function useSyncScroll() {
+  const panels = useRef(new Set<HTMLElement>())
+  return useMemo(
+    () => ({
+      register: (el: HTMLElement | null) => {
+        if (el) panels.current.add(el)
+        return () => {
+          if (el) panels.current.delete(el)
+        }
+      },
+      onScroll: (e: React.UIEvent<HTMLElement>) => {
+        const x = e.currentTarget.scrollLeft
+        for (const p of panels.current)
+          if (p !== e.currentTarget && Math.abs(p.scrollLeft - x) > 1)
+            p.scrollLeft = x
+      },
+    }),
+    []
+  )
+}
+
+// On a phone, wide enough for "Underhållsjusterat" on one line.
+const LABEL_WIDTH = { xs: 136, sm: 196 }
+const HOUSE_WIDTH = { xs: 150, sm: 180 }
+// The panel's side padding, given to the outer cells instead: a sticky cell
+// stops at the panel's padding, so scrolled text would show beside it.
+const EDGE = { xs: 1.5, sm: 3 }
+
+// The row labels stay in view while the houses scroll under them.
+function houseTableSx(count: number) {
+  return {
+    tableLayout: 'fixed',
+    width: '100%',
+    minWidth: {
+      xs: LABEL_WIDTH.xs + count * HOUSE_WIDTH.xs,
+      sm: LABEL_WIDTH.sm + count * HOUSE_WIDTH.sm,
+    },
+    '& td, & th': { px: { xs: 1, sm: 2 } },
+    '& tr > :last-child': { pr: EDGE },
+    // Each row's label is its only th; in the header row every cell is a th
+    // and the label is the first one.
+    '& tr > th:first-of-type': {
+      position: 'sticky',
+      left: 0,
+      zIndex: 1,
+      bgcolor: 'background.paper',
+      pl: EDGE,
+      hyphens: 'auto',
+      overflowWrap: 'anywhere',
+    },
+  } as const
+}
+
 function Panel({ children }: { children: React.ReactNode }) {
+  const sync = useContext(SyncScroll)
   return (
-    <Paper variant="outlined" sx={{ p: 2, overflowX: 'auto' }}>
+    <Paper
+      ref={sync?.register}
+      onScroll={sync?.onScroll}
+      variant="outlined"
+      sx={{ py: { xs: 1, sm: 2 }, overflowX: 'auto' }}
+    >
       {children}
     </Paper>
   )

@@ -367,10 +367,14 @@
         "closed": "Avslutad"
       },
       "house_type": {
-        "detached": "Friliggande villa"
+        "detached": "Friliggande villa",
+        "semi_detached": "Parhus",
+        "terraced": "Radhus",
+        "linked": "Kedjehus"
       },
       "tenure": {
-        "freehold": "Friköpt"
+        "freehold": "Friköpt",
+        "site_leasehold": "Tomträtt"
       },
       "ventilation_type": {
         "natural_draft": "Självdrag"

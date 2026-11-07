@@ -26,6 +26,15 @@ import { EditValueDialog, RetractDialog, type ValueKind } from './EditValue'
 
 export type DocumentRef = { type: string; title: string | null }
 
+// A key the library does not know is shown as is, like radon_measurement_date.
+// Offer a line break after each underscore so it wraps at word boundaries.
+function breakable(text: string) {
+  const parts = text.split('_')
+  return parts.flatMap((part, i) =>
+    i < parts.length - 1 ? [part, '_', <wbr key={i} />] : [part]
+  )
+}
+
 // Values with where each came from. Rows from a previewed draft are marked,
 // so the draft and the approved data render through the same table. With
 // edit, the user can set their own value or retract the current one; with
@@ -82,7 +91,19 @@ export default function ValueTable({
 
   return (
     <>
-      <Table size="small">
+      <Table
+        size="small"
+        sx={{
+          // Fixed layout keeps the label column at its share of the width, so
+          // a long label or value wraps instead of pushing the table past its
+          // card on a phone.
+          tableLayout: 'fixed',
+          '& td, & th': {
+            px: { xs: 1, sm: 2 },
+            overflowWrap: 'anywhere',
+          },
+        }}
+      >
         <TableBody>
           {values.map(({ key, current, alternatives }) => (
             <TableRow
@@ -105,11 +126,20 @@ export default function ValueTable({
                   color: 'text.secondary',
                 }}
               >
-                {label(key)}
+                {breakable(label(key))}
               </TableCell>
               <TableCell sx={{ verticalAlign: 'top' }}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Typography variant="body2" fontWeight={500}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  flexWrap="wrap"
+                  columnGap={1}
+                >
+                  <Typography
+                    variant="body2"
+                    fontWeight={500}
+                    sx={{ minWidth: 0 }}
+                  >
                     {format(current)}
                   </Typography>
                   {current.draft && (
