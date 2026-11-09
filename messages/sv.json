@@ -164,7 +164,8 @@
       "origin": "Husvan togs fram för att lära mig hur man gör ett AI-first-projekt, och för att underlätta mitt eget sökande efter drömhuset. Räkna med att saker kan ändras rätt kraftigt. Det kan vara helt fel tänkt från min sida hur man bygger något sådant här.",
       "ambition": "Ambitionen är att Husvan ska fungera som ett komplement till valfri AI-modell, så att du kan kommunicera med ditt hus och dess behov, och få tips, råd och uppmaningar tillbaka om sådant som behöver åtgärdas och hanteras. Lite av en digital fastighetsförvaltare, som utvecklas tillsammans med AI:ns framgång.",
       "brf": "Är du på jakt efter en bostadsrätt kan du se mitt projekt för just det: <link>brfjamforelse.se</link>."
-    }
+    },
+    "footerDemo": "Exempelhus"
   },
   "login": {
     "title": "Logga in",
@@ -1127,7 +1128,8 @@
     },
     "connect": "Verktygen blir tillgängliga när du har lagt till Husvan som egen koppling i din Claude och loggat in.",
     "getStarted": "Kom igång",
-    "privacy": "Så behandlas dina uppgifter"
+    "privacy": "Så behandlas dina uppgifter",
+    "demo": "Se ett exempelhus med allt Husvan sparar"
   },
   "privacy": {
     "title": "Integritet",
@@ -1176,5 +1178,80 @@
       "title": "Kakor",
       "body": "Husvan använder en kaka för inloggningen och en för valt språk. Båda behövs för att sidan ska fungera, och besöksstatistiken använder inga kakor, så ingen samtyckesruta visas. På inloggningssidan kontrollerar Cloudflare Turnstile att det är en människa som loggar in."
     }
+  },
+  "demo": {
+    "title": "Exempelhus: allt Husvan sparar om ett hus",
+    "metaDescription": "Ett påhittat hus i Boden som visar varje sorts uppgift Husvan sparar: kärnan, dokument, uppgifter med källa och säkerhet, komponenter, åtgärder, antaganden, ändringshistorik och prognoser.",
+    "lead": "Ett påhittat hus med påhittade men rimliga uppgifter, som det skulle se ut efter att du läst prospekt, energideklaration, besiktning och en rörinspektion med din Claude. Varje uppgift visar var den kommer ifrån.",
+    "madeUp": "Påhittade uppgifter",
+    "core": {
+      "title": "Huset",
+      "body": "Kärnan sparas direkt när Claude skapar huset. Allt annat hänger på den.",
+      "address": "Adress",
+      "propertyDesignation": "Fastighetsbeteckning",
+      "municipality": "Kommun",
+      "status": "Status",
+      "createdAt": "Tillagt"
+    },
+    "documents": {
+      "title": "Dokument",
+      "body": "Originalfilen, fulltexten och Claudes tolkning sparas oförändrade, med typ, datum och vem som står bakom dokumentet. Husvan tolkar aldrig dokumenten själv.",
+      "file": "{filename}, {pages, plural, one {# sida} other {# sidor}}, {size} MB"
+    },
+    "values": {
+      "title": "Uppgifter om huset",
+      "body": "Varje uppgift är en observation med källa, säkerhet och citatet den bygger på. Säger två dokument olika visas båda: det aktuella värdet först och det andra som alternativ. Dina egna värden går före Claudes, utom för pris och bud, där det senaste gäller."
+    },
+    "components": {
+      "title": "Komponenter",
+      "body": "Huset delas upp i delarna som kostar pengar över tid, med sina egna uppgifter. En del kan sitta i en annan, och en utbytt del finns kvar under den som ersatte den. Gula markeringar är ett utkast som väntar på ditt godkännande.",
+      "replaces": "Ersätter: {type}"
+    },
+    "workItems": {
+      "title": "Åtgärder",
+      "body": "Brister och rekommendationer från besiktningen och prospektet, och dina egna planer. Besiktningen anger sällan ett årtal, så varje åtgärd har ett spann av år och kostnader.",
+      "when": "{years} · {cost}"
+    },
+    "assumptions": {
+      "title": "Antaganden",
+      "body": "Det du bestämmer för prognosen, för ett hus eller för alla. Det som inte är satt får ett standardvärde."
+    },
+    "log": {
+      "title": "Ändringshistorik",
+      "body": "Allt som skrivs hamnar i ett ändringsset. Inget skrivs över och inget raderas: ett bättre värde blir en ny rad och ett felaktigt återkallas. Därför går det att se huset som det såg ut ett visst datum.",
+      "status": {
+        "approved": "Godkänt",
+        "rejected": "Avslaget",
+        "draft": "Utkast"
+      },
+      "entries": {
+        "created": "Claude skapade huset från prospektet.",
+        "listing": "Uppgifter och komponenter från prospektet.",
+        "assessment": "Taxeringsvärdet hämtades.",
+        "energy": "Uppgifter från energideklarationen.",
+        "inspection": "Uppgifter, komponenter och tre åtgärder från besiktningen.",
+        "rejected": "Claude läste att badrummet hade våtrumsintyg. Du avslog utkastet; det finns kvar men syns inte.",
+        "insurance": "Du lade in din egen försäkringsoffert på webbsidan.",
+        "invoice": "Värmepumpen från fakturan, som ersättning för elpannan.",
+        "retraction": "Du återkallade prospektets installationsår 2018 för värmepumpen: fakturan visar 2019.",
+        "pipes": "Skick och en åtgärd för avloppet från rörinspektionen. Väntar på ditt godkännande.",
+        "price": "En bevakning såg att utgångspriset sänkts.",
+        "bid": "Du lade in det högsta budet."
+      }
+    },
+    "forecasts": {
+      "title": "Sparade prognoser",
+      "body": "Varje prognos sparas med antagandena den räknades på, så att du ser hur bedömningen av huset ändrats. Summan är byten, åtgärder och drift över horisonten, i dagens kronor.",
+      "when": "Beräknad",
+      "total": "Summa",
+      "perMonth": "Per månad",
+      "entries": {
+        "listing": "Bara prospektet, {years} år",
+        "inspection": "Efter besiktningen, {years} år",
+        "horizon": "Ny horisont, {years} år"
+      }
+    },
+    "connect": "Ditt eget hus fylls i av din Claude när du har kopplat in Husvan och laddat upp dokumenten.",
+    "tools": "Vad Claude kan göra i Husvan"
   }
 }

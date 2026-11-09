@@ -14,6 +14,7 @@ describe('robots and sitemap', () => {
     expect(sitemap()).toEqual([
       { url: 'https://husvan.se/' },
       { url: 'https://husvan.se/tools' },
+      { url: 'https://husvan.se/demo' },
       { url: 'https://husvan.se/privacy' },
     ])
   })

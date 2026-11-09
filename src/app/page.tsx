@@ -559,6 +559,9 @@ export default async function HomePage() {
             <Link href="/tools" variant="body2" sx={{ pl: 1 }}>
               {t('footerTools')}
             </Link>
+            <Link href="/demo" variant="body2" sx={{ pl: 1 }}>
+              {t('footerDemo')}
+            </Link>
           </Stack>
         </PageContainer>
       </Box>
