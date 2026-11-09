@@ -25,8 +25,11 @@ export default async function ToolsPage() {
       <Typography component="h1" variant="h4" gutterBottom>
         {t('title')}
       </Typography>
-      <Typography color="text.secondary" sx={{ mb: 5, maxWidth: '65ch' }}>
+      <Typography color="text.secondary" sx={{ mb: 2, maxWidth: '65ch' }}>
         {t('lead', { count: TOOL_NAMES.length })}
+      </Typography>
+      <Typography sx={{ mb: 5 }}>
+        <Link href="/demo">{t('demo')}</Link>
       </Typography>
 
       <Stack spacing={5}>

@@ -164,7 +164,8 @@
       "origin": "Husvan was built to teach me how to run an AI-first project, and to help me in my own search for a dream house. Expect things to change quite a lot. I may have got it completely wrong how to build something like this.",
       "ambition": "The ambition is for Husvan to work as a complement to any AI model of your choice, so that you can communicate with your house and its needs, and get tips, advice and reminders back about things that need fixing and taking care of. A bit of a digital property manager, one that develops along with the success of AI.",
       "brf": "If you are looking for a housing cooperative flat, have a look at my project for exactly that: <link>brfjamforelse.se</link>."
-    }
+    },
+    "footerDemo": "Example house"
   },
   "login": {
     "title": "Sign in",
@@ -1127,7 +1128,8 @@
     },
     "connect": "The tools become available once you have added Husvan as a custom connector in your Claude and signed in.",
     "getStarted": "Get started",
-    "privacy": "How your data is handled"
+    "privacy": "How your data is handled",
+    "demo": "See an example house with everything Husvan stores"
   },
   "privacy": {
     "title": "Privacy",
@@ -1176,5 +1178,80 @@
       "title": "Cookies",
       "body": "Husvan uses one cookie for signing in and one for the chosen language. Both are needed for the site to work, and the visit statistics use no cookies, so no consent banner is shown. On the login page, Cloudflare Turnstile checks that a human is signing in."
     }
+  },
+  "demo": {
+    "title": "Example house: everything Husvan stores about a house",
+    "metaDescription": "A made-up house in Boden showing every kind of data Husvan stores: the core, documents, values with source and confidence, components, work items, assumptions, change history and forecasts.",
+    "lead": "A made-up house with made-up but plausible data, as it would look after you had read the listing, the energy certificate, the inspection and a pipe inspection with your Claude. Every value shows where it came from.",
+    "madeUp": "Made-up data",
+    "core": {
+      "title": "The house",
+      "body": "The core is saved at once when Claude creates the house. Everything else hangs on it.",
+      "address": "Address",
+      "propertyDesignation": "Property designation",
+      "municipality": "Municipality",
+      "status": "Status",
+      "createdAt": "Added"
+    },
+    "documents": {
+      "title": "Documents",
+      "body": "The original file, the full text and Claude’s interpretation are kept unchanged, with type, date and who is behind the document. Husvan never interprets documents itself.",
+      "file": "{filename}, {pages, plural, one {# page} other {# pages}}, {size} MB"
+    },
+    "values": {
+      "title": "About the house",
+      "body": "Each value is an observation with a source, a confidence and the passage it rests on. When two documents disagree, both are shown: the current value first and the other as an alternative. Your own values come before Claude’s, except for price and bids, where the latest counts."
+    },
+    "components": {
+      "title": "Components",
+      "body": "The house is split into the parts that cost money over time, each with its own values. A part can sit inside another, and a replaced part stays under the one that replaced it. Yellow marks are a draft waiting for your approval.",
+      "replaces": "Replaces: {type}"
+    },
+    "workItems": {
+      "title": "Work items",
+      "body": "Defects and recommendations from the inspection and the listing, and your own plans. An inspection rarely names a year, so each item has a range of years and costs.",
+      "when": "{years} · {cost}"
+    },
+    "assumptions": {
+      "title": "Assumptions",
+      "body": "What you decide for the forecast, for one house or for all. Anything not set gets a default."
+    },
+    "log": {
+      "title": "Change history",
+      "body": "Everything written lands in a changeset. Nothing is overwritten and nothing is deleted: a better value is a new row and a wrong one is retracted. That is why the house can be shown as it stood on a given date.",
+      "status": {
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "draft": "Draft"
+      },
+      "entries": {
+        "created": "Claude created the house from the listing.",
+        "listing": "Values and components from the listing.",
+        "assessment": "The tax assessment value was fetched.",
+        "energy": "Values from the energy certificate.",
+        "inspection": "Values, components and three work items from the inspection.",
+        "rejected": "Claude read that the bathroom had a wet-room certificate. You rejected the draft; it is kept but never shown.",
+        "insurance": "You entered your own insurance quote on the web page.",
+        "invoice": "The heat pump from the invoice, as the replacement of the electric boiler.",
+        "retraction": "You retracted the listing’s installation year 2018 for the heat pump: the invoice says 2019.",
+        "pipes": "Condition and a work item for the sewer pipes from the pipe inspection. Waiting for your approval.",
+        "price": "A watch saw that the asking price was lowered.",
+        "bid": "You entered the highest bid."
+      }
+    },
+    "forecasts": {
+      "title": "Saved forecasts",
+      "body": "Each forecast is saved with the assumptions it used, so that you can see how the assessment of the house changed. The total is replacements, work items and running costs over the horizon, in today’s kronor.",
+      "when": "Calculated",
+      "total": "Total",
+      "perMonth": "Per month",
+      "entries": {
+        "listing": "Listing only, {years} years",
+        "inspection": "After the inspection, {years} years",
+        "horizon": "New horizon, {years} years"
+      }
+    },
+    "connect": "Your own house is filled in by your Claude once you have connected Husvan and uploaded the documents.",
+    "tools": "What Claude can do in Husvan"
   }
 }

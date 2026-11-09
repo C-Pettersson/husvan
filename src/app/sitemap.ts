@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${site}/` },
     { url: `${site}/tools` },
+    { url: `${site}/demo` },
     { url: `${site}/privacy` },
   ]
 }
