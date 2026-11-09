@@ -1,5 +1,6 @@
 import { McpServer, type McpRequestContext } from '@modelcontextprotocol/server'
 import prisma from '@/lib/prisma'
+import { husvanServerInfo } from './serverInfo'
 import { registerHusvanTools } from './tools'
 
 // One server instance per request. requireMcpAuth has already verified the
@@ -10,7 +11,7 @@ export function createHusvanMcpServer(ctx: McpRequestContext): McpServer {
     throw new Error('MCP request reached the server without a verified user')
   }
 
-  const server = new McpServer({ name: 'husvan', version: '0.5.0' })
+  const server = new McpServer(husvanServerInfo())
   registerHusvanTools(server, prisma, userId)
   return server
 }
